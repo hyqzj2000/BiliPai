@@ -44,6 +44,7 @@ data class BottomBarTabConfig(
 val allBottomBarTabs = listOf(
     BottomBarTabConfig("HOME", "首页", CupertinoIcons.Default.House, isDefault = true),
     BottomBarTabConfig("DYNAMIC", "动态", CupertinoIcons.Default.Newspaper, isDefault = true),
+    BottomBarTabConfig("STORY", "短视频", CupertinoIcons.Default.PlayCircle, isDefault = false),  // 🔥 竖屏短视频
     BottomBarTabConfig("HISTORY", "历史", CupertinoIcons.Default.Clock, isDefault = true),
     BottomBarTabConfig("PROFILE", "我的", CupertinoIcons.Default.PersonCircle, isDefault = true),
     BottomBarTabConfig("FAVORITE", "收藏", CupertinoIcons.Default.Heart, isDefault = false),

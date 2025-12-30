@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.android.purebilibili.core.store.SettingsManager
 import androidx.media3.ui.PlayerView
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.feature.video.ui.gesture.GestureMode
@@ -99,6 +100,7 @@ fun FullscreenPlayerOverlay(
     
     // 🔥 画质选择菜单状态
     var showQualityMenu by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     
     // 手势状态
     var gestureMode by remember { mutableStateOf(FullscreenGestureMode.None) }
@@ -270,19 +272,53 @@ fun FullscreenPlayerOverlay(
         val danmakuManager = rememberDanmakuManager()
         
         // 🔥 弹幕开关设置
-        val danmakuEnabled by com.android.purebilibili.core.store.SettingsManager
+        val danmakuEnabled by SettingsManager
             .getDanmakuEnabled(context)
             .collectAsState(initial = true)
         
+        // 🔥 弹幕设置（全局持久化）
+        val danmakuOpacity by SettingsManager
+            .getDanmakuOpacity(context)
+            .collectAsState(initial = 0.85f)
+        val danmakuFontScale by SettingsManager
+            .getDanmakuFontScale(context)
+            .collectAsState(initial = 1.0f)
+        val danmakuSpeed by SettingsManager
+            .getDanmakuSpeed(context)
+            .collectAsState(initial = 1.0f)
+        val danmakuDisplayArea by SettingsManager
+            .getDanmakuArea(context)
+            .collectAsState(initial = 0.5f)
+        
         // 🔥 获取当前 cid 并加载弹幕
         val currentCid = miniPlayerManager.currentCid
-        LaunchedEffect(currentCid, danmakuEnabled) {
+        LaunchedEffect(currentCid, danmakuEnabled, player) {
             if (currentCid > 0 && danmakuEnabled) {
                 danmakuManager.isEnabled = true
-                danmakuManager.loadDanmaku(currentCid)
+                
+                // 等待播放器 duration 可用后再加载弹幕，启用 Protobuf API
+                var durationMs = player?.duration ?: 0L
+                var retries = 0
+                while (durationMs <= 0 && retries < 50) {
+                    delay(100)
+                    durationMs = player?.duration ?: 0L
+                    retries++
+                }
+                
+                danmakuManager.loadDanmaku(currentCid, durationMs)
             } else {
                 danmakuManager.isEnabled = false
             }
+        }
+        
+        // 🔥 弹幕设置变化时实时应用
+        LaunchedEffect(danmakuOpacity, danmakuFontScale, danmakuSpeed, danmakuDisplayArea) {
+            danmakuManager.updateSettings(
+                opacity = danmakuOpacity,
+                fontScale = danmakuFontScale,
+                speed = danmakuSpeed,
+                displayArea = danmakuDisplayArea
+            )
         }
         
         // 🔥 绑定 Player（不在 onDispose 中释放，单例会保持状态）
@@ -293,6 +329,22 @@ fun FullscreenPlayerOverlay(
             onDispose {
                 // 🔥 不再调用 detachView()
                 // 单例模式下，视图引用会在下次 attachView 时自动更新
+            }
+        }
+        
+        // 🔥🔥 [修复] 使用 LifecycleOwner 监听真正的 Activity 生命周期
+        // DisposableEffect(Unit) 会在重组时触发，导致 player 引用被清除
+        val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_DESTROY) {
+                    android.util.Log.d("FullscreenPlayer", "🗑️ ON_DESTROY: Clearing danmaku references")
+                    danmakuManager.clearViewReference()
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose {
+                lifecycleOwner.lifecycle.removeObserver(observer)
             }
         }
         
@@ -496,10 +548,10 @@ fun FullscreenPlayerOverlay(
         // 🔥🔥 [新增] 弹幕设置面板
         if (showDanmakuSettings) {
             // 🔥 使用本地状态确保滑动条可以更新
-            var localOpacity by remember { mutableFloatStateOf(danmakuManager.opacity) }
-            var localFontScale by remember { mutableFloatStateOf(danmakuManager.fontScale) }
-            var localSpeed by remember { mutableFloatStateOf(danmakuManager.speedFactor) }
-            var localDisplayArea by remember { mutableFloatStateOf(danmakuManager.displayArea) }
+            var localOpacity by remember(danmakuOpacity) { mutableFloatStateOf(danmakuOpacity) }
+            var localFontScale by remember(danmakuFontScale) { mutableFloatStateOf(danmakuFontScale) }
+            var localSpeed by remember(danmakuSpeed) { mutableFloatStateOf(danmakuSpeed) }
+            var localDisplayArea by remember(danmakuDisplayArea) { mutableFloatStateOf(danmakuDisplayArea) }
             
             DanmakuSettingsPanel(
                 opacity = localOpacity,
@@ -508,19 +560,23 @@ fun FullscreenPlayerOverlay(
                 displayArea = localDisplayArea,
                 onOpacityChange = { 
                     localOpacity = it
-                    danmakuManager.opacity = it 
+                    danmakuManager.opacity = it
+                    scope.launch { SettingsManager.setDanmakuOpacity(context, it) }
                 },
                 onFontScaleChange = { 
                     localFontScale = it
-                    danmakuManager.fontScale = it 
+                    danmakuManager.fontScale = it
+                    scope.launch { SettingsManager.setDanmakuFontScale(context, it) }
                 },
                 onSpeedChange = { 
                     localSpeed = it
-                    danmakuManager.speedFactor = it 
+                    danmakuManager.speedFactor = it
+                    scope.launch { SettingsManager.setDanmakuSpeed(context, it) }
                 },
                 onDisplayAreaChange = {
                     localDisplayArea = it
                     danmakuManager.displayArea = it
+                    scope.launch { SettingsManager.setDanmakuArea(context, it) }
                 },
                 onDismiss = { showDanmakuSettings = false }
             )

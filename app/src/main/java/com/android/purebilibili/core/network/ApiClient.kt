@@ -2,6 +2,7 @@
 package com.android.purebilibili.core.network
 
 import android.content.Context
+import com.android.purebilibili.BuildConfig
 import com.android.purebilibili.core.store.TokenManager
 import com.android.purebilibili.data.model.response.*
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -178,6 +179,19 @@ interface BilibiliApi {
     @GET("x/player/playurl")
     suspend fun getPlayUrlLegacy(
         @Query("bvid") bvid: String,
+        @Query("cid") cid: Long,
+        @Query("qn") qn: Int = 80,
+        @Query("fnval") fnval: Int = 16,  // MP4 格式
+        @Query("fnver") fnver: Int = 0,
+        @Query("fourk") fourk: Int = 1,
+        @Query("platform") platform: String = "html5",
+        @Query("high_quality") highQuality: Int = 1
+    ): PlayUrlResponse
+    
+    // 🔥🔥 [新增] 通过 aid 获取播放地址 - 用于 Story 模式
+    @GET("x/player/playurl")
+    suspend fun getPlayUrlByAid(
+        @Query("avid") aid: Long,
         @Query("cid") cid: Long,
         @Query("qn") qn: Int = 80,
         @Query("fnval") fnval: Int = 16,  // MP4 格式
@@ -389,6 +403,22 @@ interface SearchApi {
         @Query("main_ver") mainVer: String = "v1",
         @Query("highlight") highlight: Int = 0
     ): SearchSuggestResponse
+}
+
+// 🔥🔥 [新增] 故事模式 (竖屏短视频) API
+interface StoryApi {
+    // 获取故事流 (竖屏短视频列表)
+    @GET("x/v2/feed/index/story")
+    suspend fun getStoryFeed(
+        @Query("fnval") fnval: Int = 4048,         // 视频格式参数
+        @Query("fnver") fnver: Int = 0,
+        @Query("force_host") forceHost: Int = 0,
+        @Query("fourk") fourk: Int = 1,
+        @Query("qn") qn: Int = 32,                  // 画质
+        @Query("ps") ps: Int = 20,                  // 每页数量
+        @Query("aid") aid: Long = 0,                // 可选，从此视频开始
+        @Query("bvid") bvid: String = ""            // 可选，从此视频开始
+    ): StoryResponse
 }
 
 // 🔥 动态 API
@@ -614,18 +644,8 @@ object NetworkModule {
     }
 
     val okHttpClient: OkHttpClient by lazy {
-        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
-            override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
-            override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
-            override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-        })
-        val sslContext = SSLContext.getInstance("SSL")
-        sslContext.init(null, trustAllCerts, SecureRandom())
-
-        OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder()
             .protocols(listOf(Protocol.HTTP_1_1))
-            .sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
-            .hostnameVerifier { _, _ -> true }
             // 🔥 [新增] 超时配置，提高网络稳定性
             .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
@@ -645,18 +665,36 @@ object NetworkModule {
             .retryOnConnectionFailure(true)
             .followRedirects(true)
             .followSslRedirects(true)
+        
+        if (BuildConfig.DEBUG) {
+            val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+            })
+            val sslContext = SSLContext.getInstance("SSL")
+            sslContext.init(null, trustAllCerts, SecureRandom())
+            builder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+                .hostnameVerifier { _, _ -> true }
+        }
+        
+        val cookieLock = Any()
+        
+        builder
             // 🔥🔥 [关键] 添加 CookieJar 自动管理 Cookie（参考 PiliPala）
             .cookieJar(object : okhttp3.CookieJar {
                 private val cookieStore = mutableMapOf<String, MutableList<okhttp3.Cookie>>()
                 
                 override fun saveFromResponse(url: okhttp3.HttpUrl, cookies: List<okhttp3.Cookie>) {
                     val host = url.host
-                    val existingCookies = cookieStore.getOrPut(host) { mutableListOf() }
-                    cookies.forEach { newCookie ->
-                        // 移除同名旧 cookie，添加新 cookie
-                        existingCookies.removeAll { it.name == newCookie.name }
-                        existingCookies.add(newCookie)
-                        com.android.purebilibili.core.util.Logger.d("CookieJar", "🍪 Saved cookie: ${newCookie.name}=${newCookie.value.take(20)}... for $host")
+                    synchronized(cookieLock) {
+                        val existingCookies = cookieStore.getOrPut(host) { mutableListOf() }
+                        cookies.forEach { newCookie ->
+                            // 移除同名旧 cookie，添加新 cookie
+                            existingCookies.removeAll { it.name == newCookie.name }
+                            existingCookies.add(newCookie)
+                            com.android.purebilibili.core.util.Logger.d("CookieJar", "🍪 Saved cookie: ${newCookie.name} for $host")
+                        }
                     }
                 }
                 
@@ -664,7 +702,9 @@ object NetworkModule {
                     val cookies = mutableListOf<okhttp3.Cookie>()
                     
                     // 加载存储的 cookies
-                    cookieStore[url.host]?.let { cookies.addAll(it) }
+                    synchronized(cookieLock) {
+                        cookieStore[url.host]?.let { cookies.addAll(it) }
+                    }
                     
                     // 🔥 确保 buvid3 存在
                     var buvid3 = TokenManager.buvid3Cache
@@ -706,8 +746,10 @@ object NetworkModule {
                     
                     // 🔥🔥 [调试] 输出 Cookie 信息以便排查 VIP 画质问题
                     if (url.encodedPath.contains("playurl") || url.encodedPath.contains("pgc/view")) {
-                        com.android.purebilibili.core.util.Logger.d("CookieJar", 
-                            "🔥 ${url.encodedPath} request: domain=$biliBiliDomain, SESSDATA=${sessData?.take(10)}..., bili_jct=${biliJct?.take(10)}...")
+                        com.android.purebilibili.core.util.Logger.d(
+                            "CookieJar",
+                            "🔥 ${url.encodedPath} request: domain=$biliBiliDomain, hasSess=${!sessData.isNullOrEmpty()}, hasCsrf=${!biliJct.isNullOrEmpty()}"
+                        )
                     }
                     
                     return cookies
@@ -740,7 +782,10 @@ object NetworkModule {
                     .header("Referer", referer)
                     .header("Origin", "https://www.bilibili.com") // 🔥 增加 Origin 头
 
-                com.android.purebilibili.core.util.Logger.d("ApiClient", "🔥 Sending request to ${original.url}, Referer: $referer, Cookie contains SESSDATA: ${TokenManager.sessDataCache?.isNotEmpty() == true}")
+                com.android.purebilibili.core.util.Logger.d(
+                    "ApiClient",
+                    "🔥 Sending request to ${original.url}, Referer: $referer, hasSess=${!TokenManager.sessDataCache.isNullOrEmpty()}, hasCsrf=${!TokenManager.csrfCache.isNullOrEmpty()}"
+                )
 
                 chain.proceed(builder.build())
             }
@@ -789,5 +834,12 @@ object NetworkModule {
         Retrofit.Builder().baseUrl("https://api.bilibili.com/").client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType())).build()
             .create(BangumiApi::class.java)
+    }
+    
+    // 🔥🔥 [新增] 故事模式 (竖屏短视频) API - 使用 app.bilibili.com
+    val storyApi: StoryApi by lazy {
+        Retrofit.Builder().baseUrl("https://app.bilibili.com/").client(okHttpClient)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType())).build()
+            .create(StoryApi::class.java)
     }
 }

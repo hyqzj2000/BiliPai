@@ -86,7 +86,8 @@ fun HomeScreen(
     // 🔥🔥 [新增] 底栏扩展项目导航回调
     onFavoriteClick: () -> Unit = {},  // 收藏页面
     onLiveListClick: () -> Unit = {},  // 直播列表页面
-    onWatchLaterClick: () -> Unit = {}  // 稍后再看页面
+    onWatchLaterClick: () -> Unit = {},  // 稍后再看页面
+    onStoryClick: () -> Unit = {}  // 🔥🔥 [新增] 竖屏短视频
 ) {
     val state by viewModel.uiState.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
@@ -583,6 +584,7 @@ fun HomeScreen(
                                     BottomNavItem.FAVORITE -> onFavoriteClick()
                                     BottomNavItem.LIVE -> onLiveListClick()
                                     BottomNavItem.WATCHLATER -> onWatchLaterClick()
+                                    BottomNavItem.STORY -> onStoryClick()
                                 }
                             },
                             onHomeDoubleTap = {
@@ -612,6 +614,7 @@ fun HomeScreen(
                                 BottomNavItem.FAVORITE -> onFavoriteClick()
                                 BottomNavItem.LIVE -> onLiveListClick()
                                 BottomNavItem.WATCHLATER -> onWatchLaterClick()
+                                BottomNavItem.STORY -> onStoryClick()
                             }
                         },
                         onHomeDoubleTap = {

@@ -10,7 +10,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.android.purebilibili.data.repository.VideoRepository
 import com.bytedance.danmaku.render.engine.DanmakuView
 import com.bytedance.danmaku.render.engine.control.DanmakuController
 import com.bytedance.danmaku.render.engine.data.DanmakuData
@@ -82,8 +81,7 @@ class DanmakuManager private constructor(
     private var isPlaying = false
     private var isLoading = false
     
-    // 缓存原始数据（横竖屏切换时复用）
-    private var cachedRawData: ByteArray? = null
+    // 缓存解析后的弹幕数据（横竖屏切换时复用）
     private var cachedDanmakuList: List<DanmakuData>? = null
     private var cachedCid: Long = 0L
     
@@ -163,21 +161,40 @@ class DanmakuManager private constructor(
         }
     }
     
+    // 🔥🔥 [新增] 记录上次应用的视图尺寸，用于检测横竖屏切换
+    private var lastAppliedWidth: Int = 0
+    private var lastAppliedHeight: Int = 0
+    
     /**
      * 绑定 DanmakuView
+     * 
+     * 🔥🔥 [修复] 支持横竖屏切换时重新应用弹幕数据
+     * 当同一个视图的尺寸发生变化时，也会重新设置弹幕数据
      */
     fun attachView(view: DanmakuView) {
         // 使用 Log.w (warning) 确保日志可见
         Log.w(TAG, "========== attachView CALLED ==========")
+        Log.w(TAG, "📎 View size: width=${view.width}, height=${view.height}, lastApplied=${lastAppliedWidth}x${lastAppliedHeight}")
         
-        // 如果是同一个视图，跳过
-        if (danmakuView === view) {
-            Log.w(TAG, "📎 attachView: Same view, skipping")
+        // 🔥🔥 [关键修复] 如果是同一个视图但尺寸发生变化（横竖屏切换），也需要重新应用弹幕数据
+        val isSameView = danmakuView === view
+        val sizeChanged = view.width != lastAppliedWidth || view.height != lastAppliedHeight
+        val hasValidSize = view.width > 0 && view.height > 0
+        
+        if (isSameView && !sizeChanged && hasValidSize) {
+            Log.w(TAG, "📎 attachView: Same view, same size, skipping")
+            return
+        }
+        
+        if (isSameView && sizeChanged && hasValidSize) {
+            Log.w(TAG, "📎 attachView: Same view but size changed (rotation?), re-applying danmaku data")
+            lastAppliedWidth = view.width
+            lastAppliedHeight = view.height
+            applyDanmakuDataToController()
             return
         }
         
         Log.w(TAG, "📎 attachView: new view, old=${danmakuView != null}, hashCode=${view.hashCode()}")
-        Log.w(TAG, "📎 View size: width=${view.width}, height=${view.height}, visibility=${view.visibility}")
         
         danmakuView = view
         controller = view.controller
@@ -195,9 +212,11 @@ class DanmakuManager private constructor(
         
         // 🔥🔥 [关键修复] 等待 View 布局完成后再设置弹幕数据
         // DanmakuRenderEngine 需要有效的 View 尺寸来计算弹幕轨道位置
-        if (view.width > 0 && view.height > 0) {
+        if (hasValidSize) {
             // View 已经有有效尺寸，直接设置数据
             Log.w(TAG, "📎 View has valid size, setting data immediately")
+            lastAppliedWidth = view.width
+            lastAppliedHeight = view.height
             applyDanmakuDataToController()
         } else {
             // View 尺寸为 0，等待布局完成
@@ -211,6 +230,8 @@ class DanmakuManager private constructor(
                     
                     // 确保 View 仍然是当前绑定的 View
                     if (danmakuView === view && view.width > 0 && view.height > 0) {
+                        lastAppliedWidth = view.width
+                        lastAppliedHeight = view.height
                         applyDanmakuDataToController()
                     } else if (danmakuView === view) {
                         // 🔥🔥 [修复] 如果布局回调时尺寸仍为 0，延迟 100ms 再试一次
@@ -218,6 +239,8 @@ class DanmakuManager private constructor(
                         view.postDelayed({
                             if (danmakuView === view && view.width > 0 && view.height > 0) {
                                 Log.w(TAG, "📎 Delayed retry: width=${view.width}, height=${view.height}")
+                                lastAppliedWidth = view.width
+                                lastAppliedHeight = view.height
                                 applyDanmakuDataToController()
                             } else {
                                 Log.w(TAG, "⚠️ View still invalid after delay, skipping")
@@ -415,7 +438,6 @@ class DanmakuManager private constructor(
         Log.w(TAG, "📥 loadDanmaku: New cid=$cid, loading from network")
         isLoading = true
         cachedCid = cid
-        cachedRawData = null
         cachedDanmakuList = null
         
         // 清除现有弹幕
@@ -424,36 +446,53 @@ class DanmakuManager private constructor(
         loadJob?.cancel()
         loadJob = scope.launch {
             try {
-                var danmakuList: List<com.bytedance.danmaku.render.engine.data.DanmakuData>? = null
-                
-                // 🔥🔥 [新增] 优先使用 Protobuf API (seg.so)
-                if (durationMs > 0) {
-                    Log.w(TAG, "📥 Trying Protobuf API (seg.so)...")
-                    try {
-                        val segments = com.android.purebilibili.data.repository.DanmakuRepository.getDanmakuSegments(cid, durationMs)
-                        if (segments.isNotEmpty()) {
-                            danmakuList = DanmakuParser.parseProtobuf(segments)
-                            Log.w(TAG, "✅ Protobuf parsed ${danmakuList.size} danmakus")
+                val (segments, rawData) = withContext(Dispatchers.IO) {
+                    var segmentList: List<ByteArray>? = null
+                    var xmlData: ByteArray? = null
+                    
+                    // 🔥🔥 [新增] 优先使用 Protobuf API (seg.so)
+                    if (durationMs > 0) {
+                        Log.w(TAG, "📥 Trying Protobuf API (seg.so)...")
+                        try {
+                            val fetched = com.android.purebilibili.data.repository.DanmakuRepository.getDanmakuSegments(cid, durationMs)
+                            if (fetched.isNotEmpty()) {
+                                segmentList = fetched
+                            }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "⚠️ Protobuf API failed: ${e.message}, falling back to XML")
                         }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "⚠️ Protobuf API failed: ${e.message}, falling back to XML")
+                    }
+                    
+                    // 🔥🔥 [后备] 如果 Protobuf 失败或未提供 duration，使用 XML API
+                    if (segmentList.isNullOrEmpty()) {
+                        Log.w(TAG, "📥 Trying XML API (fallback)...")
+                        xmlData = com.android.purebilibili.data.repository.DanmakuRepository.getDanmakuRawData(cid)
+                    }
+                    
+                    Pair(segmentList, xmlData)
+                }
+                
+                val danmakuList = withContext(Dispatchers.Default) {
+                    when {
+                        !segments.isNullOrEmpty() -> {
+                            val parsed = DanmakuParser.parseProtobuf(segments)
+                            Log.w(TAG, "✅ Protobuf parsed ${parsed.size} danmakus")
+                            parsed
+                        }
+                        rawData != null && rawData.isNotEmpty() -> {
+                            val parsed = DanmakuParser.parse(rawData)
+                            Log.w(TAG, "✅ XML parsed ${parsed.size} danmakus")
+                            parsed
+                        }
+                        else -> emptyList()
                     }
                 }
                 
-                // 🔥🔥 [后备] 如果 Protobuf 失败或未提供 duration，使用 XML API
-                if (danmakuList == null || danmakuList.isEmpty()) {
-                    Log.w(TAG, "📥 Trying XML API (fallback)...")
-                    val rawData = com.android.purebilibili.data.repository.DanmakuRepository.getDanmakuRawData(cid)
-                    if (rawData != null && rawData.isNotEmpty()) {
-                        cachedRawData = rawData
-                        danmakuList = DanmakuParser.parse(rawData)
-                        Log.w(TAG, "✅ XML parsed ${danmakuList.size} danmakus")
-                    }
-                }
-                
-                if (danmakuList == null || danmakuList.isEmpty()) {
+                if (danmakuList.isEmpty()) {
                     Log.w(TAG, "⚠️ No danmaku data available for cid=$cid")
-                    isLoading = false
+                    withContext(Dispatchers.Main) {
+                        isLoading = false
+                    }
                     return@launch
                 }
                 
@@ -493,7 +532,9 @@ class DanmakuManager private constructor(
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to load danmaku for cid=$cid: ${e.message}", e)
-                isLoading = false
+                withContext(Dispatchers.Main) {
+                    isLoading = false
+                }
             }
         }
     }
@@ -534,6 +575,10 @@ class DanmakuManager private constructor(
         controller = null
         danmakuView = null
         
+        // 🔥🔥 [修复] 重置尺寸记录
+        lastAppliedWidth = 0
+        lastAppliedHeight = 0
+        
         // 取消加载任务
         loadJob?.cancel()
         loadJob = null
@@ -552,7 +597,6 @@ class DanmakuManager private constructor(
         clearViewReference()
         
         // 清除缓存
-        cachedRawData = null
         cachedDanmakuList = null
         cachedCid = 0L
         

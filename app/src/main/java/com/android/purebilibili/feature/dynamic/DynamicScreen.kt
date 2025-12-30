@@ -2,6 +2,14 @@
 package com.android.purebilibili.feature.dynamic
 
 import android.os.Build
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -117,38 +125,94 @@ fun DynamicScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        // 🔥 根据布局模式选择不同布局
-        when (displayMode) {
-            DynamicDisplayMode.SIDEBAR -> {
-                // 侧边栏模式
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                ) {
-                    // 左侧边栏
-                    DynamicSidebar(
-                        users = followedUsers,
-                        selectedUserId = selectedUserId,
-                        isExpanded = isSidebarExpanded,
-                        onUserClick = { viewModel.selectUser(it) },
-                        onToggleExpand = { viewModel.toggleSidebar() },
-                        modifier = Modifier.padding(top = statusBarHeight)
-                    )
-                    
-                    // 右侧内容区
+        // 🔥 [新增] 模式切换动画
+        AnimatedContent(
+            targetState = displayMode,
+            transitionSpec = {
+                // 🔥 根据切换方向使用不同动画
+                val slideDirection = if (targetState == DynamicDisplayMode.HORIZONTAL) {
+                    // 从侧边栏切换到横向：向左滑出+淡出，向左滑入+淡入
+                    (slideInHorizontally { -it / 4 } + fadeIn(animationSpec = tween(300))) togetherWith
+                    (slideOutHorizontally { it / 4 } + fadeOut(animationSpec = tween(200)))
+                } else {
+                    // 从横向切换到侧边栏：向右滑出+淡出，向右滑入+淡入
+                    (slideInHorizontally { it / 4 } + fadeIn(animationSpec = tween(300))) togetherWith
+                    (slideOutHorizontally { -it / 4 } + fadeOut(animationSpec = tween(200)))
+                }
+                slideDirection.using(SizeTransform(clip = false))
+            },
+            label = "displayModeTransition"
+        ) { targetMode ->
+            // 🔥 根据布局模式选择不同布局
+            when (targetMode) {
+                DynamicDisplayMode.SIDEBAR -> {
+                    // 侧边栏模式
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                    ) {
+                        // 左侧边栏
+                        DynamicSidebar(
+                            users = followedUsers,
+                            selectedUserId = selectedUserId,
+                            isExpanded = isSidebarExpanded,
+                            onUserClick = { viewModel.selectUser(it) },
+                            onToggleExpand = { viewModel.toggleSidebar() },
+                            modifier = Modifier.padding(top = statusBarHeight)
+                        )
+                        
+                        // 右侧内容区
+                        PullToRefreshBox(
+                            isRefreshing = isRefreshing,
+                            onRefresh = { viewModel.refresh() },
+                            state = pullRefreshState,
+                            modifier = Modifier.fillMaxSize().weight(1f)
+                        ) {
+                            DynamicList(
+                                state = state,
+                                filteredItems = filteredItems,
+                                listState = listState,
+                                statusBarHeight = statusBarHeight,
+                                topPaddingExtra = 100.dp,  // 顶栏高度
+                                onVideoClick = onVideoClick,
+                                onUserClick = onUserClick,
+                                onLiveClick = onLiveClick,
+                                onLoginClick = onLoginClick,
+                                gifImageLoader = gifImageLoader
+                            )
+                            
+                            // 顶栏
+                            DynamicTopBarWithTabs(
+                                selectedTab = selectedTab,
+                                tabs = tabs,
+                                onTabSelected = { selectedTab = it },
+                                displayMode = displayMode,
+                                onDisplayModeChange = { displayMode = it },
+                                onBackClick = onHomeClick,
+                                modifier = Modifier.align(Alignment.TopCenter)
+                            )
+                            
+                            // 错误提示
+                            ErrorOverlay(state, onLoginClick, { viewModel.refresh() }, Modifier.align(Alignment.Center))
+                        }
+                    }
+                }
+                
+                DynamicDisplayMode.HORIZONTAL -> {
+                    // 横向模式（UP 主列表在顶部）
                     PullToRefreshBox(
                         isRefreshing = isRefreshing,
                         onRefresh = { viewModel.refresh() },
                         state = pullRefreshState,
-                        modifier = Modifier.fillMaxSize().weight(1f)
+                        modifier = Modifier.fillMaxSize().padding(padding)
                     ) {
                         DynamicList(
                             state = state,
                             filteredItems = filteredItems,
                             listState = listState,
                             statusBarHeight = statusBarHeight,
-                            topPaddingExtra = 100.dp,  // 顶栏高度
+                            topPaddingExtra = 220.dp,  // 顶栏 + 横向用户列表高度
                             onVideoClick = onVideoClick,
                             onUserClick = onUserClick,
                             onLiveClick = onLiveClick,
@@ -156,64 +220,27 @@ fun DynamicScreen(
                             gifImageLoader = gifImageLoader
                         )
                         
-                        // 顶栏
-                        DynamicTopBarWithTabs(
-                            selectedTab = selectedTab,
-                            tabs = tabs,
-                            onTabSelected = { selectedTab = it },
-                            displayMode = displayMode,
-                            onDisplayModeChange = { displayMode = it },
-                            onBackClick = onHomeClick,
-                            modifier = Modifier.align(Alignment.TopCenter)
-                        )
+                        // 顶部区域：顶栏 + 横向用户列表
+                        Column(modifier = Modifier.align(Alignment.TopCenter)) {
+                            DynamicTopBarWithTabs(
+                                selectedTab = selectedTab,
+                                tabs = tabs,
+                                onTabSelected = { selectedTab = it },
+                                displayMode = displayMode,
+                                onDisplayModeChange = { displayMode = it },
+                                onBackClick = onHomeClick
+                            )
+                            
+                            // 🔥 横向 UP 主列表
+                            HorizontalUserList(
+                                users = followedUsers,
+                                selectedUserId = selectedUserId,
+                                onUserClick = { viewModel.selectUser(it) }
+                            )
+                        }
                         
-                        // 错误提示
                         ErrorOverlay(state, onLoginClick, { viewModel.refresh() }, Modifier.align(Alignment.Center))
                     }
-                }
-            }
-            
-            DynamicDisplayMode.HORIZONTAL -> {
-                // 横向模式（UP 主列表在顶部）
-                PullToRefreshBox(
-                    isRefreshing = isRefreshing,
-                    onRefresh = { viewModel.refresh() },
-                    state = pullRefreshState,
-                    modifier = Modifier.fillMaxSize().padding(padding)
-                ) {
-                    DynamicList(
-                        state = state,
-                        filteredItems = filteredItems,
-                        listState = listState,
-                        statusBarHeight = statusBarHeight,
-                        topPaddingExtra = 220.dp,  // 顶栏 + 横向用户列表高度
-                        onVideoClick = onVideoClick,
-                        onUserClick = onUserClick,
-                        onLiveClick = onLiveClick,
-                        onLoginClick = onLoginClick,
-                        gifImageLoader = gifImageLoader
-                    )
-                    
-                    // 顶部区域：顶栏 + 横向用户列表
-                    Column(modifier = Modifier.align(Alignment.TopCenter)) {
-                        DynamicTopBarWithTabs(
-                            selectedTab = selectedTab,
-                            tabs = tabs,
-                            onTabSelected = { selectedTab = it },
-                            displayMode = displayMode,
-                            onDisplayModeChange = { displayMode = it },
-                            onBackClick = onHomeClick
-                        )
-                        
-                        // 🔥 横向 UP 主列表
-                        HorizontalUserList(
-                            users = followedUsers,
-                            selectedUserId = selectedUserId,
-                            onUserClick = { viewModel.selectUser(it) }
-                        )
-                    }
-                    
-                    ErrorOverlay(state, onLoginClick, { viewModel.refresh() }, Modifier.align(Alignment.Center))
                 }
             }
         }

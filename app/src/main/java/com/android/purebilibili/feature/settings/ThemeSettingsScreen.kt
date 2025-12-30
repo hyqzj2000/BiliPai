@@ -40,6 +40,13 @@ fun ThemeSettingsScreen(
     val state by viewModel.state.collectAsState()
     
     var showThemeDialog by remember { mutableStateOf(false) }
+    val themeBaseLevel = when (state.themeMode) {
+        AppThemeMode.LIGHT -> 0.35f
+        AppThemeMode.DARK -> 0.75f
+        AppThemeMode.FOLLOW_SYSTEM -> 0.55f
+    }
+    val themeInteractionLevel = (themeBaseLevel + if (state.dynamicColor) 0.2f else 0f).coerceIn(0f, 1f)
+    val themeAnimationSpeed = if (state.dynamicColor) 1.15f else 0.95f
     
     // 主题模式弹窗
     if (showThemeDialog) {
@@ -109,6 +116,17 @@ fun ThemeSettingsScreen(
                 .fillMaxSize(),
             contentPadding = WindowInsets.navigationBars.asPaddingValues()
         ) {
+            // 🎬 精美互动 Lottie 动画头部 (本地资源)
+            item {
+                com.android.purebilibili.core.ui.SettingsAnimatedHeaderLocal(
+                    rawResId = com.android.purebilibili.core.ui.SettingsHeaderAnimations.THEME,
+                    title = "主题设置",
+                    subtitle = "打造专属于你的视觉风格",
+                    interactionLevel = themeInteractionLevel,
+                    animationSpeed = themeAnimationSpeed
+                )
+            }
+            
             // 🌙 外观模式
             item { SettingsSectionTitle("外观模式") }
             item {

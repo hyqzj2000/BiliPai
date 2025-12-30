@@ -77,7 +77,15 @@ fun VideoPlayerSection(
     currentCdnIndex: Int = 0,
     cdnCount: Int = 1,
     onSwitchCdn: () -> Unit = {},
-    onSwitchCdnTo: (Int) -> Unit = {}
+    onSwitchCdnTo: (Int) -> Unit = {},
+    
+    // 🔥 [新增] 音频模式
+    isAudioOnly: Boolean = false,
+    onAudioOnlyToggle: () -> Unit = {},
+    
+    // 🔥 [新增] 定时关闭
+    sleepTimerMinutes: Int? = null,
+    onSleepTimerChange: (Int?) -> Unit = {}
 ) {
     val context = LocalContext.current
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
@@ -287,6 +295,20 @@ fun VideoPlayerSection(
             .getDanmakuEnabled(context)
             .collectAsState(initial = true)
         
+        // 🔥 弹幕设置（全局持久化）
+        val danmakuOpacity by com.android.purebilibili.core.store.SettingsManager
+            .getDanmakuOpacity(context)
+            .collectAsState(initial = 0.85f)
+        val danmakuFontScale by com.android.purebilibili.core.store.SettingsManager
+            .getDanmakuFontScale(context)
+            .collectAsState(initial = 1.0f)
+        val danmakuSpeed by com.android.purebilibili.core.store.SettingsManager
+            .getDanmakuSpeed(context)
+            .collectAsState(initial = 1.0f)
+        val danmakuDisplayArea by com.android.purebilibili.core.store.SettingsManager
+            .getDanmakuArea(context)
+            .collectAsState(initial = 0.5f)
+        
         // 🔥 当视频加载成功时加载弹幕（不再依赖 isFullscreen，单例会保持弹幕）
         val cid = (uiState as? PlayerUiState.Success)?.info?.cid ?: 0L
         // 🔥 监听 player 状态，等待 duration 可用后加载弹幕
@@ -314,6 +336,24 @@ fun VideoPlayerSection(
         LaunchedEffect(danmakuEnabled) {
             danmakuManager.isEnabled = danmakuEnabled
         }
+
+        // 🔥 横竖屏/小窗切换后，若应当播放但未播放，主动恢复
+        LaunchedEffect(isFullscreen, isInPipMode) {
+            val player = playerState.player
+            if (player.playWhenReady && !player.isPlaying && player.playbackState == Player.STATE_READY) {
+                player.play()
+            }
+        }
+        
+        // 🔥 弹幕设置变化时实时应用
+        LaunchedEffect(danmakuOpacity, danmakuFontScale, danmakuSpeed, danmakuDisplayArea) {
+            danmakuManager.updateSettings(
+                opacity = danmakuOpacity,
+                fontScale = danmakuFontScale,
+                speed = danmakuSpeed,
+                displayArea = danmakuDisplayArea
+            )
+        }
         
         // 🔥 绑定 Player（不在 onDispose 中释放，单例保持状态）
         DisposableEffect(playerState.player) {
@@ -321,6 +361,22 @@ fun VideoPlayerSection(
             danmakuManager.attachPlayer(playerState.player)
             onDispose {
                 // 单例模式不需要释放
+            }
+        }
+        
+        // 🔥🔥 [修复] 使用 LifecycleOwner 监听真正的 Activity 生命周期
+        // DisposableEffect(Unit) 会在横竖屏切换时触发，导致 player 引用被清除
+        val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_DESTROY) {
+                    android.util.Log.d("VideoPlayerSection", "🗑️ ON_DESTROY: Clearing danmaku references")
+                    danmakuManager.clearViewReference()
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose {
+                lifecycleOwner.lifecycle.removeObserver(observer)
             }
         }
         
@@ -369,30 +425,38 @@ fun VideoPlayerSection(
             // 🔥 非全屏时的顶部偏移量
             val topOffset = if (isFullscreen) 0 else statusBarHeightPx + 20
             
-            key(isFullscreen) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .then(
-                            if (!isFullscreen) {
-                                Modifier.padding(top = with(LocalContext.current.resources.displayMetrics) {
-                                    (topOffset / density).dp
-                                })
-                            } else Modifier
-                        )
-                        .clipToBounds()
-                ) {
-                    AndroidView(
-                        factory = { ctx ->
-                            com.bytedance.danmaku.render.engine.DanmakuView(ctx).apply {
-                                setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                                danmakuManager.attachView(this)
-                                android.util.Log.d("VideoPlayerSection", "✅ DanmakuView (RenderEngine) created, isFullscreen=$isFullscreen")
-                            }
-                        },
-                        modifier = Modifier.fillMaxSize()
+            // 🔥🔥 [修复] 移除 key(isFullscreen)，避免横竖屏切换时重建 DanmakuView 导致弹幕消失
+            // 使用 remember 保存 DanmakuView 引用，在 update 回调中处理尺寸变化
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (!isFullscreen) {
+                            Modifier.padding(top = with(LocalContext.current.resources.displayMetrics) {
+                                (topOffset / density).dp
+                            })
+                        } else Modifier
                     )
-                }
+                    .clipToBounds()
+            ) {
+                AndroidView(
+                    factory = { ctx ->
+                        com.bytedance.danmaku.render.engine.DanmakuView(ctx).apply {
+                            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                            danmakuManager.attachView(this)
+                            android.util.Log.d("VideoPlayerSection", "✅ DanmakuView (RenderEngine) created, isFullscreen=$isFullscreen")
+                        }
+                    },
+                    update = { view ->
+                        // 🔥🔥 [关键] 横竖屏切换后视图尺寸变化时，重新 attachView 确保弹幕正确显示
+                        android.util.Log.d("VideoPlayerSection", "🔄 DanmakuView update: size=${view.width}x${view.height}, isFullscreen=$isFullscreen")
+                        // 只有当视图有有效尺寸时才 re-attach
+                        if (view.width > 0 && view.height > 0) {
+                            danmakuManager.attachView(view)
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
 
@@ -478,14 +542,34 @@ fun VideoPlayerSection(
                         com.android.purebilibili.core.store.SettingsManager.setDanmakuEnabled(context, newState)
                     }
                 },
-                danmakuOpacity = danmakuManager.opacity,
-                danmakuFontScale = danmakuManager.fontScale,
-                danmakuSpeed = danmakuManager.speedFactor,
-                danmakuDisplayArea = danmakuManager.displayArea,
-                onDanmakuOpacityChange = { danmakuManager.opacity = it },
-                onDanmakuFontScaleChange = { danmakuManager.fontScale = it },
-                onDanmakuSpeedChange = { danmakuManager.speedFactor = it },
-                onDanmakuDisplayAreaChange = { danmakuManager.displayArea = it },
+                danmakuOpacity = danmakuOpacity,
+                danmakuFontScale = danmakuFontScale,
+                danmakuSpeed = danmakuSpeed,
+                danmakuDisplayArea = danmakuDisplayArea,
+                onDanmakuOpacityChange = { value ->
+                    danmakuManager.opacity = value
+                    scope.launch {
+                        com.android.purebilibili.core.store.SettingsManager.setDanmakuOpacity(context, value)
+                    }
+                },
+                onDanmakuFontScaleChange = { value ->
+                    danmakuManager.fontScale = value
+                    scope.launch {
+                        com.android.purebilibili.core.store.SettingsManager.setDanmakuFontScale(context, value)
+                    }
+                },
+                onDanmakuSpeedChange = { value ->
+                    danmakuManager.speedFactor = value
+                    scope.launch {
+                        com.android.purebilibili.core.store.SettingsManager.setDanmakuSpeed(context, value)
+                    }
+                },
+                onDanmakuDisplayAreaChange = { value ->
+                    danmakuManager.displayArea = value
+                    scope.launch {
+                        com.android.purebilibili.core.store.SettingsManager.setDanmakuArea(context, value)
+                    }
+                },
                 // 🔥 视频比例调节
                 currentAspectRatio = currentAspectRatio,
                 onAspectRatioChange = { currentAspectRatio = it },
@@ -505,7 +589,15 @@ fun VideoPlayerSection(
                 currentCdnIndex = currentCdnIndex,
                 cdnCount = cdnCount,
                 onSwitchCdn = onSwitchCdn,
-                onSwitchCdnTo = onSwitchCdnTo
+                onSwitchCdnTo = onSwitchCdnTo,
+                
+                // 🔥 [新增] 音频模式
+                isAudioOnly = isAudioOnly,
+                onAudioOnlyToggle = onAudioOnlyToggle,
+                
+                // 🔥 [新增] 定时关闭
+                sleepTimerMinutes = sleepTimerMinutes,
+                onSleepTimerChange = onSleepTimerChange
             )
         }
         

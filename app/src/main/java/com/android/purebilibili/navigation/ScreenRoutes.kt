@@ -25,6 +25,9 @@ sealed class ScreenRoutes(val route: String) {
     
     // 🔥 动态页面
     object Dynamic : ScreenRoutes("dynamic")
+    
+    // 🔥🔥 [新增] 竖屏短视频 (故事模式)
+    object Story : ScreenRoutes("story")
 
     // 🔥 开源许可证页面
     object OpenSourceLicenses : ScreenRoutes("open_source_licenses")
@@ -61,6 +64,9 @@ sealed class ScreenRoutes(val route: String) {
             return "live/$roomId?title=$encodedTitle&uname=$encodedUname"
         }
     }
+    
+    // 🔥🔥 [新增] 音频模式页面
+    object AudioMode : ScreenRoutes("audio_mode")
     
     // 🔥🔥 [新增] 番剧/影视页面 - 支持初始类型参数
     object Bangumi : ScreenRoutes("bangumi?type={type}") {

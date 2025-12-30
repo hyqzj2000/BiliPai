@@ -22,7 +22,7 @@ class DanmakuConfig {
     var fontScale = 1.0f
     
     // 滚动速度因子 (数值越大弹幕越慢)
-    var speedFactor = 1.5f
+    var speedFactor = 1.0f
     
     // 显示区域比例 (0.25, 0.5, 0.75, 1.0)
     var displayAreaRatio = 0.5f
@@ -48,10 +48,10 @@ class DanmakuConfig {
             
             // 滚动层配置
             // moveTime: 弹幕滚过屏幕的时间（毫秒），越大越慢
-            // 🔥🔥 [修复] speedFactor > 1 表示更快（更短的 moveTime）
-            // 基准值 5000ms，speedFactor=1 时 5000ms，speedFactor=2 时 2500ms
+            // speedFactor > 1 表示更慢（更长的 moveTime）
+            // 基准值 5000ms，speedFactor=1 时 5000ms，speedFactor=2 时 10000ms
             val baseTime = 5000L
-            scroll.moveTime = (baseTime / speedFactor).toLong().coerceIn(2000L, 10000L)
+            scroll.moveTime = (baseTime * speedFactor).toLong().coerceIn(2000L, 10000L)
             
             // 🔥🔥 [修复] 显示区域控制
             // 通过 lineCount 限制最大行数来实现显示区域控制

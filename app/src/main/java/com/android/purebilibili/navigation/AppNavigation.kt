@@ -118,7 +118,8 @@ fun AppNavigation(
                     // 🔥🔥 [新增] 底栏扩展项目导航
                     onFavoriteClick = { navController.navigate(ScreenRoutes.Favorite.route) },
                     onLiveListClick = { navController.navigate(ScreenRoutes.LiveList.route) },
-                    onWatchLaterClick = { navController.navigate(ScreenRoutes.WatchLater.route) }
+                    onWatchLaterClick = { navController.navigate(ScreenRoutes.WatchLater.route) },
+                    onStoryClick = { navController.navigate(ScreenRoutes.Story.route) }  // 🔥🔥 [新增] 竖屏短视频
                 )
             }
         }
@@ -212,13 +213,15 @@ fun AppNavigation(
                     onVideoDetailExit()
                     // 🔥🔥 [修复] 只有在真正退出页面时才进入小窗模式
                     // 配置变化（如旋转）不应触发小窗模式
-                    if (activity?.isChangingConfigurations != true) {
+                    // 🔥🔥 [新增] 进入音频模式时也不应触发小窗（检查目标路由）
+                    val currentDestination = navController.currentDestination?.route
+                    val isNavigatingToAudioMode = currentDestination == ScreenRoutes.AudioMode.route
+                    if (activity?.isChangingConfigurations != true && !isNavigatingToAudioMode) {
                         miniPlayerManager?.enterMiniMode()
                     }
                 }
             }
 
-            // 🔥 提供 AnimatedVisibilityScope 给 VideoDetailScreen 以支持共享元素过渡
             ProvideAnimatedVisibilityScope(animatedVisibilityScope = this) {
                 VideoDetailScreen(
                     bvid = bvid,
@@ -234,9 +237,56 @@ fun AppNavigation(
                         CardPositionManager.markReturning()
                         // 🔥🔥 [修复] 不再在这里调用 enterMiniMode，由 onDispose 统一处理
                         navController.popBackStack() 
+                    },
+                    // 🔥🔥 [新增] 导航到音频模式
+                    onNavigateToAudioMode = { 
+                        navController.navigate(ScreenRoutes.AudioMode.route)
                     }
                 )
             }
+        }
+        
+        // --- 2.1 🔥🔥 [新增] 音频模式页面 ---
+        composable(
+            route = ScreenRoutes.AudioMode.route,
+            // 🔥 从底部滑入
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(animDuration)) },
+            // 🔥 向下滑出
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(animDuration)) }
+        ) { backStackEntry ->
+            // 🔥🔥 [关键] 共享 PlayerViewModel
+            // 尝试获取前一个页面 (VideoDetailScreen) 的 ViewModel
+            // 这样可以复用播放器实例，实现无缝切换
+            val parentEntry = androidx.compose.runtime.remember(backStackEntry) {
+                navController.previousBackStackEntry
+            }
+            
+            // 如果能获取到 VideoDetail 的 entry，就使用它的 ViewModel
+            // 否则创建一个新的（这不应该发生，除非直接深层链接进入）
+            val viewModel: com.android.purebilibili.feature.video.viewmodel.PlayerViewModel = if (parentEntry != null) {
+                viewModel(viewModelStoreOwner = parentEntry)
+            } else {
+                viewModel()
+            }
+            
+            // 🔥 获取原始进入音频模式时的 bvid（从父页面参数）
+            val originalBvid = parentEntry?.arguments?.getString("bvid") ?: ""
+            
+            com.android.purebilibili.feature.video.screen.AudioModeScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onVideoModeClick = { currentBvid ->
+                    // 🔥 如果当前播放的视频与原始视频相同，直接返回
+                    // 否则需要导航到正确的视频详情页
+                    if (currentBvid == originalBvid) {
+                        navController.popBackStack()
+                    } else {
+                        // 🔥 先返回到首页，再导航到新视频
+                        navController.popBackStack(ScreenRoutes.Home.route, false)
+                        navController.navigate(VideoRoute.createRoute(currentBvid, 0L, ""))
+                    }
+                }
+            )
         }
 
         // --- 3. 个人中心 ---
@@ -363,6 +413,18 @@ fun AppNavigation(
                 onBack = { navController.popBackStack() },
                 onLoginClick = { navController.navigate(ScreenRoutes.Login.route) },  // 🔥 跳转登录
                 onHomeClick = { navController.popBackStack() }  // 🔥 返回首页
+            )
+        }
+        
+        // --- 6.5 🔥🔥 [新增] 竖屏短视频 (故事模式) ---
+        composable(
+            route = ScreenRoutes.Story.route,
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(animDuration)) },
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(animDuration)) }
+        ) {
+            com.android.purebilibili.feature.story.StoryScreen(
+                onBack = { navController.popBackStack() },
+                onVideoClick = { bvid, aid, title -> navigateToVideo(bvid, 0L, "") }
             )
         }
 

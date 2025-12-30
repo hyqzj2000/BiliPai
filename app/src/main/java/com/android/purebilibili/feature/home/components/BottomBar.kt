@@ -58,6 +58,11 @@ enum class BottomNavItem(
         { Icon(CupertinoIcons.Filled.BellBadge, null) },
         { Icon(CupertinoIcons.Outlined.Bell, null) }
     ),
+    STORY(
+        "短视频",
+        { Icon(CupertinoIcons.Filled.PlayCircle, null) },
+        { Icon(CupertinoIcons.Outlined.PlayCircle, null) }
+    ),
     HISTORY(
         "历史",
         { Icon(CupertinoIcons.Filled.Clock, null) },

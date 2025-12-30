@@ -205,13 +205,16 @@ class MiniPlayerManager private constructor(private val context: Context) {
     
     /**
      * 判断是否应该显示应用内小窗（返回首页时）
+     * 🔥 只有 IN_APP_ONLY 模式才显示应用内悬浮小窗
+     * - SYSTEM_PIP: 使用系统画中画
+     * - BACKGROUND: 只播放音频，不显示小窗
+     * - OFF: 完全关闭
      */
     fun shouldShowInAppMiniPlayer(): Boolean {
         val mode = getCurrentMode()
-        return (mode == com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.IN_APP_ONLY ||
-                mode == com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.SYSTEM_PIP ||
-                mode == com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.BACKGROUND) && 
-               isActive
+        val result = mode == com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.IN_APP_ONLY && isActive
+        Logger.d(TAG, "🔥 shouldShowInAppMiniPlayer: mode=$mode, isActive=$isActive, result=$result")
+        return result
     }
     
     /**
@@ -219,7 +222,9 @@ class MiniPlayerManager private constructor(private val context: Context) {
      */
     fun shouldEnterPip(): Boolean {
         val mode = getCurrentMode()
-        return mode == com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.SYSTEM_PIP && isActive
+        val result = mode == com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.SYSTEM_PIP && isActive
+        Logger.d(TAG, "🔥 shouldEnterPip: mode=$mode, isActive=$isActive, result=$result")
+        return result
     }
     
     /**

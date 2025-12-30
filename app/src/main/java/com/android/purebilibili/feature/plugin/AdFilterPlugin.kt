@@ -27,7 +27,10 @@ import com.android.purebilibili.core.plugin.PluginStore
 import com.android.purebilibili.core.util.Logger
 import com.android.purebilibili.data.model.response.VideoItem
 import io.github.alexzhirkevich.cupertino.CupertinoSwitch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
@@ -60,6 +63,9 @@ class AdFilterPlugin : FeedPlugin {
     // 🔥 配置版本号，用于检测是否需要重载
     @Volatile
     private var configVersion = 0
+    @Volatile
+    private var lastConfigReloadMs = 0L
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
     // 🔥 内置广告关键词（强化版）
     private val AD_KEYWORDS = listOf(
@@ -99,7 +105,7 @@ class AdFilterPlugin : FeedPlugin {
     
     override fun shouldShowItem(item: VideoItem): Boolean {
         // 🔥 每次过滤前确保配置是最新的
-        reloadConfigSync()
+        reloadConfigAsync()
         
         val title = item.title
         val upName = item.owner.name
@@ -227,7 +233,7 @@ class AdFilterPlugin : FeedPlugin {
     }
     
     private fun saveConfig() {
-        runBlocking {
+        ioScope.launch {
             try {
                 val context = PluginManager.getContext()
                 PluginStore.setConfigJson(context, id, Json.encodeToString(config))
@@ -249,44 +255,38 @@ class AdFilterPlugin : FeedPlugin {
         }
     }
     
-    private fun loadConfig(context: Context) {
-        runBlocking {
-            val jsonStr = PluginStore.getConfigJson(context, id)
-            if (jsonStr != null) {
-                try {
-                    config = Json.decodeFromString<AdFilterConfig>(jsonStr)
-                } catch (e: Exception) {
-                    Logger.e(TAG, "Failed to decode config", e)
-                }
-            }
-        }
-    }
-    
     /**
      * 🔥 同步重载配置
      * 确保每次过滤使用最新的拉黑列表
      */
-    private fun reloadConfigSync() {
-        try {
-            val context = PluginManager.getContext()
-            val jsonStr = runBlocking { PluginStore.getConfigJson(context, id) }
-            if (jsonStr != null) {
-                val newConfig = Json.decodeFromString<AdFilterConfig>(jsonStr)
-                // 只有配置真的变了才更新
-                if (newConfig != config) {
-                    config = newConfig
-                    configVersion++
-                    Logger.d(TAG, "🔄 配置已重载 v$configVersion: 拉黑UP主=${config.blockedUpNames}")
+    private fun reloadConfigAsync() {
+        val now = System.currentTimeMillis()
+        if (now - lastConfigReloadMs < 1000L) return
+        lastConfigReloadMs = now
+        
+        ioScope.launch {
+            try {
+                val context = PluginManager.getContext()
+                val jsonStr = PluginStore.getConfigJson(context, id)
+                if (jsonStr != null) {
+                    val newConfig = Json.decodeFromString<AdFilterConfig>(jsonStr)
+                    // 只有配置真的变了才更新
+                    if (newConfig != config) {
+                        config = newConfig
+                        configVersion++
+                        Logger.d(TAG, "🔄 配置已重载 v$configVersion: 拉黑UP主=${config.blockedUpNames}")
+                    }
                 }
+            } catch (_: Exception) {
+                // 静默失败，使用现有配置
             }
-        } catch (e: Exception) {
-            // 静默失败，使用现有配置
         }
     }
     
     @Composable
     override fun SettingsContent() {
         val context = LocalContext.current
+        val scope = rememberCoroutineScope()
         var filterSponsored by remember { mutableStateOf(config.filterSponsored) }
         var filterClickbait by remember { mutableStateOf(config.filterClickbait) }
         var filterLowQuality by remember { mutableStateOf(config.filterLowQuality) }
@@ -300,7 +300,7 @@ class AdFilterPlugin : FeedPlugin {
         
         // 加载配置
         LaunchedEffect(Unit) {
-            loadConfig(context)
+            loadConfigSuspend()
             filterSponsored = config.filterSponsored
             filterClickbait = config.filterClickbait
             filterLowQuality = config.filterLowQuality
@@ -325,7 +325,7 @@ class AdFilterPlugin : FeedPlugin {
                 onCheckedChange = { newValue ->
                     filterSponsored = newValue
                     config = config.copy(filterSponsored = newValue)
-                    runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                    scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                 },
                 iconTint = Color(0xFFE91E63)
             )
@@ -341,7 +341,7 @@ class AdFilterPlugin : FeedPlugin {
                 onCheckedChange = { newValue ->
                     filterClickbait = newValue
                     config = config.copy(filterClickbait = newValue)
-                    runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                    scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                 },
                 iconTint = Color(0xFFFF9800)
             )
@@ -357,7 +357,7 @@ class AdFilterPlugin : FeedPlugin {
                 onCheckedChange = { newValue ->
                     filterLowQuality = newValue
                     config = config.copy(filterLowQuality = newValue)
-                    runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                    scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                 },
                 iconTint = Color(0xFF9E9E9E)
             )
@@ -405,7 +405,7 @@ class AdFilterPlugin : FeedPlugin {
                             onClick = {
                                 blockedUpNames = blockedUpNames - name
                                 config = config.copy(blockedUpNames = blockedUpNames)
-                                runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                                scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -477,7 +477,7 @@ class AdFilterPlugin : FeedPlugin {
                                         .clickable {
                                             blockedKeywords = blockedKeywords - keyword
                                             config = config.copy(blockedKeywords = blockedKeywords)
-                                            runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                                            scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                                         }
                                 )
                             }
@@ -528,7 +528,7 @@ class AdFilterPlugin : FeedPlugin {
                             if (inputText.isNotBlank()) {
                                 blockedUpNames = blockedUpNames + inputText.trim()
                                 config = config.copy(blockedUpNames = blockedUpNames)
-                                runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                                scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                             }
                             showAddUpDialog = false
                             inputText = ""
@@ -562,7 +562,7 @@ class AdFilterPlugin : FeedPlugin {
                             if (inputText.isNotBlank()) {
                                 blockedKeywords = blockedKeywords + inputText.trim()
                                 config = config.copy(blockedKeywords = blockedKeywords)
-                                runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                                scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                             }
                             showAddKeywordDialog = false
                             inputText = ""

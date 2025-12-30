@@ -33,7 +33,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
@@ -61,6 +60,7 @@ class EyeProtectionPlugin : Plugin {
     override val icon: ImageVector = CupertinoIcons.Default.Moon
     
     private var config: EyeProtectionConfig = EyeProtectionConfig()
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var usageTrackingJob: Job? = null
@@ -205,21 +205,8 @@ class EyeProtectionPlugin : Plugin {
         }
     }
     
-    private fun loadConfig(context: Context) {
-        runBlocking {
-            val jsonStr = PluginStore.getConfigJson(context, id)
-            if (jsonStr != null) {
-                try {
-                    config = Json.decodeFromString<EyeProtectionConfig>(jsonStr)
-                } catch (e: Exception) {
-                    Logger.e(TAG, "Failed to decode config", e)
-                }
-            }
-        }
-    }
-    
     private fun saveConfig() {
-        runBlocking {
+        ioScope.launch {
             try {
                 val context = PluginManager.getContext()
                 PluginStore.setConfigJson(context, id, Json.encodeToString(config))
@@ -232,6 +219,7 @@ class EyeProtectionPlugin : Plugin {
     @Composable
     override fun SettingsContent() {
         val context = LocalContext.current
+        val scope = rememberCoroutineScope()
         
         // 状态
         var nightModeEnabled by remember { mutableStateOf(config.nightModeEnabled) }
@@ -245,7 +233,7 @@ class EyeProtectionPlugin : Plugin {
         
         // 加载配置
         LaunchedEffect(Unit) {
-            loadConfig(context)
+            loadConfigSuspend()
             nightModeEnabled = config.nightModeEnabled
             nightModeStartHour = config.nightModeStartHour
             nightModeEndHour = config.nightModeEndHour
@@ -271,7 +259,7 @@ class EyeProtectionPlugin : Plugin {
                 onCheckedChange = { newValue ->
                     forceEnabled = newValue
                     config = config.copy(forceEnabled = newValue)
-                    runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                    scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                     toggleForceEnabled(newValue)
                 },
                 iconTint = Color(0xFFFFB74D)
@@ -288,7 +276,7 @@ class EyeProtectionPlugin : Plugin {
                 onCheckedChange = { newValue ->
                     nightModeEnabled = newValue
                     config = config.copy(nightModeEnabled = newValue)
-                    runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                    scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                     checkNightModeStatus()
                 },
                 iconTint = Color(0xFF7E57C2)
@@ -318,7 +306,7 @@ class EyeProtectionPlugin : Plugin {
                             onHourSelected = { hour ->
                                 nightModeStartHour = hour
                                 config = config.copy(nightModeStartHour = hour)
-                                runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                                scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                                 checkNightModeStatus()
                             }
                         )
@@ -343,7 +331,7 @@ class EyeProtectionPlugin : Plugin {
                             onHourSelected = { hour ->
                                 nightModeEndHour = hour
                                 config = config.copy(nightModeEndHour = hour)
-                                runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                                scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                                 checkNightModeStatus()
                             }
                         )
@@ -362,7 +350,7 @@ class EyeProtectionPlugin : Plugin {
                 onCheckedChange = { newValue ->
                     usageReminderEnabled = newValue
                     config = config.copy(usageReminderEnabled = newValue)
-                    runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                    scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                 },
                 iconTint = Color(0xFF42A5F5)
             )
@@ -382,7 +370,7 @@ class EyeProtectionPlugin : Plugin {
                                 onClick = {
                                     usageDurationMinutes = minutes
                                     config = config.copy(usageDurationMinutes = minutes)
-                                    runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                                    scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                                 },
                                 label = { Text("${minutes}分钟") }
                             )
@@ -433,7 +421,7 @@ class EyeProtectionPlugin : Plugin {
                         _brightnessLevel.value = newValue
                     },
                     onValueChangeFinished = {
-                        runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                        scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                     },
                     valueRange = 0.3f..1.0f,
                     modifier = Modifier.fillMaxWidth()
@@ -473,7 +461,7 @@ class EyeProtectionPlugin : Plugin {
                         _warmFilterStrength.value = newValue
                     },
                     onValueChangeFinished = {
-                        runBlocking { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
+                        scope.launch { PluginStore.setConfigJson(context, id, Json.encodeToString(config)) }
                     },
                     valueRange = 0f..0.5f,
                     modifier = Modifier.fillMaxWidth()

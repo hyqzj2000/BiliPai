@@ -27,7 +27,7 @@ import com.android.purebilibili.core.util.Logger
 import com.android.purebilibili.data.model.response.SponsorSegment
 import com.android.purebilibili.data.repository.SponsorBlockRepository
 import io.github.alexzhirkevich.cupertino.CupertinoSwitch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
@@ -148,19 +148,6 @@ class SponsorBlockPlugin : PlayerPlugin {
         lastPositionMs = 0
     }
 
-    private fun loadConfig(context: Context) {
-        runBlocking {
-            val jsonStr = PluginStore.getConfigJson(context, id)
-            if (jsonStr != null) {
-                try {
-                    config = Json.decodeFromString<SponsorBlockConfig>(jsonStr)
-                } catch (e: Exception) {
-                    Logger.e(TAG, "Failed to decode config", e)
-                }
-            }
-        }
-    }
-    
     /** 🔥 suspend版本的配置加载 */
     private suspend fun loadConfigSuspend() {
         try {
@@ -184,11 +171,12 @@ class SponsorBlockPlugin : PlayerPlugin {
     override fun SettingsContent() {
         val context = LocalContext.current
         val uriHandler = LocalUriHandler.current
+        val scope = rememberCoroutineScope()
         var autoSkip by remember { mutableStateOf(config.autoSkip) }
         
         // 加载配置
         LaunchedEffect(Unit) {
-            loadConfig(context)
+            loadConfigSuspend()
             autoSkip = config.autoSkip
         }
         
@@ -207,7 +195,7 @@ class SponsorBlockPlugin : PlayerPlugin {
                 onCheckedChange = { newValue ->
                     autoSkip = newValue
                     config = config.copy(autoSkip = newValue)
-                    runBlocking {
+                    scope.launch {
                         PluginStore.setConfigJson(context, id, Json.encodeToString(config))
                     }
                 },

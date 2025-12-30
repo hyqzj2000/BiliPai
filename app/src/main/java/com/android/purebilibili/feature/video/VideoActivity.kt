@@ -118,6 +118,8 @@ class VideoActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
+                val sleepTimerMinutes by viewModel.sleepTimerMinutes.collectAsStateWithLifecycle()
+                val isAudioOnly by viewModel.isInAudioMode.collectAsStateWithLifecycle()
                 
                 // 🚀 空降助手状态 - 已由插件系统自动处理，无需UI
                 // val sponsorSegment by viewModel.currentSponsorSegment.collectAsStateWithLifecycle()
@@ -168,7 +170,16 @@ class VideoActivity : ComponentActivity() {
                                 if (isFullscreen) toggleFullscreen() else finish()
                             },
                             // 🧪 实验性功能：双击点赞
-                            onDoubleTapLike = { viewModel.toggleLike() }
+                            onDoubleTapLike = { viewModel.toggleLike() },
+                            
+                            // 🔥 [新增] 音频模式
+                            isAudioOnly = isAudioOnly,
+                            onAudioOnlyToggle = { viewModel.setAudioMode(!isAudioOnly) },
+                            
+                            // 🔥 [新增] 定时关闭
+                            sleepTimerMinutes = sleepTimerMinutes,
+                            onSleepTimerChange = { viewModel.setSleepTimer(it) }
+                            
                             // 🚀 空降助手 - 已由插件系统自动处理
                             // sponsorSegment = sponsorSegment,
                             // showSponsorSkipButton = showSponsorSkipButton,

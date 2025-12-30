@@ -98,6 +98,9 @@ class PureApplication : Application(), ImageLoaderFactory, ComponentCallbacks2 {
                 .first()
             PluginManager.setEnabled("sponsor_block", sponsorBlockEnabled)
             Logger.d(TAG, "🔌 SponsorBlock plugin synced: enabled=$sponsorBlockEnabled")
+            
+            SettingsManager.forceDanmakuDefaults(this@PureApplication)
+            Logger.d(TAG, "💬 Danmaku defaults forced to recommended values")
         }
         
         createNotificationChannel()

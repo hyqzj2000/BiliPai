@@ -103,6 +103,7 @@ fun VideoDetailScreen(
     coverUrl: String,
     onBack: () -> Unit,
     onUpClick: (Long) -> Unit = {},  // 🔥 点击 UP 主头像
+    onNavigateToAudioMode: () -> Unit = {}, // 🔥🔥 [新增] 导航到音频模式
     miniPlayerManager: MiniPlayerManager? = null,
     isInPipMode: Boolean = false,
     isVisible: Boolean = true,
@@ -131,6 +132,9 @@ fun VideoDetailScreen(
 
     var isPipMode by remember { mutableStateOf(isInPipMode) }
     LaunchedEffect(isInPipMode) { isPipMode = isInPipMode }
+    
+    // 🔥🔥 [新增] 监听定时关闭状态
+    val sleepTimerMinutes by viewModel.sleepTimerMinutes.collectAsState()
     
     // 🔥🔥 [PiP修复] 记录视频播放器在屏幕上的位置，用于PiP窗口只显示视频区域
     var videoPlayerBounds by remember { mutableStateOf<android.graphics.Rect?>(null) }
@@ -220,7 +224,13 @@ fun VideoDetailScreen(
     }
     
     // 🔥🔥 [PiP修复] 当视频播放器位置更新时，同步更新PiP参数
-    LaunchedEffect(videoPlayerBounds) {
+    // 🔥🔥 [修复] 只有 SYSTEM_PIP 模式才启用自动进入PiP
+    val pipModeEnabled = remember { 
+        com.android.purebilibili.core.store.SettingsManager.getMiniPlayerModeSync(context) == 
+            com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.SYSTEM_PIP
+    }
+    
+    LaunchedEffect(videoPlayerBounds, pipModeEnabled) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             activity?.let { act ->
                 val pipParamsBuilder = android.app.PictureInPictureParams.Builder()
@@ -231,13 +241,15 @@ fun VideoDetailScreen(
                     pipParamsBuilder.setSourceRectHint(bounds)
                 }
                 
-                // Android 12+ 支持手势自动进入 PiP
+                // Android 12+ 支持手势自动进入 PiP - 🔥 只有 SYSTEM_PIP 模式才启用
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                    pipParamsBuilder.setAutoEnterEnabled(true)
-                    pipParamsBuilder.setSeamlessResizeEnabled(true)
+                    pipParamsBuilder.setAutoEnterEnabled(pipModeEnabled)  // 🔥 受设置控制
+                    pipParamsBuilder.setSeamlessResizeEnabled(pipModeEnabled)
                 }
                 
                 act.setPictureInPictureParams(pipParamsBuilder.build())
+                com.android.purebilibili.core.util.Logger.d("VideoDetailScreen", 
+                    "🔥 PiP参数更新: autoEnterEnabled=$pipModeEnabled")
             }
         }
     }
@@ -255,9 +267,16 @@ fun VideoDetailScreen(
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             when (event) {
                 androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> {
-                    playerState.player.pause()
+                    // 🔥🔥 [修改] 如果进入音频模式，不暂停播放
+                    if (!viewModel.isInAudioMode.value) {
+                        playerState.player.pause()
+                    }
                 }
                 androidx.lifecycle.Lifecycle.Event.ON_RESUME -> {
+                    // 🔥🔥 [修改] 如果从音频模式返回，重置状态
+                    if (viewModel.isInAudioMode.value) {
+                        viewModel.setAudioMode(false)
+                    }
                     playerState.player.play()
                 }
                 else -> {}
@@ -391,15 +410,20 @@ fun VideoDetailScreen(
                     // 🔥 [新增] 重载视频
                     onReloadVideo = { viewModel.reloadVideo() },
                     // 🔥 [新增] CDN 线路切换
-                    currentCdnIndex = (uiState as? PlayerUiState.Success)?.currentCdnIndex ?: 0,
                     cdnCount = (uiState as? PlayerUiState.Success)?.cdnCount ?: 1,
                     onSwitchCdn = { viewModel.switchCdn() },
-                    onSwitchCdnTo = { viewModel.switchCdnTo(it) }
-                    // 🚀 空降助手 - 已由插件系统自动处理
-                    // sponsorSegment = sponsorSegment,
-                    // showSponsorSkipButton = showSponsorSkipButton,
-                    // onSponsorSkip = { viewModel.skipCurrentSponsorSegment() },
-                    // onSponsorDismiss = { viewModel.dismissSponsorSkipButton() }
+                    onSwitchCdnTo = { viewModel.switchCdnTo(it) },
+                    
+                    // 🔥 [新增] 音频模式
+                    isAudioOnly = false, // 全屏模式只有视频
+                    onAudioOnlyToggle = { 
+                        viewModel.setAudioMode(true)
+                        onNavigateToAudioMode()
+                    },
+                    
+                    // 🔥 [新增] 定时关闭
+                    sleepTimerMinutes = sleepTimerMinutes,
+                    onSleepTimerChange = { viewModel.setSleepTimer(it) }
                 )
             } else {
                 // 🔥🔥 沉浸式布局：视频延伸到状态栏 + 内容区域
@@ -501,7 +525,18 @@ fun VideoDetailScreen(
                                 currentCdnIndex = (uiState as? PlayerUiState.Success)?.currentCdnIndex ?: 0,
                                 cdnCount = (uiState as? PlayerUiState.Success)?.cdnCount ?: 1,
                                 onSwitchCdn = { viewModel.switchCdn() },
-                                onSwitchCdnTo = { viewModel.switchCdnTo(it) }
+                                onSwitchCdnTo = { viewModel.switchCdnTo(it) },
+                                
+                                // 🔥 [新增] 音频模式
+                                isAudioOnly = false,
+                                onAudioOnlyToggle = { 
+                                    viewModel.setAudioMode(true)
+                                    onNavigateToAudioMode()
+                                },
+                                
+                                // 🔥 [新增] 定时关闭
+                                sleepTimerMinutes = sleepTimerMinutes,
+                                onSleepTimerChange = { viewModel.setSleepTimer(it) }
                                 // 🚀 空降助手 - 已由插件系统自动处理
                                 // sponsorSegment = sponsorSegment,
                                 // showSponsorSkipButton = showSponsorSkipButton,

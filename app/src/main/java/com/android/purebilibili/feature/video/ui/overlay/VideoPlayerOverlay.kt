@@ -38,6 +38,7 @@ import com.android.purebilibili.feature.video.ui.components.AspectRatioMenu
 import com.android.purebilibili.feature.video.ui.components.VideoSettingsPanel
 import io.github.alexzhirkevich.cupertino.CupertinoActivityIndicator
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 import androidx.compose.ui.platform.LocalContext
 import com.android.purebilibili.core.util.ShareUtils
@@ -65,8 +66,8 @@ fun VideoPlayerOverlay(
     danmakuEnabled: Boolean = true,
     onDanmakuToggle: () -> Unit = {},
     danmakuOpacity: Float = 0.85f,
-    danmakuFontScale: Float = 1.2f,
-    danmakuSpeed: Float = 1.5f,
+    danmakuFontScale: Float = 1.0f,
+    danmakuSpeed: Float = 1.0f,
     danmakuDisplayArea: Float = 0.5f,
     onDanmakuOpacityChange: (Float) -> Unit = {},
     onDanmakuFontScaleChange: (Float) -> Unit = {},
@@ -112,8 +113,8 @@ fun VideoPlayerOverlay(
     var lastTapTime by remember { mutableLongStateOf(0L) }
     var showLikeAnimation by remember { mutableStateOf(false) }
 
-    val progressState by produceState(initialValue = PlayerProgress(), key1 = player) {
-        while (true) {
+    val progressState by produceState(initialValue = PlayerProgress(), key1 = player, key2 = isVisible) {
+        while (isActive) {
             // 🔥🔥 [修复] 始终更新进度，不仅在播放时
             // 这样横竖屏切换后也能显示正确的进度
             val duration = if (player.duration < 0) 0L else player.duration
@@ -123,7 +124,8 @@ fun VideoPlayerOverlay(
                 buffered = player.bufferedPosition
             )
             isPlaying = player.isPlaying
-            delay(200)
+            val delayMs = if (isVisible && player.isPlaying) 200L else 500L
+            delay(delayMs)
         }
     }
 
@@ -228,6 +230,8 @@ fun VideoPlayerOverlay(
                                 ShareUtils.shareVideo(context, title, bvid)
                             }
                         },
+                        onAudioMode = onAudioOnlyToggle,
+                        isAudioOnly = isAudioOnly,
                         modifier = Modifier.align(Alignment.TopStart)
                     )
                 }
@@ -435,6 +439,8 @@ private fun PortraitTopBar(
     onBack: () -> Unit,
     onSettings: () -> Unit,
     onShare: () -> Unit,
+    onAudioMode: () -> Unit,
+    isAudioOnly: Boolean,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -463,6 +469,24 @@ private fun PortraitTopBar(
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // 🔥 听视频模式按钮
+            IconButton(
+                onClick = onAudioMode,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        if (isAudioOnly) MaterialTheme.colorScheme.primary else Color.Black.copy(alpha = 0.4f), 
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = CupertinoIcons.Default.Headphones,
+                    contentDescription = "听视频",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
             // 🔥 设置按钮
             IconButton(
                 onClick = onSettings,

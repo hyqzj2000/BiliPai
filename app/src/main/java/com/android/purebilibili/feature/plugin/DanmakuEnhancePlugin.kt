@@ -23,7 +23,7 @@ import com.android.purebilibili.core.plugin.PluginStore
 import com.android.purebilibili.core.util.Logger
 import io.github.alexzhirkevich.cupertino.CupertinoSwitch
 import io.github.alexzhirkevich.cupertino.CupertinoSwitchDefaults
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
@@ -50,15 +50,13 @@ class DanmakuEnhancePlugin : DanmakuPlugin {
     private var config: DanmakuEnhanceConfig = DanmakuEnhanceConfig()
     private var filteredCount = 0
 
-    private fun loadConfig(context: Context) {
-        runBlocking {
-            val jsonStr = PluginStore.getConfigJson(context, id)
-            if (jsonStr != null) {
-                try {
-                    config = Json.decodeFromString<DanmakuEnhanceConfig>(jsonStr)
-                } catch (e: Exception) {
-                    Logger.e(TAG, "Failed to decode config", e)
-                }
+    private suspend fun loadConfig(context: Context) {
+        val jsonStr = PluginStore.getConfigJson(context, id)
+        if (jsonStr != null) {
+            try {
+                config = Json.decodeFromString<DanmakuEnhanceConfig>(jsonStr)
+            } catch (e: Exception) {
+                Logger.e(TAG, "Failed to decode config", e)
             }
         }
     }
@@ -110,6 +108,7 @@ class DanmakuEnhancePlugin : DanmakuPlugin {
     @Composable
     override fun SettingsContent() {
         val context = LocalContext.current
+        val scope = rememberCoroutineScope()
         var enableFilter by remember { mutableStateOf(config.enableFilter) }
         var enableHighlight by remember { mutableStateOf(config.enableHighlight) }
         var blockedKeywords by remember { mutableStateOf(config.blockedKeywords) }
@@ -144,7 +143,7 @@ class DanmakuEnhancePlugin : DanmakuPlugin {
                     onCheckedChange = { newValue ->
                         enableFilter = newValue
                         config = config.copy(enableFilter = newValue)
-                        runBlocking { 
+                        scope.launch { 
                             PluginStore.setConfigJson(context, id, Json.encodeToString(config)) 
                         }
                     },
@@ -163,7 +162,7 @@ class DanmakuEnhancePlugin : DanmakuPlugin {
                     onValueChange = { newValue ->
                         blockedKeywords = newValue
                         config = config.copy(blockedKeywords = newValue)
-                        runBlocking { 
+                        scope.launch { 
                             PluginStore.setConfigJson(context, id, Json.encodeToString(config)) 
                         }
                     },
@@ -196,7 +195,7 @@ class DanmakuEnhancePlugin : DanmakuPlugin {
                     onCheckedChange = { newValue ->
                         enableHighlight = newValue
                         config = config.copy(enableHighlight = newValue)
-                        runBlocking { 
+                        scope.launch { 
                             PluginStore.setConfigJson(context, id, Json.encodeToString(config)) 
                         }
                     },
@@ -215,7 +214,7 @@ class DanmakuEnhancePlugin : DanmakuPlugin {
                     onValueChange = { newValue ->
                         highlightKeywords = newValue
                         config = config.copy(highlightKeywords = newValue)
-                        runBlocking { 
+                        scope.launch { 
                             PluginStore.setConfigJson(context, id, Json.encodeToString(config)) 
                         }
                     },

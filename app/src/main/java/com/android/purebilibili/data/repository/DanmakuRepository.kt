@@ -3,6 +3,11 @@ package com.android.purebilibili.data.repository
 
 import com.android.purebilibili.core.network.NetworkModule
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 
 /**
@@ -14,10 +19,16 @@ object DanmakuRepository {
 
     // 弹幕数据缓存 - 避免横竖屏切换时重复下载
     private val danmakuCache = LinkedHashMap<Long, ByteArray>(5, 0.75f, true)
-    private const val MAX_DANMAKU_CACHE_SIZE = 5  // 最多缓存5个视频的弹幕
+    private const val MAX_DANMAKU_CACHE_COUNT = 3  // 最多缓存3个视频的弹幕
+    private const val MAX_DANMAKU_CACHE_BYTES = 4L * 1024 * 1024
+    private var danmakuCacheBytes = 0L
     
     // Protobuf 弹幕分段缓存
     private val danmakuSegmentCache = LinkedHashMap<Long, List<ByteArray>>(5, 0.75f, true)
+    private const val MAX_SEGMENT_CACHE_COUNT = 3
+    private const val MAX_SEGMENT_CACHE_BYTES = 12L * 1024 * 1024
+    private const val MAX_SEGMENT_PARALLELISM = 3
+    private var danmakuSegmentCacheBytes = 0L
 
     /**
      * 清除弹幕缓存
@@ -25,9 +36,11 @@ object DanmakuRepository {
     fun clearDanmakuCache() {
         synchronized(danmakuCache) {
             danmakuCache.clear()
+            danmakuCacheBytes = 0L
         }
         synchronized(danmakuSegmentCache) {
             danmakuSegmentCache.clear()
+            danmakuSegmentCacheBytes = 0L
         }
         com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "🧹 Danmaku cache cleared")
     }
@@ -91,19 +104,32 @@ object DanmakuRepository {
                 }
             }
             
-            // 存入缓存
-            if (result != null) {
-                synchronized(danmakuCache) {
-                    // 缓存已满时，移除最老的条目
-                    while (danmakuCache.size >= MAX_DANMAKU_CACHE_SIZE) {
-                        val oldestKey = danmakuCache.keys.firstOrNull()
-                        if (oldestKey != null) {
-                            danmakuCache.remove(oldestKey)
-                            com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "🗑️ Danmaku cache evicted: cid=$oldestKey")
+            // 存入缓存（限制条目数与字节数）
+            if (result != null && result.isNotEmpty()) {
+                val entrySize = result.size.toLong()
+                if (entrySize <= MAX_DANMAKU_CACHE_BYTES) {
+                    synchronized(danmakuCache) {
+                        danmakuCache.remove(cid)?.let { danmakuCacheBytes -= it.size.toLong() }
+                        
+                        val iterator = danmakuCache.entries.iterator()
+                        while (iterator.hasNext() &&
+                            (danmakuCache.size >= MAX_DANMAKU_CACHE_COUNT ||
+                                danmakuCacheBytes + entrySize > MAX_DANMAKU_CACHE_BYTES)
+                        ) {
+                            val eldest = iterator.next()
+                            danmakuCacheBytes -= eldest.value.size.toLong()
+                            iterator.remove()
+                            com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "🗑️ Danmaku cache evicted: cid=${eldest.key}")
                         }
+                        danmakuCache[cid] = result
+                        danmakuCacheBytes += entrySize
+                        com.android.purebilibili.core.util.Logger.d(
+                            "DanmakuRepo",
+                            "💾 Danmaku cached: cid=$cid, size=${result.size}, cacheSize=${danmakuCache.size}, bytes=$danmakuCacheBytes"
+                        )
                     }
-                    danmakuCache[cid] = result
-                    com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "💾 Danmaku cached: cid=$cid, size=${result.size}, cacheSize=${danmakuCache.size}")
+                } else {
+                    com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "⚠️ Danmaku too large to cache: size=$entrySize")
                 }
             }
             
@@ -139,32 +165,64 @@ object DanmakuRepository {
         
         com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "📊 Fetching $segmentCount segments for ${durationMs}ms video")
         
-        // 顺序获取所有分段
-        val results = mutableListOf<ByteArray>()
-        for (index in 1..segmentCount) {
-            try {
-                val response = api.getDanmakuSeg(oid = cid, segmentIndex = index)
-                val bytes = response.bytes()
-                if (bytes.isNotEmpty()) {
-                    com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "✅ Segment $index: ${bytes.size} bytes")
-                    results.add(bytes)
-                } else {
-                    com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "⚠️ Segment $index is empty")
+        data class SegmentResult(val index: Int, val bytes: ByteArray)
+        
+        // 并发获取分段，限制并发度避免过载
+        val segmentResults = coroutineScope {
+            val semaphore = Semaphore(MAX_SEGMENT_PARALLELISM)
+            (1..segmentCount).map { index ->
+                async {
+                    semaphore.withPermit {
+                        try {
+                            val response = api.getDanmakuSeg(oid = cid, segmentIndex = index)
+                            val bytes = response.bytes()
+                            if (bytes.isNotEmpty()) {
+                                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "✅ Segment $index: ${bytes.size} bytes")
+                                SegmentResult(index, bytes)
+                            } else {
+                                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "⚠️ Segment $index is empty")
+                                null
+                            }
+                        } catch (e: Exception) {
+                            android.util.Log.w("DanmakuRepo", "❌ Segment $index failed: ${e.message}")
+                            null
+                        }
+                    }
                 }
-            } catch (e: Exception) {
-                android.util.Log.w("DanmakuRepo", "❌ Segment $index failed: ${e.message}")
-            }
+            }.awaitAll()
         }
+        
+        val results = segmentResults
+            .filterNotNull()
+            .sortedBy { it.index }
+            .map { it.bytes }
         
         com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "📊 Got ${results.size}/$segmentCount segments for cid=$cid")
         
-        // 缓存结果
+        // 缓存结果（限制条目数与字节数）
         if (results.isNotEmpty()) {
-            synchronized(danmakuSegmentCache) {
-                while (danmakuSegmentCache.size >= MAX_DANMAKU_CACHE_SIZE) {
-                    danmakuSegmentCache.keys.firstOrNull()?.let { danmakuSegmentCache.remove(it) }
+            val entrySize = results.sumOf { it.size.toLong() }
+            if (entrySize <= MAX_SEGMENT_CACHE_BYTES) {
+                synchronized(danmakuSegmentCache) {
+                    danmakuSegmentCache.remove(cid)?.let { removed ->
+                        danmakuSegmentCacheBytes -= removed.sumOf { it.size.toLong() }
+                    }
+                    
+                    val iterator = danmakuSegmentCache.entries.iterator()
+                    while (iterator.hasNext() &&
+                        (danmakuSegmentCache.size >= MAX_SEGMENT_CACHE_COUNT ||
+                            danmakuSegmentCacheBytes + entrySize > MAX_SEGMENT_CACHE_BYTES)
+                    ) {
+                        val eldest = iterator.next()
+                        danmakuSegmentCacheBytes -= eldest.value.sumOf { it.size.toLong() }
+                        iterator.remove()
+                    }
+                    
+                    danmakuSegmentCache[cid] = results.toList()
+                    danmakuSegmentCacheBytes += entrySize
                 }
-                danmakuSegmentCache[cid] = results.toList()
+            } else {
+                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "⚠️ Segments too large to cache: size=$entrySize")
             }
         }
         

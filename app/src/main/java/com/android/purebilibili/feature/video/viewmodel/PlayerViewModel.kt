@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.android.purebilibili.feature.video.player.PlaylistManager
 import com.android.purebilibili.feature.video.player.PlaylistItem
 import com.android.purebilibili.feature.video.player.PlayMode
@@ -129,6 +130,51 @@ class PlayerViewModel : ViewModel() {
     private var heartbeatJob: Job? = null
     private var appContext: android.content.Context? = null  // 🔥🔥 [新增] 保存 Context 用于网络检测
     
+    // 🔥 Public Player Accessor
+    val currentPlayer: Player?
+        get() = exoPlayer
+        
+    // 🔥 Audio Mode State
+    private val _isInAudioMode = MutableStateFlow(false)
+    val isInAudioMode = _isInAudioMode.asStateFlow()
+    
+    fun setAudioMode(enabled: Boolean) {
+        _isInAudioMode.value = enabled
+    }
+
+    // 🔥 Sleep Timer State
+    private val _sleepTimerMinutes = MutableStateFlow<Int?>(null)
+    val sleepTimerMinutes = _sleepTimerMinutes.asStateFlow()
+    private var sleepTimerJob: Job? = null
+
+    /**
+     * 设置定时关闭
+     * @param minutes 分钟数，null 表示关闭定时
+     */
+    fun setSleepTimer(minutes: Int?) {
+        sleepTimerJob?.cancel()
+        _sleepTimerMinutes.value = minutes
+        
+        if (minutes != null) {
+            sleepTimerJob = viewModelScope.launch {
+                Logger.d("PlayerVM", "⏰ 定时关闭已启动: ${minutes}分钟")
+                toast("将在 ${minutes} 分钟后停止播放")
+                delay(minutes * 60 * 1000L)
+                
+                // 定时结束
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    exoPlayer?.pause()
+                    toast("⏰ 定时结束，已暂停播放")
+                    _sleepTimerMinutes.value = null
+                    // 如果需要关闭应用或退出页面，可以在这里添加逻辑
+                }
+            }
+        } else {
+            Logger.d("PlayerVM", "⏰ 定时关闭已取消")
+            toast("定时关闭已取消")
+        }
+    }
+    
     // ========== Public API ==========
     
     /**
@@ -154,8 +200,18 @@ class PlayerViewModel : ViewModel() {
     private val playbackEndListener = object : Player.Listener {
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED) {
-                // 播放完成，自动播放推荐视频
-                playNextRecommended()
+                // 🔥🔥 [修复] 检查自动播放设置
+                val context = appContext ?: return
+                val autoPlayEnabled = context.getSharedPreferences("settings_prefs", android.content.Context.MODE_PRIVATE)
+                    .getBoolean("auto_play", true)
+                
+                if (autoPlayEnabled) {
+                    // 播放完成，自动播放推荐视频
+                    playNextRecommended()
+                } else {
+                    // 自动播放关闭，只显示提示
+                    toast("🎬 播放完成")
+                }
             }
         }
     }
@@ -185,6 +241,24 @@ class PlayerViewModel : ViewModel() {
                 }
                 else -> toast("没有更多视频")
             }
+        }
+    }
+    
+    /**
+     * 🔥🔥 [新增] 播放上一个推荐视频（使用 PlaylistManager）
+     */
+    fun playPreviousRecommended() {
+        // 使用 PlaylistManager 获取上一曲
+        val prevItem = PlaylistManager.playPrevious()
+        
+        if (prevItem != null) {
+            viewModelScope.launch {
+                toast("正在播放: ${prevItem.title}")
+            }
+            // 加载新视频
+            loadVideo(prevItem.bvid)
+        } else {
+            toast("没有上一个视频")
         }
     }
     
@@ -341,15 +415,10 @@ class PlayerViewModel : ViewModel() {
      * 🔥🔥 [新增] 更新播放列表
      */
     private fun updatePlaylist(currentInfo: com.android.purebilibili.data.model.response.ViewInfo, related: List<com.android.purebilibili.data.model.response.RelatedVideo>) {
-        // 创建当前视频的播放项
-        val currentItem = PlaylistItem(
-            bvid = currentInfo.bvid,
-            title = currentInfo.title,
-            cover = currentInfo.pic,
-            owner = currentInfo.owner.name,
-            duration = (currentInfo.stat.view / 1000).toLong()  // 使用播放量作为临时替代
-        )
-        
+        val currentPlaylist = PlaylistManager.playlist.value
+        val currentIndex = PlaylistManager.currentIndex.value
+        val currentItemInList = currentPlaylist.getOrNull(currentIndex)
+
         // 转换推荐视频为播放项
         val relatedItems = related.map { video ->
             PlaylistItem(
@@ -357,15 +426,36 @@ class PlayerViewModel : ViewModel() {
                 title = video.title,
                 cover = video.pic,
                 owner = video.owner.name,
-                duration = video.duration.toLong()  // Int -> Long
+                duration = video.duration.toLong()
             )
         }
         
-        // 设置播放列表：当前视频 + 推荐视频
-        val playlist = listOf(currentItem) + relatedItems
-        PlaylistManager.setPlaylist(playlist, 0)
-        
-        Logger.d("PlayerVM", "📋 播放列表已更新: 1 + ${relatedItems.size} 项")
+        // 创建当前视频的播放项 (updated with full info)
+        val currentFullItem = PlaylistItem(
+            bvid = currentInfo.bvid,
+            title = currentInfo.title,
+            cover = currentInfo.pic,
+            owner = currentInfo.owner.name,
+            duration = 0L // ViewInfo 暂无 duration 字段，暂置为 0
+        )
+
+        if (currentItemInList != null && currentItemInList.bvid == currentInfo.bvid) {
+             // 命中当前播放列表逻辑：保留历史，更新未来
+             // 1. 获取当前索引及之前的列表 (历史 + 当前)
+             val history = currentPlaylist.take(currentIndex) // 0 .. currentIndex-1
+             
+             // 2. 组合新列表: 历史 + 当前(更新详情) + 新推荐
+             val newPlaylist = history + currentFullItem + relatedItems
+             
+             // 3. 更新列表，保持当前索引不变
+             PlaylistManager.setPlaylist(newPlaylist, currentIndex)
+             Logger.d("PlayerVM", "📋 播放列表已扩展: 保留 ${history.size} 项历史, 更新后续 ${relatedItems.size} 项")
+        } else {
+            // 新播放逻辑：当前 + 推荐
+            val playlist = listOf(currentFullItem) + relatedItems
+            PlaylistManager.setPlaylist(playlist, 0)
+            Logger.d("PlayerVM", "📋 播放列表已重置: 1 + ${relatedItems.size} 项")
+        }
     }
     
     fun retry() {

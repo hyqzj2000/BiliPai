@@ -22,8 +22,8 @@ android {
         targetSdk = 35  // 保持35以避免Android 16的新运行时行为
         // 🔥🔥 [版本号] 发布新版前记得更新！格式：versionCode +1, versionName 递增
         // 更新日志：CHANGELOG.md
-        versionCode = 16
-        versionName = "3.3.2"
+        versionCode = 17
+        versionName = "3.3.21"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -153,6 +153,9 @@ dependencies {
     // --- 3.6 Orbital (iOS 风格共享元素动画) ---
     // 提供流畅的共享元素过渡、尺寸变换、位置移动动画
     implementation("com.github.skydoves:orbital:0.4.0")
+    
+    // --- 3.7 Startup (应用初始化) ---
+    implementation("androidx.startup:startup-runtime:1.1.1")
 
 
     // --- 4. Player (视频播放器 Media3) ---

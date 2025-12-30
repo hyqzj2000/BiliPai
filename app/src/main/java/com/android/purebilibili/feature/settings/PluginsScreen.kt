@@ -47,6 +47,11 @@ fun PluginsScreen(
     val plugins by PluginManager.pluginsFlow.collectAsState()
     val jsonPlugins by com.android.purebilibili.core.plugin.json.JsonPluginManager.plugins.collectAsState()
     val scope = rememberCoroutineScope()
+    val totalPlugins = plugins.size + jsonPlugins.size
+    val enabledPlugins = plugins.count { it.enabled } + jsonPlugins.count { it.enabled }
+    val pluginInteractionLevel = (
+        0.2f + enabledPlugins.toFloat() / totalPlugins.coerceAtLeast(1) * 0.8f
+        ).coerceIn(0f, 1f)
     
     // 展开状态追踪
     var expandedPluginId by remember { mutableStateOf<String?>(null) }
@@ -121,6 +126,16 @@ fun PluginsScreen(
                 .fillMaxSize(),
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
+            // 🎬 精美互动 Lottie 动画头部 (本地资源)
+            item {
+                com.android.purebilibili.core.ui.SettingsAnimatedHeaderLocal(
+                    rawResId = com.android.purebilibili.core.ui.SettingsHeaderAnimations.PLUGINS,
+                    title = "插件中心",
+                    subtitle = "探索更多功能，无限扩展",
+                    interactionLevel = pluginInteractionLevel
+                )
+            }
+            
             // 标题说明
             item {
                 Text(
@@ -957,4 +972,3 @@ private fun formatDuration(seconds: Int): String {
     val secs = seconds % 60
     return "${mins}分${secs}秒"
 }
-

@@ -52,6 +52,17 @@ fun AppearanceSettingsScreen(
     val state by viewModel.state.collectAsState()
     
     var showThemeDialog by remember { mutableStateOf(false) }
+    val displayLevel = when (state.displayMode) {
+        0 -> 0.35f
+        1 -> 0.6f
+        else -> 0.85f
+    }
+    val appearanceInteractionLevel = (
+        displayLevel +
+            if (state.headerBlurEnabled) 0.1f else 0f +
+            if (state.isBottomBarFloating) 0.1f else 0f
+        ).coerceIn(0f, 1f)
+    val appearanceAnimationSpeed = if (state.dynamicColor) 1.1f else 1f
     
     // 🔥🔥 [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
     val view = androidx.compose.ui.platform.LocalView.current
@@ -141,6 +152,17 @@ fun AppearanceSettingsScreen(
             // 🔥🔥 [修复] 添加底部导航栏内边距，确保沉浸式效果
             contentPadding = WindowInsets.navigationBars.asPaddingValues()
         ) {
+            // 🎬 精美互动 Lottie 动画头部 (本地资源)
+            item {
+                com.android.purebilibili.core.ui.SettingsAnimatedHeaderLocal(
+                    rawResId = com.android.purebilibili.core.ui.SettingsHeaderAnimations.APPEARANCE,
+                    title = "外观设置",
+                    subtitle = "打造专属于你的个性界面",
+                    interactionLevel = appearanceInteractionLevel,
+                    animationSpeed = appearanceAnimationSpeed
+                )
+            }
+            
             // 🔥🔥 [新增] 快速入口
             item { SettingsSectionTitle("快速入口") }
             item {

@@ -50,6 +50,21 @@ fun PlaybackSettingsScreen(
     
     var isStatsEnabled by remember { mutableStateOf(prefs.getBoolean("show_stats", false)) }
     var showPipPermissionDialog by remember { mutableStateOf(false) }
+    val miniPlayerMode by com.android.purebilibili.core.store.SettingsManager
+        .getMiniPlayerMode(context).collectAsState(
+            initial = com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.IN_APP_ONLY
+        )
+    val pipLevel = when (miniPlayerMode) {
+        com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.OFF -> 0.2f
+        com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.IN_APP_ONLY -> 0.45f
+        com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.SYSTEM_PIP -> 0.7f
+        com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.BACKGROUND -> 0.9f
+    }
+    val playbackInteractionLevel = (
+        pipLevel +
+            if (state.hwDecode) 0.15f else 0f +
+            if (isStatsEnabled) 0.1f else 0f
+        ).coerceIn(0f, 1f)
     
     // 🔥🔥 [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
     val view = androidx.compose.ui.platform.LocalView.current
@@ -158,6 +173,16 @@ fun PlaybackSettingsScreen(
             // 🔥🔥 [修复] 添加底部导航栏内边距，确保沉浸式效果
             contentPadding = WindowInsets.navigationBars.asPaddingValues()
         ) {
+            // 🎬 精美互动 Lottie 动画头部 (本地资源)
+            item {
+                com.android.purebilibili.core.ui.SettingsAnimatedHeaderLocal(
+                    rawResId = com.android.purebilibili.core.ui.SettingsHeaderAnimations.PLAYBACK,
+                    title = "智能播放体验",
+                    subtitle = "流畅观看，省流省电",
+                    interactionLevel = playbackInteractionLevel
+                )
+            }
+            
             // 🍎 解码设置
             item { SettingsSectionTitle("解码") }
             item {
@@ -177,10 +202,6 @@ fun PlaybackSettingsScreen(
             item { SettingsSectionTitle("小窗播放") }
             item {
                 val scope = rememberCoroutineScope()
-                val miniPlayerMode by com.android.purebilibili.core.store.SettingsManager
-                    .getMiniPlayerMode(context).collectAsState(
-                        initial = com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.IN_APP_ONLY
-                    )
                 
                 // 模式选项
                 val modeOptions = com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.entries
@@ -388,7 +409,26 @@ fun PlaybackSettingsScreen(
                 val swipeHidePlayerEnabled by com.android.purebilibili.core.store.SettingsManager
                     .getSwipeHidePlayerEnabled(context).collectAsState(initial = false)
                 
+                // 🔥🔥 [新增] 自动播放下一个
+                val autoPlayEnabled by com.android.purebilibili.core.store.SettingsManager
+                    .getAutoPlay(context).collectAsState(initial = true)
+                
                 SettingsGroup {
+                    // 🔥🔥 [新增] 自动播放下一个视频
+                    SettingSwitchItem(
+                        icon = CupertinoIcons.Default.ForwardEnd,
+                        title = "自动播放下一个",
+                        subtitle = "视频结束后自动播放推荐视频",
+                        checked = autoPlayEnabled,
+                        onCheckedChange = { 
+                            scope.launch {
+                                com.android.purebilibili.core.store.SettingsManager
+                                    .setAutoPlay(context, it)
+                            }
+                        },
+                        iconTint = com.android.purebilibili.core.theme.iOSPurple
+                    )
+                    Divider()
                     SettingSwitchItem(
                         icon = CupertinoIcons.Default.HeartCircle,
                         title = "双击点赞",

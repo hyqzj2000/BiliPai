@@ -24,5 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "BiliPai"
 include(":app")
-include(":app")
  

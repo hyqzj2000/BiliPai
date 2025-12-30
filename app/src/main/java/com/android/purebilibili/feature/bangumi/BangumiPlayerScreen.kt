@@ -102,13 +102,13 @@ fun BangumiPlayerScreen(
     // 🔥 弹幕设置状态
     val danmakuOpacity by com.android.purebilibili.core.store.SettingsManager
         .getDanmakuOpacity(context)
-        .collectAsState(initial = 1.0f)
+        .collectAsState(initial = 0.85f)
     val danmakuFontScale by com.android.purebilibili.core.store.SettingsManager
         .getDanmakuFontScale(context)
         .collectAsState(initial = 1.0f)
     val danmakuSpeed by com.android.purebilibili.core.store.SettingsManager
         .getDanmakuSpeed(context)
-        .collectAsState(initial = 2.5f)
+        .collectAsState(initial = 1.0f)
     val danmakuDisplayArea by com.android.purebilibili.core.store.SettingsManager
         .getDanmakuArea(context)
         .collectAsState(initial = 0.5f)
@@ -160,7 +160,7 @@ fun BangumiPlayerScreen(
     // 清理弹幕管理器（解绑视图但不释放数据，单例会保持状态）
     DisposableEffect(Unit) {
         onDispose {
-            danmakuManager.detachView()
+            danmakuManager.clearViewReference()
         }
     }
     

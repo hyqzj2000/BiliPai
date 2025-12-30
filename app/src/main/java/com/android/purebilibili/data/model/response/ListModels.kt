@@ -108,7 +108,8 @@ data class VideoItem(
     val duration: Int = 0,
     val progress: Int = -1,
     val view_at: Long = 0,
-    val pubdate: Long = 0
+    val pubdate: Long = 0,
+    val isVertical: Boolean = false  // 🔥 [新增] 是否为竖屏视频
 )
 
 @Serializable
@@ -169,7 +170,9 @@ data class RecommendItem(
     val duration: Int? = null,
     val pubdate: Long? = null,
     val owner: RecommendOwner? = null,
-    val stat: RecommendStat? = null
+    val stat: RecommendStat? = null,
+    // 🔥 [新增] 视频尺寸信息 (用于判断竖屏视频)
+    val dimension: Dimension? = null
 ) {
     fun toVideoItem(): VideoItem {
         return VideoItem(
@@ -179,7 +182,8 @@ data class RecommendItem(
             pic = pic ?: "",
             owner = Owner(mid = owner?.mid ?: 0, name = owner?.name ?: "", face = owner?.face ?: ""),
             stat = Stat(view = requestStatConvert(stat?.view), like = requestStatConvert(stat?.like), danmaku = requestStatConvert(stat?.danmaku)),
-            duration = duration ?: 0
+            duration = duration ?: 0,
+            isVertical = dimension?.isVertical == true  // 🔥 判断竖屏
         )
     }
     private fun requestStatConvert(num: Long?): Int = num?.toInt() ?: 0

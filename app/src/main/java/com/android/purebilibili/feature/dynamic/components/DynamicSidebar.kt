@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 // 🍎 Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
@@ -14,12 +15,16 @@ import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -67,37 +72,99 @@ fun DynamicSidebar(
                     onClick = onToggleExpand,
                     modifier = Modifier.size(40.dp)
                 ) {
+                    // 🔥 [新增] 旋转动画
+                    val rotation by animateFloatAsState(
+                        targetValue = if (isExpanded) 0f else 180f,
+                        animationSpec = androidx.compose.animation.core.spring(
+                            dampingRatio = 0.6f,
+                            stiffness = 300f
+                        ),
+                        label = "chevronRotation"
+                    )
                     Icon(
-                        if (isExpanded) CupertinoIcons.Default.ChevronBackward 
-                        else CupertinoIcons.Default.ChevronForward,
+                        CupertinoIcons.Default.ChevronBackward,
                         contentDescription = if (isExpanded) "收起" else "展开",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.graphicsLayer { rotationY = rotation }
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
             
-            // 🔥 "全部" 选项
+            // 🔥 "全部" 选项 - 带入场动画
             item {
-                SidebarItem(
-                    icon = "全部",
-                    label = if (isExpanded) "全部" else null,
-                    isSelected = selectedUserId == null,
-                    isLive = false,
-                    onClick = { onUserClick(null) }
+                CascadeSidebarItem(
+                    index = 0,
+                    content = {
+                        SidebarItem(
+                            icon = "全部",
+                            label = if (isExpanded) "全部" else null,
+                            isSelected = selectedUserId == null,
+                            isLive = false,
+                            onClick = { onUserClick(null) }
+                        )
+                    }
                 )
             }
             
-            // 🔥 关注的UP主列表
-            items(users, key = { "sidebar_${it.uid}" }) { user ->
-                SidebarUserItem(
-                    user = user,
-                    isSelected = selectedUserId == user.uid,
-                    showLabel = isExpanded,
-                    onClick = { onUserClick(user.uid) }
+            // 🔥 关注的UP主列表 - 带瀑布入场动画
+            itemsIndexed(users, key = { _, u -> "sidebar_${u.uid}" }) { index, user ->
+                CascadeSidebarItem(
+                    index = index + 1,  // +1 因为"全部"项占用了 index 0
+                    content = {
+                        SidebarUserItem(
+                            user = user,
+                            isSelected = selectedUserId == user.uid,
+                            showLabel = isExpanded,
+                            onClick = { onUserClick(user.uid) }
+                        )
+                    }
                 )
             }
         }
+    }
+}
+
+/**
+ * 🔥 [新增] 瀑布入场动画包装器
+ * 每个项目有递增的延迟，形成瀑布展开效果
+ */
+@Composable
+private fun CascadeSidebarItem(
+    index: Int,
+    content: @Composable () -> Unit
+) {
+    var visible by remember { mutableStateOf(false) }
+    val delay = 30 * index  // 每个项目延迟 30ms
+    
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(delay.toLong())
+        visible = true
+    }
+    
+    val offsetY by animateFloatAsState(
+        targetValue = if (visible) 0f else 20f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = 0.7f,
+            stiffness = 400f
+        ),
+        label = "cascadeOffsetY"
+    )
+    
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.tween(200),
+        label = "cascadeAlpha"
+    )
+    
+    Box(
+        modifier = Modifier
+            .graphicsLayer {
+                translationY = offsetY
+                this.alpha = alpha
+            }
+    ) {
+        content()
     }
 }
 

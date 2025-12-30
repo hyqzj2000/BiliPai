@@ -75,8 +75,8 @@ fun BangumiPlayerView(
     onSpeedChange: (Float) -> Unit = {},
     // 🔥 新增：弹幕设置
     danmakuOpacity: Float = 0.85f,
-    danmakuFontScale: Float = 1.2f,
-    danmakuSpeed: Float = 1.5f,
+    danmakuFontScale: Float = 1.0f,
+    danmakuSpeed: Float = 1.0f,
     danmakuDisplayArea: Float = 0.5f,
     onDanmakuOpacityChange: (Float) -> Unit = {},
     onDanmakuFontScaleChange: (Float) -> Unit = {},

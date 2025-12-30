@@ -90,7 +90,19 @@ object VideoRepository {
             )
             val signedParams = WbiUtils.sign(params, imgKey, subKey)
             val feedResp = api.getRecommendParams(signedParams)
+            
+            // 🔥 [调试] 检查 API 是否返回 dimension 字段
+            feedResp.data?.item?.take(3)?.forEachIndexed { index, item ->
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", 
+                    "🎬 视频[$index]: ${item.title?.take(15)}... dimension=${item.dimension} isVertical=${item.dimension?.isVertical}")
+            }
+            
             val list = feedResp.data?.item?.map { it.toVideoItem() }?.filter { it.bvid.isNotEmpty() } ?: emptyList()
+            
+            // 🔥 [调试] 检查转换后的 VideoItem
+            val verticalCount = list.count { it.isVertical }
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 首页视频: total=${list.size}, vertical=$verticalCount")
+            
             Result.success(list)
         } catch (e: Exception) {
             e.printStackTrace()

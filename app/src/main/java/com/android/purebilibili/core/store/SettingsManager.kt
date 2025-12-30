@@ -291,11 +291,18 @@ object SettingsManager {
     
     // ========== 🔥🔥 弹幕设置 ==========
     
+    private const val DANMAKU_DEFAULTS_VERSION = 2
+    private const val DEFAULT_DANMAKU_OPACITY = 0.85f
+    private const val DEFAULT_DANMAKU_FONT_SCALE = 1.0f
+    private const val DEFAULT_DANMAKU_SPEED = 1.0f
+    private const val DEFAULT_DANMAKU_AREA = 0.5f
+    
     private val KEY_DANMAKU_ENABLED = booleanPreferencesKey("danmaku_enabled")
     private val KEY_DANMAKU_OPACITY = floatPreferencesKey("danmaku_opacity")
     private val KEY_DANMAKU_FONT_SCALE = floatPreferencesKey("danmaku_font_scale")
     private val KEY_DANMAKU_SPEED = floatPreferencesKey("danmaku_speed")
     private val KEY_DANMAKU_AREA = floatPreferencesKey("danmaku_area")
+    private val KEY_DANMAKU_DEFAULTS_VERSION = intPreferencesKey("danmaku_defaults_version")
     
     // --- 弹幕开关 ---
     fun getDanmakuEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data
@@ -305,9 +312,9 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> preferences[KEY_DANMAKU_ENABLED] = value }
     }
     
-    // --- 弹幕透明度 (0.0 ~ 1.0, 默认 1.0) ---
+    // --- 弹幕透明度 (0.0 ~ 1.0, 默认 0.85) ---
     fun getDanmakuOpacity(context: Context): Flow<Float> = context.settingsDataStore.data
-        .map { preferences -> preferences[KEY_DANMAKU_OPACITY] ?: 1.0f }
+        .map { preferences -> preferences[KEY_DANMAKU_OPACITY] ?: DEFAULT_DANMAKU_OPACITY }
 
     suspend fun setDanmakuOpacity(context: Context, value: Float) {
         context.settingsDataStore.edit { preferences -> 
@@ -317,7 +324,7 @@ object SettingsManager {
     
     // --- 弹幕字体大小 (0.5 ~ 2.0, 默认 1.0) ---
     fun getDanmakuFontScale(context: Context): Flow<Float> = context.settingsDataStore.data
-        .map { preferences -> preferences[KEY_DANMAKU_FONT_SCALE] ?: 1.0f }
+        .map { preferences -> preferences[KEY_DANMAKU_FONT_SCALE] ?: DEFAULT_DANMAKU_FONT_SCALE }
 
     suspend fun setDanmakuFontScale(context: Context, value: Float) {
         context.settingsDataStore.edit { preferences -> 
@@ -325,9 +332,9 @@ object SettingsManager {
         }
     }
     
-    // --- 弹幕速度 (0.5 ~ 3.0, 默认 2.5 较慢) ---
+    // --- 弹幕速度 (0.5 ~ 3.0, 默认 1.0 适中) ---
     fun getDanmakuSpeed(context: Context): Flow<Float> = context.settingsDataStore.data
-        .map { preferences -> preferences[KEY_DANMAKU_SPEED] ?: 2.5f }
+        .map { preferences -> preferences[KEY_DANMAKU_SPEED] ?: DEFAULT_DANMAKU_SPEED }
 
     suspend fun setDanmakuSpeed(context: Context, value: Float) {
         context.settingsDataStore.edit { preferences -> 
@@ -337,11 +344,25 @@ object SettingsManager {
     
     // --- 弹幕显示区域 (0.25, 0.5, 0.75, 1.0, 默认 0.5) ---
     fun getDanmakuArea(context: Context): Flow<Float> = context.settingsDataStore.data
-        .map { preferences -> preferences[KEY_DANMAKU_AREA] ?: 0.5f }
+        .map { preferences -> preferences[KEY_DANMAKU_AREA] ?: DEFAULT_DANMAKU_AREA }
 
     suspend fun setDanmakuArea(context: Context, value: Float) {
         context.settingsDataStore.edit { preferences -> 
             preferences[KEY_DANMAKU_AREA] = value.coerceIn(0.25f, 1.0f)
+        }
+    }
+    
+    // 强制更新弹幕默认值（覆盖已有设置，版本升级时触发一次）
+    suspend fun forceDanmakuDefaults(context: Context) {
+        context.settingsDataStore.edit { preferences ->
+            val currentVersion = preferences[KEY_DANMAKU_DEFAULTS_VERSION] ?: 0
+            if (currentVersion < DANMAKU_DEFAULTS_VERSION) {
+                preferences[KEY_DANMAKU_OPACITY] = DEFAULT_DANMAKU_OPACITY
+                preferences[KEY_DANMAKU_FONT_SCALE] = DEFAULT_DANMAKU_FONT_SCALE
+                preferences[KEY_DANMAKU_SPEED] = DEFAULT_DANMAKU_SPEED
+                preferences[KEY_DANMAKU_AREA] = DEFAULT_DANMAKU_AREA
+                preferences[KEY_DANMAKU_DEFAULTS_VERSION] = DANMAKU_DEFAULTS_VERSION
+            }
         }
     }
     
