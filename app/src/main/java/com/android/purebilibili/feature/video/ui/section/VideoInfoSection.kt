@@ -7,7 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.data.model.response.ViewInfo
 import com.android.purebilibili.data.model.response.VideoTag
@@ -100,13 +100,13 @@ fun VideoTitleSection(
 
 /**
  * Video Title with Description (Official layout: title + stats + description)
- * 🔥 Description and tags hidden by default, shown on expand
+ *  Description and tags hidden by default, shown on expand
  */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun VideoTitleWithDesc(
     info: ViewInfo,
-    videoTags: List<VideoTag> = emptyList()  // 🔥 视频标签
+    videoTags: List<VideoTag> = emptyList()  //  视频标签
 ) {
     var expanded by remember { mutableStateOf(false) }
     
@@ -159,7 +159,7 @@ fun VideoTitleWithDesc(
             )
         }
         
-        // 🔥🔥 Description - 默认隐藏，展开后显示
+        //  Description - 默认隐藏，展开后显示
         androidx.compose.animation.AnimatedVisibility(
             visible = expanded && info.desc.isNotBlank(),
             enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
@@ -179,7 +179,7 @@ fun VideoTitleWithDesc(
             }
         }
         
-        // 🔥🔥 Tags - 默认隐藏，展开后显示
+        //  Tags - 默认隐藏，展开后显示
         androidx.compose.animation.AnimatedVisibility(
             visible = expanded && videoTags.isNotEmpty(),
             enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),

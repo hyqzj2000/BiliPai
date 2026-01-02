@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
- * 🔌 BiliPai 插件基础接口
+ *  BiliPai 插件基础接口
  * 
  * 所有插件必须实现此接口，定义插件的基本属性和生命周期方法。
  */
@@ -22,7 +22,7 @@ interface Plugin {
     /** 版本号，如 "1.0.0" */
     val version: String
     
-    /** 🆕 插件作者 */
+    /**  插件作者 */
     val author: String
         get() = "Unknown"
     
@@ -30,11 +30,11 @@ interface Plugin {
     val icon: ImageVector?
         get() = null
     
-    /** 🔥 是否暂不可用 (用于标识功能尚未完成) */
+    /**  是否暂不可用 (用于标识功能尚未完成) */
     val unavailable: Boolean
         get() = false
     
-    /** 🔥 不可用原因描述 */
+    /**  不可用原因描述 */
     val unavailableReason: String
         get() = "功能开发中"
     

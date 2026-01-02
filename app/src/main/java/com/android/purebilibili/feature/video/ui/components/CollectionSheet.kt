@@ -29,7 +29,7 @@ import io.github.alexzhirkevich.cupertino.icons.outlined.XmarkCircle
 import io.github.alexzhirkevich.cupertino.icons.outlined.Play
 
 /**
- * 🎬 视频合集底部弹窗
+ *  视频合集底部弹窗
  * 显示合集中的所有视频列表
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,14 +49,14 @@ fun CollectionSheet(
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
         dragHandle = { BottomSheetDefaults.DragHandle() },
-        contentWindowInsets = { WindowInsets(0.dp) }  // 🔥 沉浸式：让 scrim 延伸到全屏
+        contentWindowInsets = { WindowInsets(0.dp) }  //  沉浸式：让 scrim 延伸到全屏
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)  // 🔥 确保整个区域有背景色
+                .background(MaterialTheme.colorScheme.surface)  //  确保整个区域有背景色
         ) {
-            // 🔥 标题栏
+            //  标题栏
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -91,7 +91,7 @@ fun CollectionSheet(
             
             Divider(color = MaterialTheme.colorScheme.outlineVariant)
             
-            // 🔥 视频列表
+            //  视频列表
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -117,7 +117,7 @@ fun CollectionSheet(
                             .padding(horizontal = 16.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // 🔥 视频封面缩略图
+                        //  视频封面缩略图
                         Box(
                             modifier = Modifier
                                 .width(120.dp)
@@ -182,7 +182,7 @@ fun CollectionSheet(
                         
                         Spacer(modifier = Modifier.width(12.dp))
                         
-                        // 🔥 视频信息
+                        //  视频信息
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = episode.title,
@@ -195,7 +195,7 @@ fun CollectionSheet(
                                 overflow = TextOverflow.Ellipsis
                             )
                             
-                            // 🔥 正在播放标识
+                            //  正在播放标识
                             if (isCurrentEpisode) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
@@ -210,7 +210,7 @@ fun CollectionSheet(
                 }
             }
             
-            // 🔥 内容底部间距 + 导航栏区域填充（合并为一个 Spacer，用 surface 色填充）
+            //  内容底部间距 + 导航栏区域填充（合并为一个 Spacer，用 surface 色填充）
             val navBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             Spacer(
                 modifier = Modifier

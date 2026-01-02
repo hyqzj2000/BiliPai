@@ -29,7 +29,7 @@ import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.CheckmarkCircle
 
 /**
- * 🎨 应用图标设置二级页面
+ *  应用图标设置二级页面
  * 网格布局展示所有可选图标
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -138,7 +138,7 @@ fun IconSettingsScreen(
                             modifier = Modifier.size(68.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            // 🔥 iOS 风格圆角矩形图标
+                            //  iOS 风格圆角矩形图标
                             AsyncImage(
                                 model = option.iconRes,
                                 contentDescription = option.name,

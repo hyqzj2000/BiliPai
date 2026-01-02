@@ -7,7 +7,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -39,7 +39,7 @@ import com.android.purebilibili.core.theme.ActionFavoriteDark
 import com.android.purebilibili.core.theme.ActionShareDark
 import com.android.purebilibili.core.theme.ActionCommentDark
 
-// 🔥🔥 [重构] 视频标题区域 (官方B站样式：紧凑布局)
+//  [重构] 视频标题区域 (官方B站样式：紧凑布局)
 @Composable
 fun VideoTitleSection(
     info: ViewInfo,
@@ -94,7 +94,7 @@ fun VideoTitleSection(
     }
 }
 
-// 🔥🔥 [新增] 官方布局：标题 + 统计 + 描述 (紧凑排列)
+//  [新增] 官方布局：标题 + 统计 + 描述 (紧凑排列)
 @Composable
 fun VideoTitleWithDesc(
     info: ViewInfo
@@ -106,7 +106,7 @@ fun VideoTitleWithDesc(
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
             .clickable { expanded = !expanded }
-            .padding(horizontal = 12.dp, vertical = 4.dp)  // 🔥 紧凑布局：减小 vertical padding
+            .padding(horizontal = 12.dp, vertical = 4.dp)  //  紧凑布局：减小 vertical padding
     ) {
         // 标题行 (可展开)
         Row(
@@ -136,7 +136,7 @@ fun VideoTitleWithDesc(
             )
         }
         
-        Spacer(Modifier.height(2.dp))  // 🔥 紧凑布局
+        Spacer(Modifier.height(2.dp))  //  紧凑布局
         
         // 统计行 (官方样式：播放量 • 弹幕 • 日期)
         Row(
@@ -150,9 +150,9 @@ fun VideoTitleWithDesc(
             )
         }
         
-        // 🔥🔥 描述（动态）- 紧接在统计后面
+        //  描述（动态）- 紧接在统计后面
         if (info.desc.isNotBlank()) {
-            Spacer(Modifier.height(4.dp))  // 🔥 紧凑布局
+            Spacer(Modifier.height(4.dp))  //  紧凑布局
             Text(
                 text = info.desc,
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -168,7 +168,7 @@ fun VideoTitleWithDesc(
     }
 }
 
-// 🔥🔥 [重构] UP主信息区域 (官方B站样式：蓝色UP主标签)
+//  [重构] UP主信息区域 (官方B站样式：蓝色UP主标签)
 @Composable
 fun UpInfoSection(
     info: ViewInfo,
@@ -181,7 +181,7 @@ fun UpInfoSection(
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
             .clickable { onUpClick(info.owner.mid) }
-            .padding(horizontal = 12.dp, vertical = 4.dp),  // 🔥 紧凑布局
+            .padding(horizontal = 12.dp, vertical = 4.dp),  //  紧凑布局
         verticalAlignment = Alignment.CenterVertically
     ) {
         // 头像
@@ -192,7 +192,7 @@ fun UpInfoSection(
                 .build(),
             contentDescription = null,
             modifier = Modifier
-                .size(36.dp)  // 🔥 紧凑布局：稍微缩小头像
+                .size(36.dp)  //  紧凑布局：稍微缩小头像
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         )
@@ -253,7 +253,7 @@ fun UpInfoSection(
 }
 
 
-// 🔥 2. 操作按钮行（官方B站样式：纯图标+数字，无圆形背景）
+//  2. 操作按钮行（官方B站样式：纯图标+数字，无圆形背景）
 @Composable
 fun ActionButtonsRow(
     info: ViewInfo,
@@ -269,11 +269,11 @@ fun ActionButtonsRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 4.dp, vertical = 2.dp),  // 🔥 紧凑布局
+            .padding(horizontal = 4.dp, vertical = 2.dp),  //  紧凑布局
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 🔥 点赞
+        //  点赞
         BiliActionButton(
             icon = if (isLiked) CupertinoIcons.Filled.Heart else CupertinoIcons.Default.Heart,
             text = FormatUtils.formatStat(info.stat.like.toLong()),
@@ -291,7 +291,7 @@ fun ActionButtonsRow(
             onClick = onCoinClick
         )
 
-        // 🔥 收藏
+        //  收藏
         BiliActionButton(
             icon = if (isFavorited) CupertinoIcons.Filled.Bookmark else CupertinoIcons.Default.Bookmark,
             text = FormatUtils.formatStat(info.stat.favorite.toLong()),
@@ -300,7 +300,7 @@ fun ActionButtonsRow(
             onClick = onFavoriteClick
         )
 
-        // 🔥 三连（❤心形图标）
+        //  三连（❤心形图标）
         BiliActionButton(
             icon = CupertinoIcons.Filled.Heart,
             text = "三连",
@@ -309,11 +309,11 @@ fun ActionButtonsRow(
             onClick = onTripleClick
         )
         
-        // 🔥🔥 [删除] 评论按钮已移除，因下方已有评论区入口
+        //  [删除] 评论按钮已移除，因下方已有评论区入口
     }
 }
 
-// 🔥 官方B站样式操作按钮 - 纯图标+数字，无圆形背景
+//  官方B站样式操作按钮 - 纯图标+数字，无圆形背景
 @Composable
 private fun BiliActionButton(
     icon: ImageVector,
@@ -384,19 +384,19 @@ private fun BiliActionButton(
     }
 }
 
-// 🔥 优化版 ActionButton - 带按压动画和彩色图标
+//  优化版 ActionButton - 带按压动画和彩色图标
 @Composable
 fun ActionButton(
     icon: ImageVector,
     text: String,
     isActive: Boolean = false,
-    iconColor: Color = MaterialTheme.colorScheme.onSurfaceVariant, // 🔥 新增颜色参数
+    iconColor: Color = MaterialTheme.colorScheme.onSurfaceVariant, //  新增颜色参数
     iconSize: androidx.compose.ui.unit.Dp = 24.dp,
     onClick: () -> Unit = {}
 ) {
     val isDark = isSystemInDarkTheme()
     
-    // 🔥 按压动画状态
+    //  按压动画状态
     val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     
@@ -409,7 +409,7 @@ fun ActionButton(
         label = "pressScale"
     )
     
-    // 🍎 心跳脉冲动画 - 当 isActive 变为 true 时触发
+    //  心跳脉冲动画 - 当 isActive 变为 true 时触发
     var shouldPulse by remember { mutableStateOf(false) }
     val pulseScale by androidx.compose.animation.core.animateFloatAsState(
         targetValue = if (shouldPulse) 1.3f else 1f,
@@ -442,12 +442,12 @@ fun ActionButton(
                 indication = null
             ) { onClick() }
     ) {
-        // 🔥 图标容器 - 使用彩色背景，深色模式下提高透明度
+        //  图标容器 - 使用彩色背景，深色模式下提高透明度
         Box(
             modifier = Modifier
                 .size(38.dp)
                 .graphicsLayer {
-                    // 🍎 脉冲缩放应用到图标容器
+                    //  脉冲缩放应用到图标容器
                     scaleX = pulseScale
                     scaleY = pulseScale
                 }
@@ -473,7 +473,7 @@ fun ActionButton(
     }
 }
 
-// 🔥 3. 简介区域（优化样式）
+//  3. 简介区域（优化样式）
 @Composable
 fun DescriptionSection(desc: String) {
     var expanded by remember { mutableStateOf(false) }
@@ -529,7 +529,7 @@ fun DescriptionSection(desc: String) {
     }
 }
 
-// 🔥 4. 推荐视频列表头部
+//  4. 推荐视频列表头部
 @Composable
 fun RelatedVideosHeader() {
     Surface(
@@ -554,10 +554,10 @@ fun RelatedVideosHeader() {
     }
 }
 
-// 🔥 5. 推荐视频单项（iOS 风格优化）
+//  5. 推荐视频单项（iOS 风格优化）
 @Composable
 fun RelatedVideoItem(video: RelatedVideo, onClick: () -> Unit) {
-    // 🔥 iOS 风格按压动画
+    //  iOS 风格按压动画
     val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     
@@ -586,7 +586,7 @@ fun RelatedVideoItem(video: RelatedVideo, onClick: () -> Unit) {
                     interactionSource = interactionSource,
                     indication = null
                 ) { onClick() }
-                .padding(horizontal = 16.dp, vertical = 6.dp)  // 🔥 紧凑布局
+                .padding(horizontal = 16.dp, vertical = 6.dp)  //  紧凑布局
         ) {
             // 视频封面
             Box(
@@ -621,7 +621,7 @@ fun RelatedVideoItem(video: RelatedVideo, onClick: () -> Unit) {
                     )
                 }
                 
-                // 🔥 播放量遮罩
+                //  播放量遮罩
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -678,7 +678,7 @@ fun RelatedVideoItem(video: RelatedVideo, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onBackground
                 )
 
-                // UP主信息行 + 播放量/弹幕 🔥 [优化] 新增统计信息
+                // UP主信息行 + 播放量/弹幕  [优化] 新增统计信息
                 Column {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
@@ -703,7 +703,7 @@ fun RelatedVideoItem(video: RelatedVideo, onClick: () -> Unit) {
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
-                    // 🔥🔥 [新增] 播放量 · 弹幕数
+                    //  [新增] 播放量 · 弹幕数
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -738,7 +738,7 @@ fun RelatedVideoItem(video: RelatedVideo, onClick: () -> Unit) {
     }
 }
 
-// 🔥🔥 [新增] 投币对话框
+//  [新增] 投币对话框
 @Composable
 fun CoinDialog(
     visible: Boolean,
@@ -820,14 +820,14 @@ fun CoinDialog(
     )
 }
 
-// 🔥🔥 [新增] 视频分P选择器 (支持展开/收起)
+//  [新增] 视频分P选择器 (支持展开/收起)
 @Composable
 fun PagesSelector(
     pages: List<com.android.purebilibili.data.model.response.Page>,
     currentPageIndex: Int,
     onPageSelect: (Int) -> Unit
 ) {
-    // 🔥 展开/收起状态
+    //  展开/收起状态
     var isExpanded by remember { mutableStateOf(false) }
     
     Column(
@@ -861,7 +861,7 @@ fun PagesSelector(
                 )
             }
             
-            // 🔥 展开/收起按钮
+            //  展开/收起按钮
             Row(
                 modifier = Modifier
                     .clickable { isExpanded = !isExpanded }
@@ -886,7 +886,7 @@ fun PagesSelector(
         Spacer(modifier = Modifier.height(12.dp))
         
         if (isExpanded) {
-            // 🔥 展开状态：垂直网格布局
+            //  展开状态：垂直网格布局
             val columns = 3  // 每行3个
             val chunkedPages = pages.chunked(columns)
             
@@ -939,7 +939,7 @@ fun PagesSelector(
                 }
             }
         } else {
-            // 🔥 收起状态：横向滚动列表
+            //  收起状态：横向滚动列表
             androidx.compose.foundation.lazy.LazyRow(
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 16.dp),

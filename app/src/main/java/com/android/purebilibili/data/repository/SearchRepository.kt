@@ -18,7 +18,7 @@ object SearchRepository {
     
     private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
-    // 🔥 视频搜索 - 支持排序和时长过滤
+    //  视频搜索 - 支持排序和时长过滤
     suspend fun search(
         keyword: String,
         order: SearchOrder = SearchOrder.TOTALRANK,
@@ -30,7 +30,7 @@ object SearchRepository {
             val imgKey = wbiImg?.img_url?.substringAfterLast("/")?.substringBefore(".") ?: ""
             val subKey = wbiImg?.sub_url?.substringAfterLast("/")?.substringBefore(".") ?: ""
 
-            // 🔥🔥 [修复] 使用 search/type API 的正确参数格式
+            //  [修复] 使用 search/type API 的正确参数格式
             val params = mutableMapOf(
                 "keyword" to keyword,
                 "search_type" to "video",  // 搜索类型
@@ -40,17 +40,17 @@ object SearchRepository {
                 "pagesize" to "30"          // 每页数量
             )
             
-            // 🔥 调试日志 - 检查搜索参数
+            //  调试日志 - 检查搜索参数
             com.android.purebilibili.core.util.Logger.d("SearchRepo", "🔍 Search params BEFORE sign: keyword=$keyword, order=${order.value}, duration=${duration.value}")
             
             val signedParams = if (imgKey.isNotEmpty()) WbiUtils.sign(params, imgKey, subKey) else params
             
-            // 🔥 调试日志 - 检查签名后的参数
+            //  调试日志 - 检查签名后的参数
             com.android.purebilibili.core.util.Logger.d("SearchRepo", "🔍 Search params AFTER sign: $signedParams")
 
             val response = api.search(signedParams)
             
-            // 🔥🔥 [修复] search/type API 直接返回 result 列表，不需要查找 result_type
+            //  [修复] search/type API 直接返回 result 列表，不需要查找 result_type
             val videoList = response.data?.result
                 ?.map { it.toVideoItem() }
                 ?: emptyList()
@@ -64,7 +64,7 @@ object SearchRepository {
         }
     }
     
-    // 🔥 UP主 搜索
+    //  UP主 搜索
     suspend fun searchUp(keyword: String): Result<List<SearchUpItem>> = withContext(Dispatchers.IO) {
         try {
             val navResp = navApi.getNavInfo()
@@ -72,7 +72,7 @@ object SearchRepository {
             val imgKey = wbiImg?.img_url?.substringAfterLast("/")?.substringBefore(".") ?: ""
             val subKey = wbiImg?.sub_url?.substringAfterLast("/")?.substringBefore(".") ?: ""
 
-            // 🔥🔥 [修复] 使用 search/type API，search_type = bili_user
+            //  [修复] 使用 search/type API，search_type = bili_user
             val params = mapOf(
                 "keyword" to keyword,
                 "search_type" to "bili_user",  // UP主搜索类型
@@ -85,7 +85,7 @@ object SearchRepository {
 
             val response = api.searchUp(signedParams)
             
-            // 🔥 直接从 response.data.result 获取 UP 主列表
+            //  直接从 response.data.result 获取 UP 主列表
             val upList = response.data?.result
                 ?.map { it.cleanupFields() }
                 ?: emptyList()
@@ -100,7 +100,7 @@ object SearchRepository {
         }
     }
 
-    // 🔥 热搜
+    //  热搜
     suspend fun getHotSearch(): Result<List<HotItem>> = withContext(Dispatchers.IO) {
         try {
             val response = api.getHotSearch()
@@ -112,7 +112,7 @@ object SearchRepository {
         }
     }
     
-    // 🔥 搜索建议/联想
+    //  搜索建议/联想
     suspend fun getSuggest(keyword: String): Result<List<String>> = withContext(Dispatchers.IO) {
         try {
             if (keyword.isBlank()) return@withContext Result.success(emptyList())
@@ -126,7 +126,7 @@ object SearchRepository {
         }
     }
 
-    // 🔥 获取搜索发现 (个性化 + 官方热搜兜底)
+    //  获取搜索发现 (个性化 + 官方热搜兜底)
     suspend fun getSearchDiscover(historyKeywords: List<String>): Result<Pair<String, List<String>>> = withContext(Dispatchers.IO) {
         try {
             // 1. 个性化推荐：尝试使用最近的搜索词进行联想
@@ -147,7 +147,7 @@ object SearchRepository {
             val hotList = hotResponse.data?.trending?.list?.map { it.show_name }?.shuffled()?.take(10) ?: emptyList()
             
             if (hotList.isNotEmpty()) {
-                return@withContext Result.success("🔥 热门推荐" to hotList)
+                return@withContext Result.success(" 热门推荐" to hotList)
             }
             
             // 3. 静态兜底
@@ -160,7 +160,7 @@ object SearchRepository {
     }
 }
 
-// 🔥 搜索排序选项
+//  搜索排序选项
 enum class SearchOrder(val value: String, val displayName: String) {
     TOTALRANK("totalrank", "综合排序"),
     PUBDATE("pubdate", "最新发布"),
@@ -169,7 +169,7 @@ enum class SearchOrder(val value: String, val displayName: String) {
     STOW("stow", "收藏最多")
 }
 
-// 🔥 搜索时长筛选
+//  搜索时长筛选
 enum class SearchDuration(val value: Int, val displayName: String) {
     ALL(0, "全部时长"),
     UNDER_10MIN(1, "10分钟以下"),

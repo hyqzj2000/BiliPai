@@ -5,7 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -26,7 +26,7 @@ import coil.compose.AsyncImage
 import com.android.purebilibili.data.model.response.ArchiveMajor
 
 /**
- * 🔥 大尺寸视频卡片
+ *  大尺寸视频卡片
  */
 @Composable
 fun VideoCardLarge(
@@ -115,7 +115,7 @@ fun VideoCardLarge(
 }
 
 /**
- * 🔥 小尺寸视频卡片（用于转发）
+ *  小尺寸视频卡片（用于转发）
  */
 @Composable
 fun VideoCardSmall(

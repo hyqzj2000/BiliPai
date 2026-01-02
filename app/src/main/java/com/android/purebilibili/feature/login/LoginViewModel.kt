@@ -26,7 +26,7 @@ sealed class LoginState {
     object Success : LoginState()
     data class Error(val msg: String) : LoginState()
     
-    // 🔥 手机号登录状态
+    //  手机号登录状态
     object PhoneIdle : LoginState()  // 等待输入手机号
     data class CaptchaReady(val captchaData: CaptchaData) : LoginState()  // 验证码准备就绪
     data class SmsSent(val captchaKey: String) : LoginState()  // 短信已发送
@@ -41,11 +41,11 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private var isPolling = true
 
     /**
-     * 🔥🔥 [重构] 统一使用 TV 端二维码登录
+     *  [重构] 统一使用 TV 端二维码登录
      * 这样登录后自动获得 access_token，支持 4K/HDR/1080P60 高画质视频
      */
     fun loadQrCode() {
-        // 🔥 直接调用 TV 登录，获取 access_token
+        //  直接调用 TV 登录，获取 access_token
         loadTvQrCode()
     }
     
@@ -61,16 +61,16 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
                 val resp = NetworkModule.passportApi.generateQrCode()
 
-                // 🔥 核心修复：处理可空类型
+                //  核心修复：处理可空类型
                 val data = resp.data ?: throw Exception("服务器返回数据为空")
                 val url = data.url ?: throw Exception("二维码 URL 为空")
 
-                // 👇 这里使用 ?: 抛出异常，解决了 Type mismatch 问题
+                //  这里使用 ?: 抛出异常，解决了 Type mismatch 问题
                 qrcodeKey = data.qrcode_key ?: throw Exception("二维码 Key 为空")
 
                 Logger.d("LoginDebug", "2. Web 二维码获取成功 Key: $qrcodeKey")
                 val bitmap = generateQrBitmap(url)
-                currentBitmap = bitmap // 🔥 保存以便在 Scanned 状态使用
+                currentBitmap = bitmap //  保存以便在 Scanned 状态使用
                 _state.value = LoginState.QrCode(bitmap)
 
                 startPolling()
@@ -81,30 +81,30 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private var currentBitmap: Bitmap? = null // 🔥 保存当前二维码用于 Scanned 状态
+    private var currentBitmap: Bitmap? = null //  保存当前二维码用于 Scanned 状态
 
     private fun startPolling() {
         viewModelScope.launch {
             Logger.d("LoginDebug", "3. 开始轮询...")
             while (isPolling) {
-                delay(2000) // 🔥 缩短轮询间隔，更快响应
+                delay(2000) //  缩短轮询间隔，更快响应
                 try {
                     val response = NetworkModule.passportApi.pollQrCode(qrcodeKey)
                     val body = response.body()
 
-                    // 🔥 核心修复：处理可空类型，默认为 -1 防止空指针
+                    //  核心修复：处理可空类型，默认为 -1 防止空指针
                     val code = body?.data?.code ?: -1
 
                     Logger.d("LoginDebug", "轮询状态: Code=$code")
 
                     when (code) {
                         0 -> {
-                            // 🔥 登录成功
+                            //  登录成功
                             Logger.d("LoginDebug", ">>> 登录成功！开始解析 Cookie <<<")
 
                             val cookies = response.headers().values("Set-Cookie")
                             var sessData = ""
-                            var biliJct = "" // 🔥 CSRF token
+                            var biliJct = "" //  CSRF token
 
                             for (line in cookies) {
                                 if (line.contains("SESSDATA")) {
@@ -117,7 +117,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                                         }
                                     }
                                 }
-                                // 🔥 提取 bili_jct (CSRF Token)
+                                //  提取 bili_jct (CSRF Token)
                                 if (line.contains("bili_jct")) {
                                     val parts = line.split(";")
                                     for (part in parts) {
@@ -131,12 +131,12 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                             }
 
                             if (sessData.isNotEmpty()) {
-                                Logger.d("LoginDebug", "✅ 成功提取 SESSDATA: $sessData")
-                                Logger.d("LoginDebug", "✅ 成功提取 bili_jct: $biliJct")
+                                Logger.d("LoginDebug", " 成功提取 SESSDATA: $sessData")
+                                Logger.d("LoginDebug", " 成功提取 bili_jct: $biliJct")
 
                                 // 保存并更新缓存
                                 TokenManager.saveCookies(getApplication(), sessData)
-                                // 🔥 保存 CSRF Token (持久化)
+                                //  保存 CSRF Token (持久化)
                                 if (biliJct.isNotEmpty()) {
                                     TokenManager.saveCsrf(getApplication(), biliJct)
                                 }
@@ -150,8 +150,8 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                             }
                         }
                         86090 -> {
-                            // 🔥 新增: 已扫描待确认
-                            Logger.d("LoginDebug", "📱 二维码已扫描，等待确认...")
+                            //  新增: 已扫描待确认
+                            Logger.d("LoginDebug", " 二维码已扫描，等待确认...")
                             currentBitmap?.let { bitmap ->
                                 withContext(Dispatchers.Main) {
                                     _state.value = LoginState.Scanned(bitmap)
@@ -191,7 +191,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         return bmp
     }
     
-    // ========== 🔥 手机号登录方法 ==========
+    // ==========  手机号登录方法 ==========
     
     // 当前验证码数据 (极验验证成功后暂存)
     private var currentCaptchaData: CaptchaData? = null
@@ -378,7 +378,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         }
         
         if (sessData.isNotEmpty()) {
-            Logger.d("LoginDebug", "✅ 登录成功: SESSDATA=$sessData")
+            Logger.d("LoginDebug", " 登录成功: SESSDATA=$sessData")
             TokenManager.saveCookies(getApplication(), sessData)
             if (biliJct.isNotEmpty()) {
                 TokenManager.saveCsrf(getApplication(), biliJct)
@@ -404,7 +404,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         _state.value = LoginState.PhoneIdle
     }
     
-    // ========== 🔥🔥 TV 端登录方法 (获取 access_token 用于高画质视频) ==========
+    // ==========  TV 端登录方法 (获取 access_token 用于高画质视频) ==========
     
     private var tvAuthCode: String = ""
     private var isTvPolling = false
@@ -477,7 +477,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     when (response.code) {
                         0 -> {
                             // 登录成功
-                            Logger.d("TvLogin", "✅ TV 登录成功!")
+                            Logger.d("TvLogin", " TV 登录成功!")
                             val data = response.data
                             if (data != null) {
                                 // 保存 access_token
@@ -499,16 +499,16 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                                             kotlinx.coroutines.runBlocking {
                                                 TokenManager.saveCookies(getApplication(), cookie.value)
                                             }
-                                            Logger.d("TvLogin", "✅ 保存 SESSDATA: ${cookie.value.take(10)}...")
+                                            Logger.d("TvLogin", " 保存 SESSDATA: ${cookie.value.take(10)}...")
                                         }
                                         "bili_jct" -> {
                                             TokenManager.saveCsrf(getApplication(), cookie.value)
-                                            Logger.d("TvLogin", "✅ 保存 bili_jct: ${cookie.value.take(10)}...")
+                                            Logger.d("TvLogin", " 保存 bili_jct: ${cookie.value.take(10)}...")
                                         }
                                     }
                                 }
                                 
-                                Logger.d("TvLogin", "✅ access_token: ${data.accessToken.take(10)}...")
+                                Logger.d("TvLogin", " access_token: ${data.accessToken.take(10)}...")
                                 
                                 isTvPolling = false
                                 withContext(Dispatchers.Main) {
@@ -524,7 +524,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                         }
                         86090 -> {
                             // 已扫码待确认
-                            Logger.d("TvLogin", "📱 二维码已扫描，等待确认...")
+                            Logger.d("TvLogin", " 二维码已扫描，等待确认...")
                             currentBitmap?.let { bitmap ->
                                 withContext(Dispatchers.Main) {
                                     _state.value = LoginState.Scanned(bitmap)

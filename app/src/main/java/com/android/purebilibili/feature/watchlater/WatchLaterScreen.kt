@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -113,7 +113,7 @@ class WatchLaterViewModel(application: Application) : AndroidViewModel(applicati
 }
 
 /**
- * 🔥 稍后再看页面
+ *  稍后再看页面
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

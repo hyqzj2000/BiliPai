@@ -34,9 +34,9 @@ fun SubReplySheet(
     emoteMap: Map<String, String>,
     onDismiss: () -> Unit,
     onLoadMore: () -> Unit,
-    onTimestampClick: ((Long) -> Unit)? = null  // 🔥🔥 [新增] 时间戳点击跳转
+    onTimestampClick: ((Long) -> Unit)? = null  //  [新增] 时间戳点击跳转
 ) {
-    // 🔥 必须用 Box 包裹，否则 align 报错
+    //  必须用 Box 包裹，否则 align 报错
     Box(modifier = Modifier.fillMaxSize()) {
 
         AnimatedVisibility(
@@ -56,7 +56,7 @@ fun SubReplySheet(
             )
         }
 
-        // 🍎 iOS 风格弹性滑入动画
+        //  iOS 风格弹性滑入动画
         AnimatedVisibility(
             visible = state.visible && state.rootReply != null,
             enter = slideInVertically(
@@ -89,7 +89,7 @@ fun SubReplySheet(
                         emoteMap = emoteMap,
                         onLoadMore = onLoadMore,
                         onTimestampClick = onTimestampClick,
-                        upMid = state.rootReply!!.oid  // 🔥 传递 UP 主 mid
+                        upMid = state.rootReply!!.oid  //  传递 UP 主 mid
                     )
                 }
             }
@@ -106,7 +106,7 @@ fun SubReplyList(
     emoteMap: Map<String, String>,
     onLoadMore: () -> Unit,
     onTimestampClick: ((Long) -> Unit)? = null,
-    upMid: Long = 0  // 🔥 UP主 mid 用于 UP 标签
+    upMid: Long = 0  //  UP主 mid 用于 UP 标签
 ) {
     val listState = rememberLazyListState()
     val shouldLoadMore by remember {
@@ -137,7 +137,7 @@ fun SubReplyList(
             item {
                 ReplyItemView(
                     item = rootReply,
-                    upMid = upMid,  // 🔥 传递 UP 主 mid
+                    upMid = upMid,  //  传递 UP 主 mid
                     emoteMap = emoteMap, 
                     onClick = {}, 
                     onSubClick = {},
@@ -148,7 +148,7 @@ fun SubReplyList(
             items(subReplies) { item ->
                 ReplyItemView(
                     item = item,
-                    upMid = upMid,  // 🔥 传递 UP 主 mid
+                    upMid = upMid,  //  传递 UP 主 mid
                     emoteMap = emoteMap, 
                     onClick = {}, 
                     onSubClick = {},

@@ -8,7 +8,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -36,7 +36,7 @@ import com.android.purebilibili.core.theme.iOSSystemGray
 import dev.chrisbanes.haze.HazeState
 
 /**
- * 🍎 简洁版首页头部 (带滚动隐藏/显示动画)
+ *  简洁版首页头部 (带滚动隐藏/显示动画)
  * 
  * 注意：Header 不使用 hazeChild 模糊效果（会导致渲染问题）
  * 磨砂效果仅保留给 BottomBar（在屏幕底部可以正常工作）
@@ -51,12 +51,12 @@ fun iOSHomeHeader(
     onSearchClick: () -> Unit,
     categoryIndex: Int,
     onCategorySelected: (Int) -> Unit,
-    onPartitionClick: () -> Unit = {},  // 🔥 新增：分区按钮回调
+    onPartitionClick: () -> Unit = {},  //  新增：分区按钮回调
     isScrollingUp: Boolean = true,
     collapseThreshold: androidx.compose.ui.unit.Dp = 60.dp,
     hazeState: HazeState? = null,  // 保留参数兼容性，但不用于模糊
     onStatusBarDoubleTap: () -> Unit = {},
-    // 🍎 [新增] 下拉刷新状态
+    //  [新增] 下拉刷新状态
     isRefreshing: Boolean = false,
     pullProgress: Float = 0f  // 0.0 ~ 1.0+ 下拉进度
 ) {
@@ -67,7 +67,7 @@ fun iOSHomeHeader(
     val maxOffsetPx = with(density) { 50.dp.toPx() }
     val scrollProgress = (scrollOffset / maxOffsetPx).coerceIn(0f, 1f)
     
-    // 🍎 [下拉刷新] 合并滚动和下拉进度，下拉时也要收起标签页
+    //  [下拉刷新] 合并滚动和下拉进度，下拉时也要收起标签页
     val progress = maxOf(scrollProgress, (pullProgress * 1.5f).coerceIn(0f, 1f))
     
     // 状态栏高度
@@ -100,7 +100,7 @@ fun iOSHomeHeader(
                 CategoryTabRow(
                     selectedIndex = categoryIndex,
                     onCategorySelected = onCategorySelected,
-                    onPartitionClick = onPartitionClick  // 🔥 传递分区回调
+                    onPartitionClick = onPartitionClick  //  传递分区回调
                 )
             }
         }
@@ -162,7 +162,7 @@ fun iOSHomeHeader(
                 
                 Spacer(modifier = Modifier.width(12.dp))
                 
-                // 🍎 搜索框 - iOS 风格
+                //  搜索框 - iOS 风格
                 Box(
                     modifier = Modifier
                         .weight(1f)

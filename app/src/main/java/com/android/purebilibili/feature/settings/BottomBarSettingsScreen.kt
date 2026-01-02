@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -23,13 +23,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.android.purebilibili.core.store.SettingsManager
-import com.android.purebilibili.core.theme.BottomBarColors  // 🔥 统一底栏颜色配置
-import com.android.purebilibili.core.theme.BottomBarColorPalette  // 🔥 调色板
-import com.android.purebilibili.core.theme.BottomBarColorNames  // 🔥 颜色名称
+import com.android.purebilibili.core.theme.BottomBarColors  //  统一底栏颜色配置
+import com.android.purebilibili.core.theme.BottomBarColorPalette  //  调色板
+import com.android.purebilibili.core.theme.BottomBarColorNames  //  颜色名称
 import kotlinx.coroutines.launch
 
 /**
- * 🔥 底栏项目配置
+ *  底栏项目配置
  */
 data class BottomBarTabConfig(
     val id: String,
@@ -44,7 +44,7 @@ data class BottomBarTabConfig(
 val allBottomBarTabs = listOf(
     BottomBarTabConfig("HOME", "首页", CupertinoIcons.Default.House, isDefault = true),
     BottomBarTabConfig("DYNAMIC", "动态", CupertinoIcons.Default.Newspaper, isDefault = true),
-    BottomBarTabConfig("STORY", "短视频", CupertinoIcons.Default.PlayCircle, isDefault = false),  // 🔥 竖屏短视频
+    BottomBarTabConfig("STORY", "短视频", CupertinoIcons.Default.PlayCircle, isDefault = false),  //  竖屏短视频
     BottomBarTabConfig("HISTORY", "历史", CupertinoIcons.Default.Clock, isDefault = true),
     BottomBarTabConfig("PROFILE", "我的", CupertinoIcons.Default.PersonCircle, isDefault = true),
     BottomBarTabConfig("FAVORITE", "收藏", CupertinoIcons.Default.Heart, isDefault = false),
@@ -53,7 +53,7 @@ val allBottomBarTabs = listOf(
 )
 
 /**
- * 🔥 底栏管理设置页面
+ *  底栏管理设置页面
  * 支持拖拽排序和显示/隐藏配置
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,7 +72,7 @@ fun BottomBarSettingsScreen(
     var localOrder by remember(order) { mutableStateOf(order) }
     var localVisibleTabs by remember(visibleTabs) { mutableStateOf(visibleTabs) }
     
-    // 🔥🔥 [新增] 读取项目颜色配置
+    //  [新增] 读取项目颜色配置
     val itemColors by SettingsManager.getBottomBarItemColors(context).collectAsState(initial = emptyMap())
     
     // 保存配置
@@ -83,7 +83,7 @@ fun BottomBarSettingsScreen(
         }
     }
     
-    // 🔥🔥 [新增] 保存颜色配置
+    //  [新增] 保存颜色配置
     fun saveItemColor(itemId: String, colorIndex: Int) {
         scope.launch {
             SettingsManager.setBottomBarItemColor(context, itemId, colorIndex)
@@ -183,7 +183,7 @@ fun BottomBarSettingsScreen(
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "💡 长按拖拽底栏图标可调整顺序（开发中）",
+                    text = " 长按拖拽底栏图标可调整顺序（开发中）",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
@@ -264,10 +264,10 @@ private fun BottomBarTabItem(
     onToggle: (Boolean) -> Unit,
     onColorChange: (Int) -> Unit
 ) {
-    // 🔥 获取项目当前颜色
+    //  获取项目当前颜色
     val itemColor = BottomBarColors.getColorByIndex(colorIndex)
     
-    // 🔥 颜色选择弹窗状态
+    //  颜色选择弹窗状态
     var showColorPicker by remember { mutableStateOf(false) }
     
     Row(
@@ -276,7 +276,7 @@ private fun BottomBarTabItem(
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 图标 - 🔥 点击可更换颜色
+        // 图标 -  点击可更换颜色
         Box(
             modifier = Modifier
                 .size(36.dp)
@@ -323,7 +323,7 @@ private fun BottomBarTabItem(
         )
     }
     
-    // 🔥 颜色选择弹窗
+    //  颜色选择弹窗
     if (showColorPicker) {
         AlertDialog(
             onDismissRequest = { showColorPicker = false },

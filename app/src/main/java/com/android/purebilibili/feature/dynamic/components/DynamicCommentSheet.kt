@@ -23,7 +23,7 @@ import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 
 /**
- * 🔥 动态评论底部弹窗
+ *  动态评论底部弹窗
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -162,7 +162,7 @@ fun DynamicCommentSheet(
 }
 
 /**
- * 🔥 单条评论项
+ *  单条评论项
  */
 @Composable
 private fun CommentItem(reply: ReplyItem) {

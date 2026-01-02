@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * 🔥 横屏弹幕输入框组件
+ *  横屏弹幕输入框组件
  * 
  * 仿官方 B 站设计，显示为可点击的文本框
  * 点击后弹出弹幕发送界面
@@ -47,7 +47,7 @@ fun LandscapeDanmakuInput(
 }
 
 /**
- * 🔥 横屏底部互动按钮（点赞/投币小按钮）
+ *  横屏底部互动按钮（点赞/投币小按钮）
  */
 @Composable
 fun LandscapeQuickActionButton(

@@ -8,7 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * 🔥 动态数据仓库
+ *  动态数据仓库
  * 
  * 负责从 B站 API 获取动态 Feed 数据
  */

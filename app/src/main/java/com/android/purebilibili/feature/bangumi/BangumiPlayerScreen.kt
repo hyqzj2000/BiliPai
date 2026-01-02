@@ -26,7 +26,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import io.github.alexzhirkevich.cupertino.CupertinoActivityIndicator
 import kotlinx.coroutines.launch
 import com.android.purebilibili.feature.video.danmaku.rememberDanmakuManager
-// 🔥 使用提取后的组件
+//  使用提取后的组件
 import com.android.purebilibili.feature.bangumi.ui.player.BangumiPlayerView
 import com.android.purebilibili.feature.bangumi.ui.player.BangumiMiniProgressBar
 import com.android.purebilibili.feature.bangumi.ui.player.BangumiPlayerContent
@@ -35,7 +35,7 @@ import com.android.purebilibili.feature.bangumi.ui.player.BangumiErrorContent
 /**
  * 番剧播放页面
  * 
- * 🔥🔥 [重构] 简化后的主屏幕，播放器组件已拆分到 ui/player/ 目录
+ *  [重构] 简化后的主屏幕，播放器组件已拆分到 ui/player/ 目录
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +51,7 @@ fun BangumiPlayerScreen(
     val configuration = LocalConfiguration.current
     val uiState by viewModel.uiState.collectAsState()
     
-    // 🚀 空降助手状态
+    //  空降助手状态
     val sponsorSegment by viewModel.currentSponsorSegment.collectAsState()
     val showSponsorSkipButton by viewModel.showSkipButton.collectAsState()
     val sponsorBlockEnabled by com.android.purebilibili.core.store.SettingsManager
@@ -77,7 +77,7 @@ fun BangumiPlayerScreen(
         viewModel.loadBangumiPlay(seasonId, epId)
     }
     
-    // 🚀 空降助手：定期检查播放位置
+    //  空降助手：定期检查播放位置
     LaunchedEffect(sponsorBlockEnabled, uiState) {
         if (sponsorBlockEnabled && uiState is BangumiPlayerState.Success) {
             while (true) {
@@ -87,19 +87,19 @@ fun BangumiPlayerScreen(
         }
     }
     
-    // 🔥🔥 [重构] 弹幕管理器 - 使用单例确保横竖屏切换时保持状态
+    //  [重构] 弹幕管理器 - 使用单例确保横竖屏切换时保持状态
     val danmakuManager = rememberDanmakuManager()
     
     // 弹幕开关设置
-    val scope = rememberCoroutineScope()  // 🔥 用于弹幕开关和设置保存
+    val scope = rememberCoroutineScope()  //  用于弹幕开关和设置保存
     val danmakuEnabled by com.android.purebilibili.core.store.SettingsManager
         .getDanmakuEnabled(context)
         .collectAsState(initial = true)
     
-    // 🔥 倍速状态
+    //  倍速状态
     var currentSpeed by remember { mutableFloatStateOf(1.0f) }
     
-    // 🔥 弹幕设置状态
+    //  弹幕设置状态
     val danmakuOpacity by com.android.purebilibili.core.store.SettingsManager
         .getDanmakuOpacity(context)
         .collectAsState(initial = 0.85f)
@@ -113,7 +113,7 @@ fun BangumiPlayerScreen(
         .getDanmakuArea(context)
         .collectAsState(initial = 0.5f)
     
-    // 🔥 弹幕设置变化时实时应用到 DanmakuManager
+    //  弹幕设置变化时实时应用到 DanmakuManager
     LaunchedEffect(danmakuOpacity, danmakuFontScale, danmakuSpeed, danmakuDisplayArea) {
         danmakuManager.updateSettings(
             opacity = danmakuOpacity,
@@ -127,13 +127,13 @@ fun BangumiPlayerScreen(
     val currentCid = (uiState as? BangumiPlayerState.Success)?.currentEpisode?.cid ?: 0L
     
     // 加载弹幕 - 在父级组件管理
-    // 🔥🔥 [修复] 等待播放器 duration 可用后再加载弹幕，启用 Protobuf API
+    //  [修复] 等待播放器 duration 可用后再加载弹幕，启用 Protobuf API
     LaunchedEffect(currentCid, danmakuEnabled) {
         android.util.Log.d("BangumiPlayer", "🎯 Parent Danmaku LaunchedEffect: cid=$currentCid, enabled=$danmakuEnabled")
         if (currentCid > 0 && danmakuEnabled) {
             danmakuManager.isEnabled = true
             
-            // 🔥🔥 [修复] 等待播放器准备好并获取 duration (最多等待 5 秒)
+            //  [修复] 等待播放器准备好并获取 duration (最多等待 5 秒)
             var durationMs = 0L
             var retries = 0
             while (durationMs <= 0 && retries < 50) {
@@ -145,7 +145,7 @@ fun BangumiPlayerScreen(
             }
             
             android.util.Log.d("BangumiPlayer", "🎯 Loading danmaku for cid=$currentCid, duration=${durationMs}ms (after $retries retries)")
-            danmakuManager.loadDanmaku(currentCid, durationMs)  // 🔥 传入时长启用 Protobuf API
+            danmakuManager.loadDanmaku(currentCid, durationMs)  //  传入时长启用 Protobuf API
         } else {
             danmakuManager.isEnabled = false
         }
@@ -164,23 +164,23 @@ fun BangumiPlayerScreen(
         }
     }
     
-    // 清理播放器 + 🔥 屏幕常亮管理
+    // 清理播放器 +  屏幕常亮管理
     DisposableEffect(Unit) {
         val window = context.findActivity()?.window
         
-        // 🔥🔥 [修复] 进入番剧播放页时保持屏幕常亮，防止自动熄屏
+        //  [修复] 进入番剧播放页时保持屏幕常亮，防止自动熄屏
         window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         
         onDispose {
             exoPlayer.release()
-            // 🔥 恢复默认方向，避免离开播放器后卡在横屏
+            //  恢复默认方向，避免离开播放器后卡在横屏
             context.findActivity()?.requestedOrientation = 
                 ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             
-            // 🔥🔥 [修复] 离开番剧播放页时取消屏幕常亮
+            //  [修复] 离开番剧播放页时取消屏幕常亮
             window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             
-            // 🔥🔥 [修复] 恢复系统亮度控制，解除亮度锁定
+            //  [修复] 恢复系统亮度控制，解除亮度锁定
             window?.let { w ->
                 val params = w.attributes
                 params.screenBrightness = -1f  // -1f 表示跟随系统亮度
@@ -199,7 +199,7 @@ fun BangumiPlayerScreen(
         }
     }
     
-    // 🔥 自动检测设备方向变化并解锁旋转
+    //  自动检测设备方向变化并解锁旋转
     DisposableEffect(Unit) {
         val activity = context.findActivity()
         val orientationEventListener = object : android.view.OrientationEventListener(context) {
@@ -271,7 +271,7 @@ fun BangumiPlayerScreen(
             .fillMaxSize()
             .background(if (isLandscape) Color.Black else MaterialTheme.colorScheme.background)
     ) {
-        // 🔥 获取清晰度数据
+        //  获取清晰度数据
         val successState = uiState as? BangumiPlayerState.Success
         
         if (isLandscape) {
@@ -297,10 +297,10 @@ fun BangumiPlayerScreen(
                 showSponsorSkipButton = showSponsorSkipButton,
                 onSponsorSkip = { viewModel.skipCurrentSponsorSegment() },
                 onSponsorDismiss = { viewModel.dismissSponsorSkipButton() },
-                // 🔥 倍速控制
+                //  倍速控制
                 currentSpeed = currentSpeed,
                 onSpeedChange = { currentSpeed = it },
-                // 🔥 弹幕设置
+                //  弹幕设置
                 danmakuOpacity = danmakuOpacity,
                 danmakuFontScale = danmakuFontScale,
                 danmakuSpeed = danmakuSpeed,
@@ -313,7 +313,7 @@ fun BangumiPlayerScreen(
         } else {
             // 竖屏：播放器 + 内容
             Column(modifier = Modifier.fillMaxSize()) {
-                // 🔥 播放器区域 - 放大为 2:3 比例
+                //  播放器区域 - 放大为 2:3 比例
                 val screenWidthDp = configuration.screenWidthDp.dp
                 val playerHeight = screenWidthDp * 2f / 3f
                 
@@ -344,10 +344,10 @@ fun BangumiPlayerScreen(
                         showSponsorSkipButton = showSponsorSkipButton,
                         onSponsorSkip = { viewModel.skipCurrentSponsorSegment() },
                         onSponsorDismiss = { viewModel.dismissSponsorSkipButton() },
-                        // 🔥 倍速控制
+                        //  倍速控制
                         currentSpeed = currentSpeed,
                         onSpeedChange = { currentSpeed = it },
-                        // 🔥 弹幕设置
+                        //  弹幕设置
                         danmakuOpacity = danmakuOpacity,
                         danmakuFontScale = danmakuFontScale,
                         danmakuSpeed = danmakuSpeed,

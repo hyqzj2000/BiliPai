@@ -70,7 +70,7 @@ class CaptchaManager(private val activity: Activity) {
                         Logger.d(TAG, "Captcha success via JS: validate=$validate, challenge=$newChallenge")
                         activity.runOnUiThread {
                             dialog?.dismiss()
-                            // 🔥 使用验证后返回的新 challenge
+                            //  使用验证后返回的新 challenge
                             onSuccess(validate, seccode, newChallenge)
                         }
                     }
@@ -115,7 +115,7 @@ class CaptchaManager(private val activity: Activity) {
             
             dialog?.show()
             
-            // 🔥 设置对话框为接近全屏
+            //  设置对话框为接近全屏
             dialog?.window?.setLayout(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT

@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import coil.compose.AsyncImage
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.vectorResource
 import androidx.lifecycle.viewmodel.compose.viewModel
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.theme.iOSBlue
 import com.android.purebilibili.core.theme.iOSGreen
 import com.android.purebilibili.core.theme.iOSOrange
@@ -61,11 +61,11 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel(),
     onBack: () -> Unit,
     onOpenSourceLicensesClick: () -> Unit,
-    onAppearanceClick: () -> Unit = {},    // 🔥 外观设置
-    onPlaybackClick: () -> Unit = {},      // 🔥 播放设置
-    onPermissionClick: () -> Unit = {},    // 🔐 权限管理
-    onPluginsClick: () -> Unit = {},       // 🔌 插件中心
-    mainHazeState: dev.chrisbanes.haze.HazeState? = null // 🔥🔥 接收全局 Haze 状态
+    onAppearanceClick: () -> Unit = {},    //  外观设置
+    onPlaybackClick: () -> Unit = {},      //  播放设置
+    onPermissionClick: () -> Unit = {},    //  权限管理
+    onPluginsClick: () -> Unit = {},       //  插件中心
+    mainHazeState: dev.chrisbanes.haze.HazeState? = null //  接收全局 Haze 状态
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
@@ -74,18 +74,18 @@ fun SettingsScreen(
     
     var showCacheDialog by remember { mutableStateOf(false) }
     
-    // 🥚 版本号点击彩蛋
+    //  版本号点击彩蛋
     var versionClickCount by remember { mutableIntStateOf(0) }
     var showEasterEggDialog by remember { mutableStateOf(false) }
     
-    // 🔥🔥 [新增] 用于重播新手引导
+    //  [新增] 用于重播新手引导
     var showOnboardingReplay by remember { mutableStateOf(false) }
     
-    // 🧹 缓存清理动画状态
+    //  缓存清理动画状态
     var showCacheAnimation by remember { mutableStateOf(false) }
     var cacheProgress by remember { mutableStateOf<CacheClearProgress?>(null) }
     
-    // 🧹 启动缓存清理动画
+    //  启动缓存清理动画
     LaunchedEffect(showCacheAnimation) {
         if (showCacheAnimation) {
             val breakdown = com.android.purebilibili.core.util.CacheUtils.getCacheBreakdown(context)
@@ -120,7 +120,7 @@ fun SettingsScreen(
         viewModel.refreshCacheSize()
     }
     
-    // 🔥🔥 [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
+    //  [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
     val view = androidx.compose.ui.platform.LocalView.current
     androidx.compose.runtime.DisposableEffect(Unit) {
         val window = (context as? android.app.Activity)?.window
@@ -150,7 +150,7 @@ fun SettingsScreen(
         )
     }
     
-    // 🧹 缓存清理动画对话框
+    //  缓存清理动画对话框
     if (showCacheAnimation && cacheProgress != null) {
         CacheClearAnimationDialog(
             progress = cacheProgress!!,
@@ -161,7 +161,7 @@ fun SettingsScreen(
         )
     }
     
-    // 🥚 版本号彩蛋弹窗
+    //  版本号彩蛋弹窗
     if (showEasterEggDialog) {
         AlertDialog(
             onDismissRequest = { 
@@ -170,7 +170,7 @@ fun SettingsScreen(
             },
             title = { 
                 Text(
-                    "🥚 你发现了彩蛋！", 
+                    " 你发现了彩蛋！", 
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 ) 
@@ -191,9 +191,9 @@ fun SettingsScreen(
                         "感谢你使用 BiliPai！\n\n" +
                         "这是一个用爱发电的开源项目，\n" +
                         "希望能为你带来更好的观影体验。\n\n" +
-                        "🌟 如果喜欢，欢迎 Star ⭐\n" +
-                        "🐛 遇到问题，欢迎反馈\n" +
-                        "💖 感谢每一位支持者！",
+                        " 如果喜欢，欢迎 Star ⭐\n" +
+                        " 遇到问题，欢迎反馈\n" +
+                        " 感谢每一位支持者！",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(horizontal = 8.dp)
@@ -219,11 +219,11 @@ fun SettingsScreen(
         )
     }
 
-    // 🔥🔥 [关键修复] 创建本地 haze 状态用于设置页面的模糊效果
+    //  [关键修复] 创建本地 haze 状态用于设置页面的模糊效果
     // 因为 OnboardingBottomSheet 必须在 haze 源 Box 内部才能使用 hazeChild
     val settingsHazeState = remember { dev.chrisbanes.haze.HazeState() }
     
-    // 🔥🔥 整个设置页面包裹在 haze 源 Box 中
+    //  整个设置页面包裹在 haze 源 Box 中
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -247,14 +247,14 @@ fun SettingsScreen(
                 )
             },
             containerColor = MaterialTheme.colorScheme.background,
-            // 🔥🔥 [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，避免底部白色填充
+            //  [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，避免底部白色填充
             contentWindowInsets = WindowInsets(0.dp)
         ) { padding ->
             LazyColumn(
                 modifier = Modifier
                     .padding(padding)
                     .fillMaxSize(),
-                // 🔥🔥 [修复] 添加底部导航栏内边距，确保沉浸式效果
+                //  [修复] 添加底部导航栏内边距，确保沉浸式效果
                 contentPadding = WindowInsets.navigationBars.asPaddingValues()
             ) {
                 // ═══════════════════════════════════════════════════
@@ -263,7 +263,7 @@ fun SettingsScreen(
                 item { SettingsSectionTitle("关注作者") }
                 item {
                     SettingsGroup {
-                    // 🔥 使用 mono 图标 + iconTint，与其他设置项风格统一，自动支持深浅色
+                    //  使用 mono 图标 + iconTint，与其他设置项风格统一，自动支持深浅色
                     SettingClickableItem(
                         iconPainter = androidx.compose.ui.res.painterResource(com.android.purebilibili.R.drawable.ic_telegram_mono),
                         title = "Telegram 频道",
@@ -307,7 +307,7 @@ fun SettingsScreen(
                 }
                 
                 // ═══════════════════════════════════════════════════
-                // 🔒 隐私与安全
+                //  隐私与安全
                 // ═══════════════════════════════════════════════════
                 item { SettingsSectionTitle("隐私与安全") }
                 item {
@@ -341,7 +341,7 @@ fun SettingsScreen(
                 }
                 
                 // ═══════════════════════════════════════════════════
-                // 💾 数据与存储
+                //  数据与存储
                 // ═══════════════════════════════════════════════════
                 item { SettingsSectionTitle("数据与存储") }
                 item {
@@ -392,7 +392,7 @@ fun SettingsScreen(
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        "💡 默认位置随应用卸载而删除，选择自定义位置可保留下载文件",
+                                        " 默认位置随应用卸载而删除，选择自定义位置可保留下载文件",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = iOSOrange
                                     )
@@ -496,7 +496,7 @@ fun SettingsScreen(
                             iconTint = iOSPurple
                         )
                         Divider()
-                        // 📋 导出日志
+                        //  导出日志
                         SettingClickableItem(
                             icon = CupertinoIcons.Default.DocTextMagnifyingglass,
                             title = "导出日志",
@@ -531,7 +531,7 @@ fun SettingsScreen(
                             iconTint = iOSPurple
                         )
                         Divider()
-                        // 🥚 版本号彩蛋 - 点击 7 次触发
+                        //  版本号彩蛋 - 点击 7 次触发
                         SettingClickableItem(
                             icon = CupertinoIcons.Default.InfoCircle,
                             title = "版本",
@@ -553,7 +553,7 @@ fun SettingsScreen(
                             iconTint = iOSTeal
                         )
                         Divider()
-                        // 🌟 重播新手引导
+                        //  重播新手引导
                         SettingClickableItem(
                             icon = CupertinoIcons.Default.BookCircle,  // 更合适的引导/教程图标
                             title = "重播新手引导",
@@ -562,7 +562,7 @@ fun SettingsScreen(
                             iconTint = iOSPink
                         )
                         Divider()
-                        // 🥚 彩蛋开关
+                        //  彩蛋开关
                         val easterEggEnabled by com.android.purebilibili.core.store.SettingsManager
                             .getEasterEggEnabled(context).collectAsState(initial = true)
                         val coroutineScope = rememberCoroutineScope()
@@ -586,7 +586,7 @@ fun SettingsScreen(
             }
         }
         
-        // 🔥🔥 [关键修复] OnboardingBottomSheet 必须在 haze 源 Box 内部
+        //  [关键修复] OnboardingBottomSheet 必须在 haze 源 Box 内部
         // 这样 hazeChild 可以模糊同一个 Box 内的兄弟内容 (Scaffold/LazyColumn)
         OnboardingBottomSheet(
             visible = showOnboardingReplay,
@@ -600,10 +600,10 @@ fun SettingsScreen(
 @Composable
 fun SettingsSectionTitle(title: String) {
     Text(
-        text = title.uppercase(),  // 🍎 iOS 风格大写
+        text = title.uppercase(),  //  iOS 风格大写
         style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,  // 🍎 更淡的颜色
-        letterSpacing = 0.5.sp,  // 🍎 字符间距
+        color = MaterialTheme.colorScheme.onSurfaceVariant,  //  更淡的颜色
+        letterSpacing = 0.5.sp,  //  字符间距
         modifier = Modifier.padding(start = 32.dp, top = 24.dp, bottom = 8.dp)
     )
 }
@@ -613,9 +613,9 @@ fun SettingsGroup(content: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = Modifier
             .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(12.dp)),  // 🍎 iOS 圆角
+            .clip(RoundedCornerShape(12.dp)),  //  iOS 圆角
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 0.dp,  // 🍎 iOS 不太使用阴影
+        shadowElevation = 0.dp,  //  iOS 不太使用阴影
         tonalElevation = 1.dp
     ) {
         Column(content = content)
@@ -629,7 +629,7 @@ fun SettingSwitchItem(
     subtitle: String? = null,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    // 🔥 新增：图标颜色
+    //  新增：图标颜色
     iconTint: Color = MaterialTheme.colorScheme.primary
 ) {
     Row(
@@ -640,7 +640,7 @@ fun SettingSwitchItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (icon != null) {
-            // 🔥 彩色圆形背景图标
+            //  彩色圆形背景图标
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -659,7 +659,7 @@ fun SettingSwitchItem(
                 Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        // 🍎 iOS 风格开关 - 🔥🔥 [修复] 使用主题色
+        //  iOS 风格开关 -  [修复] 使用主题色
         val primaryColor = MaterialTheme.colorScheme.primary
         CupertinoSwitch(
             checked = checked,
@@ -680,7 +680,7 @@ fun SettingClickableItem(
     title: String,
     value: String? = null,
     onClick: (() -> Unit)? = null,
-    // 🔥 新增：图标颜色
+    //  新增：图标颜色
     iconTint: Color = MaterialTheme.colorScheme.primary
 ) {
     Row(
@@ -692,7 +692,7 @@ fun SettingClickableItem(
     ) {
         if (icon != null || iconPainter != null) {
             if (iconTint != Color.Unspecified) {
-                // 🔥 彩色圆形背景图标
+                //  彩色圆形背景图标
                 Box(
                     modifier = Modifier
                         .size(36.dp)
@@ -707,7 +707,7 @@ fun SettingClickableItem(
                     }
                 }
             } else {
-                // 🔥 使用图标原始颜色（无背景容器）
+                //  使用图标原始颜色（无背景容器）
                 Box(
                     modifier = Modifier.size(36.dp),
                     contentAlignment = Alignment.Center

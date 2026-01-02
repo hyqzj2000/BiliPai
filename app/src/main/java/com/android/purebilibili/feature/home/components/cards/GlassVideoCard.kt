@@ -6,7 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -39,35 +39,35 @@ import com.android.purebilibili.core.util.rememberHapticFeedback
 import com.android.purebilibili.core.util.HapticType
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
-// 🔥 共享元素过渡
+//  共享元素过渡
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.core.spring
 import com.android.purebilibili.core.ui.LocalSharedTransitionScope
 import com.android.purebilibili.core.ui.LocalAnimatedVisibilityScope
 
 /**
- * 🍎 玻璃拟态卡片 - Vision Pro 风格 (性能优化版)
+ *  玻璃拟态卡片 - Vision Pro 风格 (性能优化版)
  * 
  * 特点：
  * - 彩虹渐变边框
  * - 轻量阴影
  * - 悬浮播放按钮
  * 
- * 🚀 性能优化：移除了昂贵的 blur() 和多层阴影
+ *  性能优化：移除了昂贵的 blur() 和多层阴影
  */
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun GlassVideoCard(
     video: VideoItem,
-    index: Int = 0,  // 🔥🔥 [新增] 索引用于动画延迟
-    animationEnabled: Boolean = true,  // 🔥 卡片动画开关
-    transitionEnabled: Boolean = false, // 🔥 卡片过渡动画开关
-    onDismiss: (() -> Unit)? = null,    // 🗑️ [新增] 删除/过滤回调（长按触发）
+    index: Int = 0,  //  [新增] 索引用于动画延迟
+    animationEnabled: Boolean = true,  //  卡片动画开关
+    transitionEnabled: Boolean = false, //  卡片过渡动画开关
+    onDismiss: (() -> Unit)? = null,    //  [新增] 删除/过滤回调（长按触发）
     onClick: (String, Long) -> Unit
 ) {
     val haptic = rememberHapticFeedback()
     
-    // 🗑️ [新增] 长按删除菜单状态
+    //  [新增] 长按删除菜单状态
     var showDismissMenu by remember { mutableStateOf(false) }
     
     val coverUrl = remember(video.bvid) {
@@ -77,19 +77,19 @@ fun GlassVideoCard(
     val primaryColor = MaterialTheme.colorScheme.primary
     val onSurface = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
-    // 🍎 玻璃背景色 - 使用系统主题色自动适配
+    //  玻璃背景色 - 使用系统主题色自动适配
     val glassBackground = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
     
-    // 🔥 获取屏幕尺寸用于计算归一化坐标
+    //  获取屏幕尺寸用于计算归一化坐标
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
     
-    // 🔥 记录卡片位置
+    //  记录卡片位置
     var cardBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     
-    // 🔥 尝试获取共享元素作用域
+    //  尝试获取共享元素作用域
     val sharedTransitionScope = LocalSharedTransitionScope.current
     val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
     
@@ -106,14 +106,14 @@ fun GlassVideoCard(
         )
     }
     
-    // 🔥 卡片容器 - 支持共享元素过渡（受开关控制）
+    //  卡片容器 - 支持共享元素过渡（受开关控制）
     val cardModifier = if (transitionEnabled && sharedTransitionScope != null && animatedVisibilityScope != null) {
         with(sharedTransitionScope) {
             Modifier
                 .sharedBounds(
                     sharedContentState = rememberSharedContentState(key = "video_cover_${video.bvid}"),
                     animatedVisibilityScope = animatedVisibilityScope,
-                    // 🔥 添加回弹效果的 spring 动画
+                    //  添加回弹效果的 spring 动画
                     boundsTransform = { _, _ ->
                         spring(
                             dampingRatio = 0.7f,   // 轻微回弹
@@ -121,7 +121,7 @@ fun GlassVideoCard(
                         )
                     },
                     clipInOverlayDuringTransition = OverlayClip(
-                        RoundedCornerShape(20.dp)  // 🔥 过渡时保持圆角
+                        RoundedCornerShape(20.dp)  //  过渡时保持圆角
                     )
                 )
         }
@@ -133,18 +133,18 @@ fun GlassVideoCard(
         modifier = cardModifier
             .fillMaxWidth()
             .padding(6.dp)
-            // 🔥🔥 [新增] 进场动画 - 支持开关控制
+            //  [新增] 进场动画 - 支持开关控制
             .animateEnter(index = index, key = video.bvid, animationEnabled = animationEnabled)
-            // 🔥🔥 [新增] 记录卡片位置
+            //  [新增] 记录卡片位置
             .onGloballyPositioned { coordinates ->
                 cardBounds = coordinates.boundsInRoot()
             }
     ) {
-        // 🚀 [性能优化] 移除 blur() 层，改用静态渐变色
+        //  [性能优化] 移除 blur() 层，改用静态渐变色
         // 原：blur(radius = 20.dp) 成本很高
         // 新：单层轻量阴影
         
-        // 🍎 玻璃卡片主体
+        //  玻璃卡片主体
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -159,7 +159,7 @@ fun GlassVideoCard(
                 )
                 // 单层轻量阴影
                 .background(glassBackground)
-                // 🗑️ [新增] 长按手势检测
+                //  [新增] 长按手势检测
                 .pointerInput(onDismiss) {
                     if (onDismiss != null) {
                         detectTapGestures(
@@ -194,7 +194,7 @@ fun GlassVideoCard(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // 🍎 封面区域
+                //  封面区域
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -212,12 +212,12 @@ fun GlassVideoCard(
                                 ambientColor = Color.Black.copy(alpha = 0.3f)
                             )
                     ) {
-                        // 🚀 [性能优化] 降低图片尺寸
+                        //  [性能优化] 降低图片尺寸
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data(coverUrl)
-                                .crossfade(100)  // 🚀 缩短淡入时间
-                                .size(360, 225)  // 🚀 优化：360x225 替代 480x300
+                                .crossfade(100)  //  缩短淡入时间
+                                .size(360, 225)  //  优化：360x225 替代 480x300
                                 .memoryCacheKey("glass_${video.bvid}")
                                 .diskCacheKey("glass_${video.bvid}")
                                 .build(),
@@ -226,7 +226,7 @@ fun GlassVideoCard(
                             contentScale = ContentScale.Crop
                         )
                         
-                        // 🍎 底部渐变遮罩
+                        //  底部渐变遮罩
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -242,8 +242,8 @@ fun GlassVideoCard(
                                 )
                         )
                         
-                        // 🔥 已删除悬浮播放按钮
-                        // 🍎 时长标签 - 玻璃胶囊
+                        //  已删除悬浮播放按钮
+                        //  时长标签 - 玻璃胶囊
                         Surface(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
@@ -260,7 +260,7 @@ fun GlassVideoCard(
                             )
                         }
                         
-                        // 🔥 [新增] 竖屏标签 - 左上角显示
+                        //  [新增] 竖屏标签 - 左上角显示
                         if (video.isVertical) {
                             Surface(
                                 modifier = Modifier
@@ -281,7 +281,7 @@ fun GlassVideoCard(
                     }
                 }
                 
-                // 🍎 信息区域
+                //  信息区域
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -323,7 +323,7 @@ fun GlassVideoCard(
                         
                         Spacer(modifier = Modifier.width(8.dp))
                         
-                        // 播放量 - 🔥 [修复] 只在有播放量时显示
+                        // 播放量 -  [修复] 只在有播放量时显示
                         if (video.stat.view > 0) {
                             Text(
                                 text = "${FormatUtils.formatStat(video.stat.view.toLong())}播放",
@@ -335,7 +335,7 @@ fun GlassVideoCard(
                 }
             }
             
-            // 🌟 顶部高光线
+            //  顶部高光线
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -355,7 +355,7 @@ fun GlassVideoCard(
         }
     }
     
-    // 🗑️ [新增] 长按删除菜单
+    //  [新增] 长按删除菜单
     DropdownMenu(
         expanded = showDismissMenu,
         onDismissRequest = { showDismissMenu = false }

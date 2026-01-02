@@ -21,7 +21,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -66,7 +66,7 @@ private const val AUTO_HIDE_DELAY = 4000L
 enum class FullscreenGestureMode { None, Brightness, Volume, Seek }
 
 /**
- * 🔥 全屏播放器覆盖层
+ *  全屏播放器覆盖层
  * 
  * 从小窗展开时直接显示全屏播放器
  * 包含：亮度调节、音量调节、进度滑动等完整功能
@@ -87,18 +87,18 @@ fun FullscreenPlayerOverlay(
     var showControls by remember { mutableStateOf(true) }
     var lastInteractionTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
     
-    // 🔥🔥 [新增] 弹幕设置面板状态
+    //  [新增] 弹幕设置面板状态
     var showDanmakuSettings by remember { mutableStateOf(false) }
     
-    // 🔥 播放速度状态
+    //  播放速度状态
     var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
     var showSpeedMenu by remember { mutableStateOf(false) }
     
-    // 🔥 视频比例状态
+    //  视频比例状态
     var aspectRatio by remember { mutableStateOf(VideoAspectRatio.FIT) }
     var showRatioMenu by remember { mutableStateOf(false) }
     
-    // 🔥 画质选择菜单状态
+    //  画质选择菜单状态
     var showQualityMenu by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     
@@ -268,15 +268,15 @@ fun FullscreenPlayerOverlay(
                 )
             }
     ) {
-        // 🔥🔥 [重构] 弹幕管理器 (使用共享单例，确保横竖屏切换时保持状态)
+        //  [重构] 弹幕管理器 (使用共享单例，确保横竖屏切换时保持状态)
         val danmakuManager = rememberDanmakuManager()
         
-        // 🔥 弹幕开关设置
+        //  弹幕开关设置
         val danmakuEnabled by SettingsManager
             .getDanmakuEnabled(context)
             .collectAsState(initial = true)
         
-        // 🔥 弹幕设置（全局持久化）
+        //  弹幕设置（全局持久化）
         val danmakuOpacity by SettingsManager
             .getDanmakuOpacity(context)
             .collectAsState(initial = 0.85f)
@@ -290,7 +290,7 @@ fun FullscreenPlayerOverlay(
             .getDanmakuArea(context)
             .collectAsState(initial = 0.5f)
         
-        // 🔥 获取当前 cid 并加载弹幕
+        //  获取当前 cid 并加载弹幕
         val currentCid = miniPlayerManager.currentCid
         LaunchedEffect(currentCid, danmakuEnabled, player) {
             if (currentCid > 0 && danmakuEnabled) {
@@ -311,7 +311,7 @@ fun FullscreenPlayerOverlay(
             }
         }
         
-        // 🔥 弹幕设置变化时实时应用
+        //  弹幕设置变化时实时应用
         LaunchedEffect(danmakuOpacity, danmakuFontScale, danmakuSpeed, danmakuDisplayArea) {
             danmakuManager.updateSettings(
                 opacity = danmakuOpacity,
@@ -321,24 +321,24 @@ fun FullscreenPlayerOverlay(
             )
         }
         
-        // 🔥 绑定 Player（不在 onDispose 中释放，单例会保持状态）
-        // 🔥🔥 [修复] 移除 detachView 调用，避免横竖屏切换时弹幕消失
+        //  绑定 Player（不在 onDispose 中释放，单例会保持状态）
+        //  [修复] 移除 detachView 调用，避免横竖屏切换时弹幕消失
         // attachView 会自动暂停旧视图，不需要手动 detach
         DisposableEffect(player) {
             player?.let { danmakuManager.attachPlayer(it) }
             onDispose {
-                // 🔥 不再调用 detachView()
+                //  不再调用 detachView()
                 // 单例模式下，视图引用会在下次 attachView 时自动更新
             }
         }
         
-        // 🔥🔥 [修复] 使用 LifecycleOwner 监听真正的 Activity 生命周期
+        //  [修复] 使用 LifecycleOwner 监听真正的 Activity 生命周期
         // DisposableEffect(Unit) 会在重组时触发，导致 player 引用被清除
         val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
         DisposableEffect(lifecycleOwner) {
             val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
                 if (event == androidx.lifecycle.Lifecycle.Event.ON_DESTROY) {
-                    android.util.Log.d("FullscreenPlayer", "🗑️ ON_DESTROY: Clearing danmaku references")
+                    android.util.Log.d("FullscreenPlayer", " ON_DESTROY: Clearing danmaku references")
                     danmakuManager.clearViewReference()
                 }
             }
@@ -350,7 +350,7 @@ fun FullscreenPlayerOverlay(
         
         // 视频播放器
         player?.let { exoPlayer ->
-            // 🔥 应用播放速度
+            //  应用播放速度
             LaunchedEffect(playbackSpeed) {
                 exoPlayer.setPlaybackSpeed(playbackSpeed)
             }
@@ -372,14 +372,14 @@ fun FullscreenPlayerOverlay(
                 modifier = Modifier.fillMaxSize()
             )
             
-            // 🔥🔥 [新增] DanmakuView (覆盖在 PlayerView 上方) - 使用 DanmakuRenderEngine
+            //  [新增] DanmakuView (覆盖在 PlayerView 上方) - 使用 DanmakuRenderEngine
             if (danmakuEnabled) {
                 AndroidView(
                     factory = { ctx ->
                         com.bytedance.danmaku.render.engine.DanmakuView(ctx).apply {
                             setBackgroundColor(android.graphics.Color.TRANSPARENT)
                             danmakuManager.attachView(this)
-                            com.android.purebilibili.core.util.Logger.d("FullscreenDanmaku", "🎨 DanmakuView (RenderEngine) created for fullscreen")
+                            com.android.purebilibili.core.util.Logger.d("FullscreenDanmaku", " DanmakuView (RenderEngine) created for fullscreen")
                         }
                     },
                     modifier = Modifier.fillMaxSize()
@@ -436,7 +436,7 @@ fun FullscreenPlayerOverlay(
                             modifier = Modifier.weight(1f)
                         )
                         
-                        // 🔥🔥 [新增] 弹幕开关按钮
+                        //  [新增] 弹幕开关按钮
                         IconButton(onClick = { danmakuManager.isEnabled = !danmakuManager.isEnabled }) {
                             Icon(
                                 if (danmakuEnabled) CupertinoIcons.Default.TextBubble else CupertinoIcons.Default.TextBubble,
@@ -445,14 +445,14 @@ fun FullscreenPlayerOverlay(
                             )
                         }
                         
-                        // 🔥🔥 [新增] 弹幕设置按钮
+                        //  [新增] 弹幕设置按钮
                         IconButton(onClick = { showDanmakuSettings = true }) {
                             Icon(CupertinoIcons.Default.Gear, "弹幕设置", tint = Color.White)
                         }
                     }
                 }
                 
-                // 🔥🔥 [修改] 移除中间大按钮，改为在底部控制栏左侧显示
+                //  [修改] 移除中间大按钮，改为在底部控制栏左侧显示
                 
                 // 底部进度条和控制按钮
                 Box(
@@ -470,7 +470,7 @@ fun FullscreenPlayerOverlay(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            // 🔥🔥 [新增] 左下角播放/暂停按钮
+                            //  [新增] 左下角播放/暂停按钮
                             Surface(
                                 onClick = {
                                     lastInteractionTime = System.currentTimeMillis()
@@ -520,7 +520,7 @@ fun FullscreenPlayerOverlay(
                         
                         Spacer(modifier = Modifier.height(4.dp))
                         
-                        // 🔥 底部控制按钮行
+                        //  底部控制按钮行
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End,
@@ -545,9 +545,9 @@ fun FullscreenPlayerOverlay(
             }
         }
         
-        // 🔥🔥 [新增] 弹幕设置面板
+        //  [新增] 弹幕设置面板
         if (showDanmakuSettings) {
-            // 🔥 使用本地状态确保滑动条可以更新
+            //  使用本地状态确保滑动条可以更新
             var localOpacity by remember(danmakuOpacity) { mutableFloatStateOf(danmakuOpacity) }
             var localFontScale by remember(danmakuFontScale) { mutableFloatStateOf(danmakuFontScale) }
             var localSpeed by remember(danmakuSpeed) { mutableFloatStateOf(danmakuSpeed) }
@@ -582,7 +582,7 @@ fun FullscreenPlayerOverlay(
             )
         }
         
-        // 🔥 播放速度选择菜单
+        //  播放速度选择菜单
         if (showSpeedMenu) {
             Box(
                 modifier = Modifier
@@ -605,7 +605,7 @@ fun FullscreenPlayerOverlay(
             }
         }
         
-        // 🔥 视频比例选择菜单
+        //  视频比例选择菜单
         if (showRatioMenu) {
             Box(
                 modifier = Modifier
@@ -649,7 +649,7 @@ private fun GestureIndicator(
         ) {
             when (mode) {
                 FullscreenGestureMode.Brightness -> {
-                    // 🔥 亮度图标：CupertinoIcons SunMax (iOS SF Symbols 风格)
+                    //  亮度图标：CupertinoIcons SunMax (iOS SF Symbols 风格)
                     Icon(CupertinoIcons.Default.SunMax, null, tint = Color.White, modifier = Modifier.size(36.dp))
                     Spacer(Modifier.height(8.dp))
                     Text("亮度", color = Color.White, fontSize = 14.sp)
@@ -657,7 +657,7 @@ private fun GestureIndicator(
                     Text("${(value * 100).toInt()}%", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 }
                 FullscreenGestureMode.Volume -> {
-                    // 🔥 动态音量图标：3 级
+                    //  动态音量图标：3 级
                     val volumeIcon = when {
                         value < 0.01f -> CupertinoIcons.Default.SpeakerSlash
                         value < 0.5f -> CupertinoIcons.Default.Speaker
@@ -684,7 +684,7 @@ private fun GestureIndicator(
 }
 
 /**
- * 🔥 全屏底部控制按钮
+ *  全屏底部控制按钮
  */
 @Composable
 private fun FullscreenControlButton(

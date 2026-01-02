@@ -31,7 +31,7 @@ import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 
 /**
- * 🧹 缓存清理进度数据
+ *  缓存清理进度数据
  */
 data class CacheClearProgress(
     val current: Long,
@@ -65,7 +65,7 @@ private object CacheAnimationColors {
 // ==================== 粒子系统 ====================
 
 /**
- * 🌟 消散粒子数据
+ *  消散粒子数据
  */
 private data class DissolveParticle(
     val id: Int,
@@ -217,7 +217,7 @@ fun DataDissolveParticles(
 // ==================== 圆形进度环 ====================
 
 /**
- * 🔄 iOS 风格圆形进度环
+ *  iOS 风格圆形进度环
  * 替代传统进度条，更加优雅现代
  */
 @Composable
@@ -353,7 +353,7 @@ fun CircularProgressRing(
 }
 
 /**
- * 🗑️ 优雅的垃圾桶/闪光图标动画
+ *  优雅的垃圾桶/闪光图标动画
  * 
  * 新增：动态填充层显示缓存减少
  * @param fillLevel 填充等级（1.0=满，0.0=空）
@@ -420,7 +420,7 @@ fun CenterCleaningIcon(
         val centerY = canvasSize / 2
         
         if (isComplete) {
-            // ✅ 完成状态 - 绘制对勾
+            //  完成状态 - 绘制对勾
             val checkPaint = iconColor
             val checkStroke = canvasSize * 0.08f
             
@@ -454,7 +454,7 @@ fun CenterCleaningIcon(
                 center = Offset(centerX, centerY)
             )
         } else {
-            // 🗑️ 清理中 - 绘制优雅的垃圾桶
+            //  清理中 - 绘制优雅的垃圾桶
             val trashWidth = canvasSize * 0.5f
             val trashHeight = canvasSize * 0.55f
             val trashLeft = centerX - trashWidth / 2
@@ -615,7 +615,7 @@ fun CenterCleaningIcon(
 // ==================== 对话框组件 ====================
 
 /**
- * 🧹 缓存清理确认对话框
+ *  缓存清理确认对话框
  */
 @Composable
 fun CacheClearConfirmDialog(
@@ -666,7 +666,7 @@ fun CacheClearConfirmDialog(
 }
 
 /**
- * 🎬 iOS 风格缓存清理动画全屏对话框
+ *  iOS 风格缓存清理动画全屏对话框
  * 
  * 设计理念：
  * - 圆形进度环替代传统进度条

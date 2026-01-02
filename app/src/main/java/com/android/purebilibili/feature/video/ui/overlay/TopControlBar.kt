@@ -5,7 +5,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -47,7 +47,7 @@ fun TopControlBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            // 🔥 只在全屏模式下添加状态栏padding，非全屏时视频区域已在状态栏下方
+            //  只在全屏模式下添加状态栏padding，非全屏时视频区域已在状态栏下方
             .then(if (isFullscreen) Modifier.statusBarsPadding() else Modifier)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -88,7 +88,7 @@ fun TopControlBar(
                 )
             }
         }
-        // 🔥 独立的弹幕设置按钮，更直观
+        //  独立的弹幕设置按钮，更直观
         Spacer(modifier = Modifier.width(4.dp))
         Surface(
             onClick = onDanmakuSettingsClick,

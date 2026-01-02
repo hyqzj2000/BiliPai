@@ -10,7 +10,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -22,7 +22,7 @@ import androidx.core.content.ContextCompat
 import com.android.purebilibili.core.theme.BiliPink
 
 /**
- * 🔐 权限请求 Composable - 带说明对话框
+ *  权限请求 Composable - 带说明对话框
  * 
  * 使用方式:
  * ```

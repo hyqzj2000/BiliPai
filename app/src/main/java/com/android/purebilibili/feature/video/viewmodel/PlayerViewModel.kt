@@ -1,5 +1,5 @@
 // File: feature/video/PlayerViewModel.kt
-// 🔥🔥 [重构] 简化版 PlayerViewModel - 使用 UseCase 层
+//  [重构] 简化版 PlayerViewModel - 使用 UseCase 层
 package com.android.purebilibili.feature.video.viewmodel
 
 import com.android.purebilibili.feature.video.usecase.*
@@ -65,13 +65,15 @@ sealed class PlayerUiState {
         val isLiked: Boolean = false,
         val coinCount: Int = 0,
         val emoteMap: Map<String, String> = emptyMap(),
-        val isInWatchLater: Boolean = false,  // 🔥 稍后再看状态
-        val followingMids: Set<Long> = emptySet(),  // 🔥 已关注用户 ID 列表
-        val videoTags: List<VideoTag> = emptyList(),  // 🔥 视频标签列表
-        // 🔥 CDN 线路切换
+        val isInWatchLater: Boolean = false,  //  稍后再看状态
+        val followingMids: Set<Long> = emptySet(),  //  已关注用户 ID 列表
+        val videoTags: List<VideoTag> = emptyList(),  //  视频标签列表
+        //  CDN 线路切换
         val currentCdnIndex: Int = 0,  // 当前使用的 CDN 索引 (0=主线路)
         val allVideoUrls: List<String> = emptyList(),  // 所有可用视频 URL (主+备用)
-        val allAudioUrls: List<String> = emptyList()   // 所有可用音频 URL (主+备用)
+        val allAudioUrls: List<String> = emptyList(),   // 所有可用音频 URL (主+备用)
+        // 🖼️ [新增] 视频预览图数据（用于进度条拖动预览）
+        val videoshotData: VideoshotData? = null
     ) : PlayerUiState() {
         val cdnCount: Int get() = allVideoUrls.size.coerceAtLeast(1)
         val currentCdnLabel: String get() = "线路${currentCdnIndex + 1}"
@@ -92,7 +94,7 @@ class PlayerViewModel : ViewModel() {
     private val interactionUseCase = VideoInteractionUseCase()
     private val qualityManager = QualityManager()
     
-    // 🔌 插件系统（替代旧的SponsorBlockUseCase）
+    //  插件系统（替代旧的SponsorBlockUseCase）
     private var pluginCheckJob: Job? = null
     
     // State
@@ -113,13 +115,13 @@ class PlayerViewModel : ViewModel() {
     private val _coinDialogVisible = MutableStateFlow(false)
     val coinDialogVisible = _coinDialogVisible.asStateFlow()
     
-    // 🔌 SponsorBlock (via Plugin)
+    //  SponsorBlock (via Plugin)
     private val _showSkipButton = MutableStateFlow(false)
     val showSkipButton = _showSkipButton.asStateFlow()
     private val _currentSkipReason = MutableStateFlow<String?>( null)
     val currentSkipReason = _currentSkipReason.asStateFlow()
     
-    // 🔥 Download state
+    //  Download state
     private val _downloadProgress = MutableStateFlow(-1f)
     val downloadProgress = _downloadProgress.asStateFlow()
     
@@ -128,13 +130,13 @@ class PlayerViewModel : ViewModel() {
     private var currentCid = 0L
     private var exoPlayer: ExoPlayer? = null
     private var heartbeatJob: Job? = null
-    private var appContext: android.content.Context? = null  // 🔥🔥 [新增] 保存 Context 用于网络检测
+    private var appContext: android.content.Context? = null  //  [新增] 保存 Context 用于网络检测
     
-    // 🔥 Public Player Accessor
+    //  Public Player Accessor
     val currentPlayer: Player?
         get() = exoPlayer
         
-    // 🔥 Audio Mode State
+    //  Audio Mode State
     private val _isInAudioMode = MutableStateFlow(false)
     val isInAudioMode = _isInAudioMode.asStateFlow()
     
@@ -142,7 +144,7 @@ class PlayerViewModel : ViewModel() {
         _isInAudioMode.value = enabled
     }
 
-    // 🔥 Sleep Timer State
+    //  Sleep Timer State
     private val _sleepTimerMinutes = MutableStateFlow<Int?>(null)
     val sleepTimerMinutes = _sleepTimerMinutes.asStateFlow()
     private var sleepTimerJob: Job? = null
@@ -181,7 +183,7 @@ class PlayerViewModel : ViewModel() {
      * 初始化持久化存储（需要在使用前调用一次）
      */
     fun initWithContext(context: android.content.Context) {
-        appContext = context.applicationContext  // 🔥🔥 [新增] 保存应用 Context
+        appContext = context.applicationContext  //  [新增] 保存应用 Context
         playbackUseCase.initWithContext(context)
     }
     
@@ -192,15 +194,15 @@ class PlayerViewModel : ViewModel() {
         playbackUseCase.attachPlayer(player)
         player.volume = 1.0f
         
-        // 🔥🔥 [新增] 添加播放完成监听器
+        //  [新增] 添加播放完成监听器
         player.addListener(playbackEndListener)
     }
     
-    // 🔥🔥 [新增] 播放完成监听器
+    //  [新增] 播放完成监听器
     private val playbackEndListener = object : Player.Listener {
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED) {
-                // 🔥🔥 [修复] 检查自动播放设置
+                //  [修复] 检查自动播放设置
                 val context = appContext ?: return
                 val autoPlayEnabled = context.getSharedPreferences("settings_prefs", android.content.Context.MODE_PRIVATE)
                     .getBoolean("auto_play", true)
@@ -210,14 +212,14 @@ class PlayerViewModel : ViewModel() {
                     playNextRecommended()
                 } else {
                     // 自动播放关闭，只显示提示
-                    toast("🎬 播放完成")
+                    toast(" 播放完成")
                 }
             }
         }
     }
     
     /**
-     * 🔥🔥 [新增] 自动播放推荐视频（使用 PlaylistManager）
+     *  [新增] 自动播放推荐视频（使用 PlaylistManager）
      */
     fun playNextRecommended() {
         // 使用 PlaylistManager 获取下一曲
@@ -233,7 +235,7 @@ class PlayerViewModel : ViewModel() {
             // 根据播放模式显示不同提示
             val mode = PlaylistManager.playMode.value
             when (mode) {
-                PlayMode.SEQUENTIAL -> toast("🎬 播放列表结束")
+                PlayMode.SEQUENTIAL -> toast(" 播放列表结束")
                 PlayMode.REPEAT_ONE -> {
                     // 单曲循环：重新播放当前视频
                     exoPlayer?.seekTo(0)
@@ -245,7 +247,7 @@ class PlayerViewModel : ViewModel() {
     }
     
     /**
-     * 🔥🔥 [新增] 播放上一个推荐视频（使用 PlaylistManager）
+     *  [新增] 播放上一个推荐视频（使用 PlaylistManager）
      */
     fun playPreviousRecommended() {
         // 使用 PlaylistManager 获取上一曲
@@ -265,13 +267,13 @@ class PlayerViewModel : ViewModel() {
     fun loadVideo(bvid: String) {
         if (bvid.isBlank()) return
         
-        // 🔥 防止重复加载：只有在正在加载同一视频时才跳过
+        //  防止重复加载：只有在正在加载同一视频时才跳过
         if (currentBvid == bvid && _uiState.value is PlayerUiState.Loading) {
-            Logger.d("PlayerVM", "⚠️ Already loading $bvid, skip")
+            Logger.d("PlayerVM", " Already loading $bvid, skip")
             return
         }
         
-        // 🔥🔥 [修复] 更智能的重复检测：只有播放器真正在播放同一视频时才跳过
+        //  [修复] 更智能的重复检测：只有播放器真正在播放同一视频时才跳过
         // 如果播放器已停止、出错或处于空闲状态，应该重新加载
         val player = exoPlayer
         val isPlayerHealthy = player != null && 
@@ -280,8 +282,8 @@ class PlayerViewModel : ViewModel() {
         
         val currentSuccess = _uiState.value as? PlayerUiState.Success
         if (currentSuccess != null && currentBvid == bvid && isPlayerHealthy && player != null) {
-            Logger.d("PlayerVM", "⚠️ $bvid already playing healthy, skip reload")
-            // 🔥 确保音量正常
+            Logger.d("PlayerVM", " $bvid already playing healthy, skip reload")
+            //  确保音量正常
             player.volume = 1.0f
             if (!player.isPlaying) {
                 player.play()
@@ -297,7 +299,7 @@ class PlayerViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = PlayerUiState.Loading.Initial
             
-            // 🔥🔥 [网络感知] 根据网络类型选择默认清晰度
+            //  [网络感知] 根据网络类型选择默认清晰度
             var defaultQuality = appContext?.let { NetworkUtils.getDefaultQualityId(it) } ?: 64
             
             // 📉 [省流量] 省流量模式逻辑：
@@ -308,7 +310,7 @@ class PlayerViewModel : ViewModel() {
                 com.android.purebilibili.core.store.SettingsManager.getDataSaverModeSync(it) 
             } ?: com.android.purebilibili.core.store.SettingsManager.DataSaverMode.MOBILE_ONLY
             
-            // 🔥 判断是否应该限制画质
+            //  判断是否应该限制画质
             val shouldLimitQuality = when (dataSaverMode) {
                 com.android.purebilibili.core.store.SettingsManager.DataSaverMode.OFF -> false
                 com.android.purebilibili.core.store.SettingsManager.DataSaverMode.ALWAYS -> true  // 任何网络都限制
@@ -331,7 +333,7 @@ class PlayerViewModel : ViewModel() {
                         playbackUseCase.playVideo(result.playUrl, cachedPosition)
                     }
                     
-                    // 🔥 收集所有 CDN URL (主+备用)
+                    //  收集所有 CDN URL (主+备用)
                     val allVideoUrls = buildList {
                         add(result.playUrl)
                         result.cachedDashVideos
@@ -370,26 +372,29 @@ class PlayerViewModel : ViewModel() {
                         isFavorited = result.isFavorited,
                         isLiked = result.isLiked,
                         coinCount = result.coinCount,
-                        // 🔥 CDN 线路
+                        //  CDN 线路
                         currentCdnIndex = 0,
                         allVideoUrls = allVideoUrls,
                         allAudioUrls = allAudioUrls
                     )
                     
-                    // 🔥🔥 [新增] 异步加载关注列表（用于推荐视频的已关注标签）
+                    //  [新增] 异步加载关注列表（用于推荐视频的已关注标签）
                     if (result.isLoggedIn) {
                         loadFollowingMids()
                     }
                     
-                    // 🔥 异步加载视频标签
+                    //  异步加载视频标签
                     loadVideoTags(bvid)
                     
-                    // 🔥🔥 [新增] 更新播放列表
+                    // 🖼️ 异步加载视频预览图（用于进度条拖动预览）
+                    loadVideoshot(bvid, result.info.cid)
+                    
+                    //  [新增] 更新播放列表
                     updatePlaylist(result.info, result.related)
                     
                     startHeartbeat()
                     
-                    // 🔌 通知插件系统：视频已加载
+                    //  通知插件系统：视频已加载
                     PluginManager.getEnabledPlayerPlugins().forEach { plugin ->
                         try {
                             plugin.onVideoLoad(bvid, currentCid)
@@ -398,7 +403,7 @@ class PlayerViewModel : ViewModel() {
                         }
                     }
                     
-                    // 🔌 启动插件检查定时器
+                    //  启动插件检查定时器
                     startPluginCheck()
                     
                     AnalyticsHelper.logVideoPlay(bvid, result.info.title, result.info.owner.name)
@@ -412,7 +417,7 @@ class PlayerViewModel : ViewModel() {
     }
     
     /**
-     * 🔥🔥 [新增] 更新播放列表
+     *  [新增] 更新播放列表
      */
     private fun updatePlaylist(currentInfo: com.android.purebilibili.data.model.response.ViewInfo, related: List<com.android.purebilibili.data.model.response.RelatedVideo>) {
         val currentPlaylist = PlaylistManager.playlist.value
@@ -449,19 +454,19 @@ class PlayerViewModel : ViewModel() {
              
              // 3. 更新列表，保持当前索引不变
              PlaylistManager.setPlaylist(newPlaylist, currentIndex)
-             Logger.d("PlayerVM", "📋 播放列表已扩展: 保留 ${history.size} 项历史, 更新后续 ${relatedItems.size} 项")
+             Logger.d("PlayerVM", " 播放列表已扩展: 保留 ${history.size} 项历史, 更新后续 ${relatedItems.size} 项")
         } else {
             // 新播放逻辑：当前 + 推荐
             val playlist = listOf(currentFullItem) + relatedItems
             PlaylistManager.setPlaylist(playlist, 0)
-            Logger.d("PlayerVM", "📋 播放列表已重置: 1 + ${relatedItems.size} 项")
+            Logger.d("PlayerVM", " 播放列表已重置: 1 + ${relatedItems.size} 项")
         }
     }
     
     fun retry() {
         val bvid = currentBvid.takeIf { it.isNotBlank() } ?: return
         
-        // 🔥 检查当前错误类型，如果是全局冷却则清除所有冷却
+        //  检查当前错误类型，如果是全局冷却则清除所有冷却
         val currentState = _uiState.value
         if (currentState is PlayerUiState.Error && 
             currentState.error is VideoLoadError.GlobalCooldown) {
@@ -477,7 +482,7 @@ class PlayerViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 重载视频 - 保持当前播放位置
+     *  重载视频 - 保持当前播放位置
      * 用于设置面板的"重载视频"功能
      */
     fun reloadVideo() {
@@ -500,7 +505,7 @@ class PlayerViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 切换 CDN 线路
+     *  切换 CDN 线路
      * 在当前画质下切换到下一个 CDN
      */
     fun switchCdn() {
@@ -540,7 +545,7 @@ class PlayerViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 切换到指定 CDN 线路
+     *  切换到指定 CDN 线路
      */
     fun switchCdnTo(index: Int) {
         val current = _uiState.value as? PlayerUiState.Success ?: return
@@ -593,7 +598,7 @@ class PlayerViewModel : ViewModel() {
                 .onSuccess { 
                     val newStat = current.info.stat.copy(favorite = current.info.stat.favorite + if (it) 1 else -1)
                     _uiState.value = current.copy(info = current.info.copy(stat = newStat), isFavorited = it)
-                    // 🥚 彩蛋：使用趣味消息（如果设置开启）
+                    //  彩蛋：使用趣味消息（如果设置开启）
                     val message = if (it && appContext?.let { ctx -> com.android.purebilibili.core.store.SettingsManager.isEasterEggEnabledSync(ctx) } == true) {
                         com.android.purebilibili.core.util.EasterEggs.getFavoriteMessage()
                     } else {
@@ -613,7 +618,7 @@ class PlayerViewModel : ViewModel() {
                     val newStat = current.info.stat.copy(like = current.info.stat.like + if (it) 1 else -1)
                     _uiState.value = current.copy(info = current.info.copy(stat = newStat), isLiked = it)
                     if (it) _likeBurstVisible.value = true
-                    // 🥚 彩蛋：使用趣味消息（如果设置开启）
+                    //  彩蛋：使用趣味消息（如果设置开启）
                     val message = if (it && appContext?.let { ctx -> com.android.purebilibili.core.store.SettingsManager.isEasterEggEnabledSync(ctx) } == true) {
                         com.android.purebilibili.core.util.EasterEggs.getLikeMessage()
                     } else {
@@ -625,7 +630,7 @@ class PlayerViewModel : ViewModel() {
         }
     }
     
-    // 🔥 稍后再看
+    //  稍后再看
     fun toggleWatchLater() {
         val current = _uiState.value as? PlayerUiState.Success ?: return
         viewModelScope.launch {
@@ -638,7 +643,7 @@ class PlayerViewModel : ViewModel() {
         }
     }
     
-    // 🔥 异步加载关注列表（用于推荐视频的已关注标签）
+    //  异步加载关注列表（用于推荐视频的已关注标签）
     private fun loadFollowingMids() {
         viewModelScope.launch {
             try {
@@ -668,14 +673,14 @@ class PlayerViewModel : ViewModel() {
                 // 更新 UI 状态
                 val current = _uiState.value as? PlayerUiState.Success ?: return@launch
                 _uiState.value = current.copy(followingMids = allMids)
-                Logger.d("PlayerVM", "🔥 Loaded ${allMids.size} following mids")
+                Logger.d("PlayerVM", " Loaded ${allMids.size} following mids")
             } catch (e: Exception) {
-                Logger.d("PlayerVM", "⚠️ Failed to load following mids: ${e.message}")
+                Logger.d("PlayerVM", " Failed to load following mids: ${e.message}")
             }
         }
     }
     
-    // 🔥 异步加载视频标签
+    //  异步加载视频标签
     private fun loadVideoTags(bvid: String) {
         viewModelScope.launch {
             try {
@@ -686,7 +691,23 @@ class PlayerViewModel : ViewModel() {
                     Logger.d("PlayerVM", "🏷️ Loaded ${response.data.size} video tags")
                 }
             } catch (e: Exception) {
-                Logger.d("PlayerVM", "⚠️ Failed to load video tags: ${e.message}")
+                Logger.d("PlayerVM", " Failed to load video tags: ${e.message}")
+            }
+        }
+    }
+    
+    // 🖼️ 异步加载视频预览图数据（用于进度条拖动预览）
+    private fun loadVideoshot(bvid: String, cid: Long) {
+        viewModelScope.launch {
+            try {
+                val videoshotData = VideoRepository.getVideoshot(bvid, cid)
+                if (videoshotData != null && videoshotData.isValid) {
+                    val current = _uiState.value as? PlayerUiState.Success ?: return@launch
+                    _uiState.value = current.copy(videoshotData = videoshotData)
+                    Logger.d("PlayerVM", "🖼️ Loaded videoshot: ${videoshotData.image.size} images, ${videoshotData.index.size} frames")
+                }
+            } catch (e: Exception) {
+                Logger.d("PlayerVM", "🖼️ Failed to load videoshot: ${e.message}")
             }
         }
     }
@@ -708,7 +729,7 @@ class PlayerViewModel : ViewModel() {
                     var newState = current.copy(coinCount = minOf(current.coinCount + count, 2))
                     if (alsoLike && !current.isLiked) newState = newState.copy(isLiked = true)
                     _uiState.value = newState
-                    // 🥚 彩蛋：使用趣味消息（如果设置开启）
+                    //  彩蛋：使用趣味消息（如果设置开启）
                     val message = if (appContext?.let { ctx -> com.android.purebilibili.core.store.SettingsManager.isEasterEggEnabledSync(ctx) } == true) {
                         com.android.purebilibili.core.util.EasterEggs.getCoinMessage()
                     } else {
@@ -743,7 +764,7 @@ class PlayerViewModel : ViewModel() {
     
     // ========== Download ==========
     
-    // 🔥 下载对话框状态
+    //  下载对话框状态
     private val _showDownloadDialog = MutableStateFlow(false)
     val showDownloadDialog = _showDownloadDialog.asStateFlow()
     
@@ -844,7 +865,7 @@ class PlayerViewModel : ViewModel() {
         if (current.isQualitySwitching) { toast("正在切换中..."); return }
         if (current.currentQuality == qualityId) { toast("已是当前清晰度"); return }
         
-        // 🔥🔥 [新增] 权限检查
+        //  [新增] 权限检查
         val permissionResult = qualityManager.checkQualityPermission(
             qualityId, current.isLoggedIn, current.isVip
         )
@@ -880,12 +901,12 @@ class PlayerViewModel : ViewModel() {
                 _uiState.value = current.copy(
                     playUrl = result.videoUrl, audioUrl = result.audioUrl,
                     currentQuality = result.actualQuality, isQualitySwitching = false, requestedQuality = null,
-                    // 🔥🔥 [修复] 更新缓存的DASH流，否则后续画质切换可能失败
+                    //  [修复] 更新缓存的DASH流，否则后续画质切换可能失败
                     cachedDashVideos = result.cachedDashVideos.ifEmpty { current.cachedDashVideos },
                     cachedDashAudios = result.cachedDashAudios.ifEmpty { current.cachedDashAudios }
                 )
                 val label = current.qualityLabels.getOrNull(current.qualityIds.indexOf(result.actualQuality)) ?: "${result.actualQuality}"
-                toast(if (result.wasFallback) "⚠️ 已切换至 $label" else "✓ 已切换至 $label")
+                toast(if (result.wasFallback) " 已切换至 $label" else "✓ 已切换至 $label")
             } else {
                 _uiState.value = current.copy(isQualitySwitching = false, requestedQuality = null)
                 toast("清晰度切换失败")
@@ -934,7 +955,7 @@ class PlayerViewModel : ViewModel() {
         }
     }
     
-    // ========== 🔌 Plugin System (SponsorBlock等) ==========
+    // ==========  Plugin System (SponsorBlock等) ==========
     
     /**
      * 定期检查插件（约500ms一次）
@@ -955,7 +976,7 @@ class PlayerViewModel : ViewModel() {
                             is SkipAction.SkipTo -> {
                                 playbackUseCase.seekTo(action.positionMs)
                                 toast(action.reason)
-                                Logger.d("PlayerVM", "🔌 Plugin ${plugin.name} skipped to ${action.positionMs}ms")
+                                Logger.d("PlayerVM", " Plugin ${plugin.name} skipped to ${action.positionMs}ms")
                             }
                             else -> {}
                         }
@@ -1004,7 +1025,7 @@ class PlayerViewModel : ViewModel() {
         heartbeatJob?.cancel()
         pluginCheckJob?.cancel()
         
-        // 🔌 通知插件系统：视频结束
+        //  通知插件系统：视频结束
         PluginManager.getEnabledPlayerPlugins().forEach { plugin ->
             try {
                 plugin.onVideoEnd()

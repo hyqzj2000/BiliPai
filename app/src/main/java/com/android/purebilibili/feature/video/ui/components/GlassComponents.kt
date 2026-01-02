@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * 🔥 iOS 风格毛玻璃卡片
+ *  iOS 风格毛玻璃卡片
  * 
  * 使用半透明背景和模糊效果创建类似 iOS 的磨砂玻璃效果
  */
@@ -30,7 +30,7 @@ fun GlassCard(
     borderAlpha: Float = 0.2f,
     content: @Composable BoxScope.() -> Unit
 ) {
-    // 🔥 使用 MaterialTheme 颜色代替硬编码
+    //  使用 MaterialTheme 颜色代替硬编码
     val surfaceColor = MaterialTheme.colorScheme.surface
     val outlineColor = MaterialTheme.colorScheme.outline
     
@@ -54,7 +54,7 @@ fun GlassCard(
 }
 
 /**
- * 🔥 iOS 风格时长标签 (毛玻璃效果)
+ *  iOS 风格时长标签 (毛玻璃效果)
  * 注意：此组件用于视频封面上，保持固定的黑色半透明背景以确保可读性
  */
 @Composable

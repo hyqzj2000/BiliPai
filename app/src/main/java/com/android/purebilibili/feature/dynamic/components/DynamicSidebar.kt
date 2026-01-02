@@ -9,7 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -32,11 +32,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.feature.dynamic.SidebarUser
 
 /**
- * 🔥 动态侧边栏 - 显示关注的UP主（支持展开/收起、在线状态）
+ *  动态侧边栏 - 显示关注的UP主（支持展开/收起、在线状态）
  */
 @Composable
 fun DynamicSidebar(
@@ -66,13 +66,13 @@ fun DynamicSidebar(
             contentPadding = PaddingValues(vertical = 8.dp),
             modifier = Modifier.fillMaxSize()
         ) {
-            // 🔥 展开/收起按钮
+            //  展开/收起按钮
             item {
                 IconButton(
                     onClick = onToggleExpand,
                     modifier = Modifier.size(40.dp)
                 ) {
-                    // 🔥 [新增] 旋转动画
+                    //  [新增] 旋转动画
                     val rotation by animateFloatAsState(
                         targetValue = if (isExpanded) 0f else 180f,
                         animationSpec = androidx.compose.animation.core.spring(
@@ -91,7 +91,7 @@ fun DynamicSidebar(
                 Spacer(modifier = Modifier.height(8.dp))
             }
             
-            // 🔥 [简化] 移除「全部」按钮，直接显示 UP 主列表
+            //  [简化] 移除「全部」按钮，直接显示 UP 主列表
             // 关注的UP主列表 - 带瀑布入场动画
             itemsIndexed(users, key = { _, u -> "sidebar_${u.uid}" }) { index, user ->
                 CascadeSidebarItem(
@@ -111,7 +111,7 @@ fun DynamicSidebar(
 }
 
 /**
- * 🔥 [新增] 瀑布入场动画包装器
+ *  [新增] 瀑布入场动画包装器
  * 每个项目有递增的延迟，形成瀑布展开效果
  */
 @Composable
@@ -154,7 +154,7 @@ private fun CascadeSidebarItem(
 }
 
 /**
- * 🔥 侧边栏项目（文字图标）
+ *  侧边栏项目（文字图标）
  */
 @Composable
 fun SidebarItem(
@@ -203,7 +203,7 @@ fun SidebarItem(
 }
 
 /**
- * 🔥 侧边栏用户项（头像 + 在线状态）
+ *  侧边栏用户项（头像 + 在线状态）
  */
 @Composable
 fun SidebarUserItem(
@@ -249,7 +249,7 @@ fun SidebarUserItem(
                 contentScale = ContentScale.Crop
             )
             
-            // 🔥 在线状态指示器（红点）
+            //  在线状态指示器（红点）
             if (user.isLive) {
                 Box(
                     modifier = Modifier

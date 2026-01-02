@@ -36,7 +36,7 @@ enum class PlayMode {
 }
 
 /**
- * 🔥 播放列表管理器
+ *  播放列表管理器
  * 
  * 管理播放队列、播放模式和上下曲切换
  */
@@ -65,7 +65,7 @@ object PlaylistManager {
      * @param startIndex 开始播放的索引
      */
     fun setPlaylist(items: List<PlaylistItem>, startIndex: Int = 0) {
-        Logger.d(TAG, "📋 设置播放列表: ${items.size} 项, 从索引 $startIndex 开始")
+        Logger.d(TAG, " 设置播放列表: ${items.size} 项, 从索引 $startIndex 开始")
         _playlist.value = items
         _currentIndex.value = startIndex.coerceIn(0, items.lastIndex.coerceAtLeast(0))
         
@@ -82,7 +82,7 @@ object PlaylistManager {
      */
     fun addToPlaylist(item: PlaylistItem) {
         if (_playlist.value.any { it.bvid == item.bvid }) {
-            Logger.d(TAG, "⚠️ ${item.bvid} 已在播放列表中")
+            Logger.d(TAG, " ${item.bvid} 已在播放列表中")
             return
         }
         _playlist.value = _playlist.value + item
@@ -126,7 +126,7 @@ object PlaylistManager {
         _currentIndex.value = -1
         shuffleHistory.clear()
         shuffleHistoryIndex = -1
-        Logger.d(TAG, "🗑️ 清空播放列表")
+        Logger.d(TAG, " 清空播放列表")
     }
     
     /**
@@ -134,7 +134,7 @@ object PlaylistManager {
      */
     fun setPlayMode(mode: PlayMode) {
         _playMode.value = mode
-        Logger.d(TAG, "🔄 播放模式: $mode")
+        Logger.d(TAG, " 播放模式: $mode")
     }
     
     /**
@@ -147,7 +147,7 @@ object PlaylistManager {
             PlayMode.REPEAT_ONE -> PlayMode.SEQUENTIAL
         }
         _playMode.value = newMode
-        Logger.d(TAG, "🔄 切换播放模式: $newMode")
+        Logger.d(TAG, " 切换播放模式: $newMode")
         return newMode
     }
     
@@ -205,7 +205,7 @@ object PlaylistManager {
         
         return if (nextIndex != null && nextIndex in list.indices) {
             _currentIndex.value = nextIndex
-            Logger.d(TAG, "⏭️ 播放下一曲: ${list[nextIndex].title} (索引: $nextIndex)")
+            Logger.d(TAG, " 播放下一曲: ${list[nextIndex].title} (索引: $nextIndex)")
             list[nextIndex]
         } else {
             Logger.d(TAG, "⏹️ 播放列表结束")
@@ -310,7 +310,7 @@ object PlaylistManager {
         return when (_playMode.value) {
             PlayMode.SEQUENTIAL -> "🔂"
             PlayMode.SHUFFLE -> "🔀"
-            PlayMode.REPEAT_ONE -> "🔁"
+            PlayMode.REPEAT_ONE -> ""
         }
     }
 }

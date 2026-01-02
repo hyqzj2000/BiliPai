@@ -9,7 +9,7 @@ import com.google.firebase.analytics.ktx.logEvent
 import com.google.firebase.ktx.Firebase
 
 /**
- * 📊 Firebase Analytics 工具类
+ *  Firebase Analytics 工具类
  * 封装 Firebase Analytics，提供统一的用户行为追踪接口
  * 
  * 追踪的事件类型：
@@ -32,7 +32,7 @@ object AnalyticsHelper {
     fun init(context: Context) {
         try {
             analytics = Firebase.analytics
-            Logger.d(TAG, "📊 Firebase Analytics initialized")
+            Logger.d(TAG, " Firebase Analytics initialized")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to init Firebase Analytics", e)
         }
@@ -45,7 +45,7 @@ object AnalyticsHelper {
         isEnabled = enabled
         try {
             analytics?.setAnalyticsCollectionEnabled(enabled)
-            Logger.d(TAG, "📊 Analytics collection ${if (enabled) "enabled" else "disabled"}")
+            Logger.d(TAG, " Analytics collection ${if (enabled) "enabled" else "disabled"}")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to set Analytics enabled state", e)
         }
@@ -76,7 +76,7 @@ object AnalyticsHelper {
         }
     }
     
-    // ========== 📱 屏幕浏览追踪 ==========
+    // ==========  屏幕浏览追踪 ==========
     
     /**
      * 记录屏幕浏览
@@ -90,13 +90,13 @@ object AnalyticsHelper {
                 param(FirebaseAnalytics.Param.SCREEN_NAME, screenName)
                 screenClass?.let { param(FirebaseAnalytics.Param.SCREEN_CLASS, it) }
             }
-            Logger.d(TAG, "📊 Screen view: $screenName")
+            Logger.d(TAG, " Screen view: $screenName")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to log screen view", e)
         }
     }
     
-    // ========== 🎬 视频播放追踪 ==========
+    // ==========  视频播放追踪 ==========
     
     /**
      * 记录视频播放开始
@@ -119,7 +119,7 @@ object AnalyticsHelper {
                 author?.let { param("video_author", it.take(50)) }
                 duration?.let { param("video_duration_sec", it) }
             }
-            Logger.d(TAG, "📊 Video play: $videoId")
+            Logger.d(TAG, " Video play: $videoId")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to log video play", e)
         }
@@ -145,7 +145,7 @@ object AnalyticsHelper {
                 param("progress_percent", progress.toLong())
                 param("watch_time_sec", watchTime)
             }
-            Logger.d(TAG, "📊 Video progress: $videoId at $progress%")
+            Logger.d(TAG, " Video progress: $videoId at $progress%")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to log video progress", e)
         }
@@ -161,7 +161,7 @@ object AnalyticsHelper {
                 param("video_id", videoId)
                 param("total_watch_time_sec", totalWatchTime)
             }
-            Logger.d(TAG, "📊 Video complete: $videoId")
+            Logger.d(TAG, " Video complete: $videoId")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to log video complete", e)
         }
@@ -179,7 +179,7 @@ object AnalyticsHelper {
             analytics?.logEvent(FirebaseAnalytics.Event.SEARCH) {
                 param(FirebaseAnalytics.Param.SEARCH_TERM, query.take(100))
             }
-            Logger.d(TAG, "📊 Search: $query")
+            Logger.d(TAG, " Search: $query")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to log search", e)
         }
@@ -276,7 +276,7 @@ object AnalyticsHelper {
         }
     }
     
-    // ========== 🚀 应用事件追踪 ==========
+    // ==========  应用事件追踪 ==========
     
     /**
      * 记录应用打开
@@ -285,7 +285,7 @@ object AnalyticsHelper {
         if (!isEnabled) return
         try {
             analytics?.logEvent(FirebaseAnalytics.Event.APP_OPEN, null)
-            Logger.d(TAG, "📊 App open")
+            Logger.d(TAG, " App open")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to log app open", e)
         }
@@ -300,7 +300,7 @@ object AnalyticsHelper {
             analytics?.logEvent(FirebaseAnalytics.Event.LOGIN) {
                 param(FirebaseAnalytics.Param.METHOD, method)
             }
-            Logger.d(TAG, "📊 Login: $method")
+            Logger.d(TAG, " Login: $method")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to log login", e)
         }
@@ -368,7 +368,7 @@ object AnalyticsHelper {
         }
     }
     
-    // ========== 📺 直播追踪 ==========
+    // ==========  直播追踪 ==========
     
     /**
      * 记录直播观看
@@ -381,7 +381,7 @@ object AnalyticsHelper {
                 param("title", title.take(100))
                 upName?.let { param("up_name", it.take(50)) }
             }
-            Logger.d(TAG, "📊 Live play: roomId=$roomId")
+            Logger.d(TAG, " Live play: roomId=$roomId")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to log live play", e)
         }
@@ -402,7 +402,7 @@ object AnalyticsHelper {
         }
     }
     
-    // ========== ❌ 错误事件追踪 (用于分析问题) ==========
+    // ==========  错误事件追踪 (用于分析问题) ==========
     
     /**
      * 记录视频播放错误 (Analytics 层面，用于统计)

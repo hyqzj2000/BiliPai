@@ -8,7 +8,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * 🔥 分区数据类
+ *  分区数据类
  */
 data class PartitionCategory(
     val id: Int,
@@ -34,18 +34,18 @@ data class PartitionCategory(
 )
 
 /**
- * 🔥 所有分区列表 (参考官方 Bilibili API)
+ *  所有分区列表 (参考官方 Bilibili API)
  * tid 是 Bilibili 官方的分区 ID，用于 x/web-interface/newlist 接口
  * 注意：番剧/国创/电影/电视剧/纪录片是特殊分区，使用不同的 API
  */
 val allPartitions = listOf(
     // === 视频分区（支持 newlist API）===
-    PartitionCategory(1, "动画", "🎬", Color(0xFF7BBEEC)),
-    PartitionCategory(13, "番剧", "📺", Color(0xFFFF6B9D)),      // 特殊分区
+    PartitionCategory(1, "动画", "", Color(0xFF7BBEEC)),
+    PartitionCategory(13, "番剧", "", Color(0xFFFF6B9D)),      // 特殊分区
     PartitionCategory(167, "国创", "🇨🇳", Color(0xFFFF7575)),     // 特殊分区
     PartitionCategory(3, "音乐", "🎵", Color(0xFF6BB5FF)),
     PartitionCategory(129, "舞蹈", "💃", Color(0xFFFF7777)),
-    PartitionCategory(4, "游戏", "🎮", Color(0xFF7FD37F)),
+    PartitionCategory(4, "游戏", "", Color(0xFF7FD37F)),
     PartitionCategory(36, "知识", "📚", Color(0xFFFFD166)),
     PartitionCategory(188, "科技", "💻", Color(0xFF6ECFFF)),
     PartitionCategory(234, "运动", "⚽", Color(0xFF7BC96F)),
@@ -59,13 +59,13 @@ val allPartitions = listOf(
     PartitionCategory(5, "娱乐", "🎪", Color(0xFFFFB347)),
     // === 特殊分区（番剧/电影等使用不同 API）===
     PartitionCategory(23, "电影", "🎞️", Color(0xFFFF9E7A)),      // 特殊分区
-    PartitionCategory(11, "电视剧", "📺", Color(0xFFFF85A2)),    // 特殊分区
+    PartitionCategory(11, "电视剧", "", Color(0xFFFF85A2)),    // 特殊分区
     PartitionCategory(177, "纪录片", "🎥", Color(0xFF7BC8F6)),   // 特殊分区
     PartitionCategory(181, "影视", "🎦", Color(0xFFC7A4FF))      // 特殊分区
 )
 
 /**
- * 🔥 分区页面
+ *  分区页面
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,7 +94,7 @@ fun PartitionScreen(
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // 🔥 快捷访问
+            //  快捷访问
             Text(
                 text = "快捷访问",
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -126,7 +126,7 @@ fun PartitionScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // 🔥 全部分区
+            //  全部分区
             Text(
                 text = "全部分区",
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -134,7 +134,7 @@ fun PartitionScreen(
                 fontSize = 16.sp
             )
             
-            // 🔥 分区网格
+            //  分区网格
             LazyVerticalGrid(
                 columns = GridCells.Fixed(4),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -154,7 +154,7 @@ fun PartitionScreen(
 }
 
 /**
- * 🔥 分区项目
+ *  分区项目
  */
 @Composable
 private fun PartitionItem(

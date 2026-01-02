@@ -35,7 +35,7 @@ data class HeartParticle(
 )
 
 /**
- * 🔥 点赞成功爆裂动画
+ *  点赞成功爆裂动画
  */
 @Composable
 fun LikeBurstAnimation(
@@ -130,7 +130,7 @@ fun LikeBurstAnimation(
 }
 
 /**
- * 🔥 三连成功庆祝动画
+ *  三连成功庆祝动画
  */
 @Composable
 fun TripleSuccessAnimation(
@@ -224,7 +224,7 @@ fun TripleSuccessAnimation(
 }
 
 /**
- * 🔥 投币成功动画
+ *  投币成功动画
  */
 @Composable
 fun CoinSuccessAnimation(

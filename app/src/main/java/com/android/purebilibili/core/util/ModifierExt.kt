@@ -94,11 +94,11 @@ fun VideoGridItemSkeleton() {
 }
 
 // =============================================================================
-// 🔥 Android 特有功能：触觉反馈 + 弹性点击
+//  Android 特有功能：触觉反馈 + 弹性点击
 // =============================================================================
 
 /**
- * 🔥 触觉反馈类型枚举
+ *  触觉反馈类型枚举
  */
 enum class HapticType {
     LIGHT,      // 轻触 (选择/切换)
@@ -108,7 +108,7 @@ enum class HapticType {
 }
 
 /**
- * 🔥 触发触觉反馈
+ *  触发触觉反馈
  * 
  * - Android 12+: 使用新的 GESTURE_START/END 等常量
  * - 旧版本: 使用 LONG_PRESS/KEYBOARD_TAP 等
@@ -148,7 +148,7 @@ fun rememberHapticFeedback(): (HapticType) -> Unit {
 }
 
 /**
- * 🔥 弹性点击 Modifier (带缩放动画 + 触觉反馈)
+ *  弹性点击 Modifier (带缩放动画 + 触觉反馈)
  * 
  * Android 特有的交互体验：
  * - 按压时缩放到 0.95
@@ -189,7 +189,7 @@ fun Modifier.bouncyClickable(
 }
 
 /**
- * 🔥 带涟漪效果的触觉点击 (Material 3 风格)
+ *  带涟漪效果的触觉点击 (Material 3 风格)
  */
 fun Modifier.hapticClickable(
     hapticType: HapticType = HapticType.LIGHT,
@@ -205,7 +205,7 @@ fun Modifier.hapticClickable(
 }
 
 /**
- * 🍎 iOS 风格点击效果 Modifier
+ *  iOS 风格点击效果 Modifier
  * 
  * 特性：
  * - 按压时缩放到 0.96f (iOS 默认值)
@@ -225,7 +225,7 @@ fun Modifier.iOSTapEffect(
     val isPressed by interactionSource.collectIsPressedAsState()
     val haptic = rememberHapticFeedback()
     
-    // 🍎 iOS 风格弹性动画
+    //  iOS 风格弹性动画
     val animatedScale by animateFloatAsState(
         targetValue = if (isPressed) scale else 1f,
         animationSpec = spring(
@@ -252,7 +252,7 @@ fun Modifier.iOSTapEffect(
 }
 
 /**
- * 🍎 iOS 风格点击效果 (仅动画，不处理点击事件)
+ *  iOS 风格点击效果 (仅动画，不处理点击事件)
  * 
  * 用于需要自定义点击处理的场景
  */
@@ -278,7 +278,7 @@ fun Modifier.iOSTapScale(
 }
 
 /**
- * 🍎 iOS 风格卡片点击效果 Modifier（增强版）
+ *  iOS 风格卡片点击效果 Modifier（增强版）
  * 
  * 特性：
  * - 按压时：缩放 + 轻微下沉 + 透明度微调
@@ -300,7 +300,7 @@ fun Modifier.iOSCardTapEffect(
     val isPressed by interactionSource.collectIsPressedAsState()
     val haptic = rememberHapticFeedback()
     
-    // 🍎 多维度动画状态
+    //  多维度动画状态
     val animatedScale by animateFloatAsState(
         targetValue = if (isPressed) pressScale else 1f,
         animationSpec = spring(

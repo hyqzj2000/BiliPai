@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * 🎨 BiliPai 设计系统
+ *  BiliPai 设计系统
  * 统一的颜色、间距、圆角、动画时长定义
  */
 object BiliDesign {
@@ -103,14 +103,14 @@ object BiliDesign {
 }
 
 /**
- * 🔥 Shimmer 骨架屏效果 Modifier - 优化版
+ *  Shimmer 骨架屏效果 Modifier - 优化版
  * 用法: Modifier.shimmer()
  */
 fun Modifier.shimmer(
-    durationMillis: Int = 1000,  // 🔥 更快的动画周期
+    durationMillis: Int = 1000,  //  更快的动画周期
     delayMillis: Int = 0
 ): Modifier = composed {
-    // 🔥 使用 MaterialTheme 颜色支持深色模式
+    //  使用 MaterialTheme 颜色支持深色模式
     val baseColor = MaterialTheme.colorScheme.surfaceVariant
     val highlightColor = MaterialTheme.colorScheme.surface
     
@@ -125,12 +125,12 @@ fun Modifier.shimmer(
     val transition = rememberInfiniteTransition(label = "shimmer")
     val translateAnim by transition.animateFloat(
         initialValue = -500f,
-        targetValue = 1500f,  // 🔥 更大的动画范围
+        targetValue = 1500f,  //  更大的动画范围
         animationSpec = infiniteRepeatable(
             animation = tween(
                 durationMillis = durationMillis,
                 delayMillis = delayMillis,
-                easing = FastOutSlowInEasing  // 🔥 更自然的缓动
+                easing = FastOutSlowInEasing  //  更自然的缓动
             ),
             repeatMode = RepeatMode.Restart
         ),
@@ -141,13 +141,13 @@ fun Modifier.shimmer(
         brush = Brush.linearGradient(
             colors = shimmerColors,
             start = Offset(translateAnim, translateAnim * 0.5f),
-            end = Offset(translateAnim + 400f, translateAnim * 0.5f + 200f)  // 🔥 对角线渐变
+            end = Offset(translateAnim + 400f, translateAnim * 0.5f + 200f)  //  对角线渐变
         )
     )
 }
 
 /**
- * 🔥 骨架屏占位符组件
+ *  骨架屏占位符组件
  */
 @Composable
 fun ShimmerBox(
@@ -165,23 +165,23 @@ fun ShimmerBox(
 }
 
 /**
- * 🔥 视频卡片骨架屏 - 优化版
+ *  视频卡片骨架屏 - 优化版
  */
 @Composable
 fun VideoCardSkeleton(
     modifier: Modifier = Modifier,
-    index: Int = 0  // 🔥 支持交错动画延迟
+    index: Int = 0  //  支持交错动画延迟
 ) {
     val delay = index * 80  // 每个卡片延迟 80ms
     
-    // 🔥 使用 MaterialTheme 颜色支持深色模式
+    //  使用 MaterialTheme 颜色支持深色模式
     val cardBackground = MaterialTheme.colorScheme.surfaceVariant
     
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(BiliDesign.Radius.md))
-            .background(cardBackground)  // 🔥 使用主题色
+            .background(cardBackground)  //  使用主题色
             .padding(bottom = BiliDesign.Spacing.sm)
     ) {
         // 封面 - 使用正确的宽高比
@@ -240,7 +240,7 @@ fun VideoCardSkeleton(
 }
 
 /**
- * 🔥 评论骨架屏
+ *  评论骨架屏
  */
 @Composable
 fun CommentSkeleton(
@@ -274,7 +274,7 @@ fun CommentSkeleton(
 }
 
 /**
- * 🔥 加载列表骨架屏
+ *  加载列表骨架屏
  */
 @Composable
 fun ListLoadingSkeleton(

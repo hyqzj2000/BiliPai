@@ -15,7 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.theme.iOSYellow
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.data.model.response.BangumiFilter
@@ -90,7 +90,7 @@ fun BangumiScreen(
         BangumiType.VARIETY
     )
     
-    // 🔥🔥 [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
+    //  [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
     val context = androidx.compose.ui.platform.LocalContext.current
     androidx.compose.runtime.DisposableEffect(Unit) {
         val window = (context as? android.app.Activity)?.window
@@ -155,14 +155,14 @@ fun BangumiScreen(
                 )
             }
         },
-        // 🔥🔥 [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，让内容区域自行处理
+        //  [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，让内容区域自行处理
         contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                // 🔥🔥 [修复] 移除这里的底部内边距，让内容区域自己处理（如 LazyVerticalGrid 的 contentPadding）
+                //  [修复] 移除这里的底部内边距，让内容区域自己处理（如 LazyVerticalGrid 的 contentPadding）
         ) {
             // 模式切换 Tabs (时间表/索引/追番)
             BangumiModeTabs(

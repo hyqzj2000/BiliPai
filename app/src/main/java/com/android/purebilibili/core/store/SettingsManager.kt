@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.map
 private val Context.settingsDataStore by preferencesDataStore(name = "settings_prefs")
 
 /**
- * 🚀 首页设置合并类 - 减少 HomeScreen 重组次数
+ *  首页设置合并类 - 减少 HomeScreen 重组次数
  * 将多个独立的设置流合并为单一流，避免每个设置变化都触发重组
  */
 data class HomeSettings(
@@ -27,9 +27,9 @@ data class HomeSettings(
     val bottomBarLabelMode: Int = 0,       // (0=图标+文字, 1=仅图标, 2=仅文字)
     val isHeaderBlurEnabled: Boolean = true,
     val isBottomBarBlurEnabled: Boolean = true,
-    val cardAnimationEnabled: Boolean = false,    // 🔥 卡片进场动画（默认关闭）
-    val cardTransitionEnabled: Boolean = true,   // 🔥 卡片过渡动画（默认开启）
-    // 🔥🔥 [修复] 默认值改为 true，避免在 Flow 加载实际值之前错误触发弹窗
+    val cardAnimationEnabled: Boolean = false,    //  卡片进场动画（默认关闭）
+    val cardTransitionEnabled: Boolean = true,   //  卡片过渡动画（默认开启）
+    //  [修复] 默认值改为 true，避免在 Flow 加载实际值之前错误触发弹窗
     // 当 Flow 加载完成后，如果实际值是 false，LaunchedEffect 会再次触发并显示弹窗
     val crashTrackingConsentShown: Boolean = true
 )
@@ -41,35 +41,35 @@ object SettingsManager {
     private val KEY_THEME_MODE = intPreferencesKey("theme_mode_v2")
     private val KEY_DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
     private val KEY_BG_PLAY = booleanPreferencesKey("bg_play")
-    // 🔥🔥 [新增] 手势灵敏度和主题色
+    //  [新增] 手势灵敏度和主题色
     private val KEY_GESTURE_SENSITIVITY = floatPreferencesKey("gesture_sensitivity")
     private val KEY_THEME_COLOR_INDEX = intPreferencesKey("theme_color_index")
-    // 🔥🔥 [新增] 应用图标 Key (Blue, Red, Green...)
+    //  [新增] 应用图标 Key (Blue, Red, Green...)
     private val KEY_APP_ICON = androidx.datastore.preferences.core.stringPreferencesKey("app_icon_key")
-    // 🔥🔥 [新增] 底部栏样式 (true=悬浮, false=贴底)
+    //  [新增] 底部栏样式 (true=悬浮, false=贴底)
     private val KEY_BOTTOM_BAR_FLOATING = booleanPreferencesKey("bottom_bar_floating")
-    // 🔥🔥 [新增] 底栏显示模式 (0=图标+文字, 1=仅图标, 2=仅文字)
+    //  [新增] 底栏显示模式 (0=图标+文字, 1=仅图标, 2=仅文字)
     private val KEY_BOTTOM_BAR_LABEL_MODE = intPreferencesKey("bottom_bar_label_mode")
-    // 🔥🔥 [新增] 模糊效果开关
+    //  [新增] 模糊效果开关
     private val KEY_HEADER_BLUR_ENABLED = booleanPreferencesKey("header_blur_enabled")
     private val KEY_BOTTOM_BAR_BLUR_ENABLED = booleanPreferencesKey("bottom_bar_blur_enabled")
-    // �🔥 [新增] 模糊强度 (ULTRA_THIN, THIN, THICK)
+    // � [新增] 模糊强度 (ULTRA_THIN, THIN, THICK)
     private val KEY_BLUR_INTENSITY = stringPreferencesKey("blur_intensity")
-    // �🚀 [合并] 首页展示模式 (0=Grid, 1=Story, 2=Glass)
+    // � [合并] 首页展示模式 (0=Grid, 1=Story, 2=Glass)
     private val KEY_DISPLAY_MODE = intPreferencesKey("display_mode")
-    // 🔥 [新增] 卡片动画开关
+    //  [新增] 卡片动画开关
     private val KEY_CARD_ANIMATION_ENABLED = booleanPreferencesKey("card_animation_enabled")
-    // 🔥 [新增] 卡片过渡动画开关
+    //  [新增] 卡片过渡动画开关
     private val KEY_CARD_TRANSITION_ENABLED = booleanPreferencesKey("card_transition_enabled")
-    // 🚀 [合并] 崩溃追踪同意弹窗
+    //  [合并] 崩溃追踪同意弹窗
     private val KEY_CRASH_TRACKING_CONSENT_SHOWN = booleanPreferencesKey("crash_tracking_consent_shown")
-    // 🔥🔥 [新增] 底栏自定义 - 顺序和可见性
+    //  [新增] 底栏自定义 - 顺序和可见性
     private val KEY_BOTTOM_BAR_ORDER = stringPreferencesKey("bottom_bar_order")  // 逗号分隔的项目顺序
     private val KEY_BOTTOM_BAR_VISIBLE_TABS = stringPreferencesKey("bottom_bar_visible_tabs")  // 逗号分隔的可见项目
-    private val KEY_BOTTOM_BAR_ITEM_COLORS = stringPreferencesKey("bottom_bar_item_colors")  // 🔥 格式: HOME:0,DYNAMIC:1,...
+    private val KEY_BOTTOM_BAR_ITEM_COLORS = stringPreferencesKey("bottom_bar_item_colors")  //  格式: HOME:0,DYNAMIC:1,...
 
     /**
-     * 🚀 合并首页相关设置为单一 Flow
+     *  合并首页相关设置为单一 Flow
      * 避免 HomeScreen 中多个 collectAsState 导致频繁重组
      */
     fun getHomeSettings(context: Context): Flow<HomeSettings> {
@@ -129,7 +129,7 @@ object SettingsManager {
 
     suspend fun setHwDecode(context: Context, value: Boolean) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_HW_DECODE] = value }
-        // 🔥 同步到 SharedPreferences，供同步读取使用
+        //  同步到 SharedPreferences，供同步读取使用
         context.getSharedPreferences("hw_decode_cache", Context.MODE_PRIVATE)
             .edit().putBoolean("hw_decode_enabled", value).apply()
     }
@@ -143,13 +143,13 @@ object SettingsManager {
 
     suspend fun setThemeMode(context: Context, mode: AppThemeMode) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_THEME_MODE] = mode.value }
-        // 🚀 同步到 SharedPreferences，供 PureApplication 同步读取使用
+        //  同步到 SharedPreferences，供 PureApplication 同步读取使用
         // 使用 commit() 确保立即写入
         val success = context.getSharedPreferences("theme_cache", Context.MODE_PRIVATE)
             .edit().putInt("theme_mode", mode.value).commit()
-        com.android.purebilibili.core.util.Logger.d("SettingsManager", "🎨 Theme mode saved: ${mode.value} (${mode.label}), success=$success")
+        com.android.purebilibili.core.util.Logger.d("SettingsManager", " Theme mode saved: ${mode.value} (${mode.label}), success=$success")
         
-        // 🚀 同时应用到 AppCompatDelegate，使当前运行时生效
+        //  同时应用到 AppCompatDelegate，使当前运行时生效
         val nightMode = when (mode) {
             AppThemeMode.FOLLOW_SYSTEM -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
             AppThemeMode.LIGHT -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
@@ -174,7 +174,7 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> preferences[KEY_BG_PLAY] = value }
     }
 
-    // 🔥🔥 [新增] --- 手势灵敏度 (0.5 ~ 2.0, 默认 1.0) ---
+    //  [新增] --- 手势灵敏度 (0.5 ~ 2.0, 默认 1.0) ---
     fun getGestureSensitivity(context: Context): Flow<Float> = context.settingsDataStore.data
         .map { preferences -> preferences[KEY_GESTURE_SENSITIVITY] ?: 1.0f }
 
@@ -184,7 +184,7 @@ object SettingsManager {
         }
     }
 
-    // 🔥🔥 [新增] --- 主题色索引 (0-5, 默认 0 = BiliPink) ---
+    //  [新增] --- 主题色索引 (0-5, 默认 0 = BiliPink) ---
     fun getThemeColorIndex(context: Context): Flow<Int> = context.settingsDataStore.data
         .map { preferences -> preferences[KEY_THEME_COLOR_INDEX] ?: 0 }
 
@@ -195,7 +195,7 @@ object SettingsManager {
     }
     
     
-    // 🔥🔥 --- 首页展示模式 功能方法 ---
+    //  --- 首页展示模式 功能方法 ---
     
     fun getDisplayMode(context: Context): Flow<Int> = context.settingsDataStore.data
         .map { preferences -> preferences[KEY_DISPLAY_MODE] ?: 0 }
@@ -206,7 +206,7 @@ object SettingsManager {
         }
     }
     
-    // 🔥 [新增] --- 卡片进场动画开关 ---
+    //  [新增] --- 卡片进场动画开关 ---
     fun getCardAnimationEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data
         .map { preferences -> preferences[KEY_CARD_ANIMATION_ENABLED] ?: false }  // 默认关闭
 
@@ -214,7 +214,7 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> preferences[KEY_CARD_ANIMATION_ENABLED] = value }
     }
     
-    // 🔥 [新增] --- 卡片过渡动画开关 ---
+    //  [新增] --- 卡片过渡动画开关 ---
     fun getCardTransitionEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data
         .map { preferences -> preferences[KEY_CARD_TRANSITION_ENABLED] ?: true }  // 默认开启
 
@@ -222,7 +222,7 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> preferences[KEY_CARD_TRANSITION_ENABLED] = value }
     }
 
-    // 🔥🔥 [新增] --- 应用图标 ---
+    //  [新增] --- 应用图标 ---
     fun getAppIcon(context: Context): Flow<String> = context.settingsDataStore.data
         .map { preferences -> preferences[KEY_APP_ICON] ?: "3D" }
 
@@ -230,18 +230,18 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> 
             preferences[KEY_APP_ICON] = iconKey
         }
-        // 🔥 同步到 SharedPreferences，供 Application 同步读取
+        //  同步到 SharedPreferences，供 Application 同步读取
         context.getSharedPreferences("app_icon_cache", Context.MODE_PRIVATE)
             .edit().putString("current_icon", iconKey).apply()
     }
     
-    // 🔥 同步读取当前图标设置（用于 Application 启动时同步）
+    //  同步读取当前图标设置（用于 Application 启动时同步）
     fun getAppIconSync(context: Context): String {
         return context.getSharedPreferences("app_icon_cache", Context.MODE_PRIVATE)
             .getString("current_icon", "3D") ?: "3D"
     }
 
-    // 🔥🔥 [新增] --- 底部栏样式 ---
+    //  [新增] --- 底部栏样式 ---
     fun getBottomBarFloating(context: Context): Flow<Boolean> = context.settingsDataStore.data
         .map { preferences -> preferences[KEY_BOTTOM_BAR_FLOATING] ?: true }
 
@@ -249,7 +249,7 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> preferences[KEY_BOTTOM_BAR_FLOATING] = value }
     }
     
-    // 🔥🔥 [新增] --- 底栏显示模式 (0=图标+文字, 1=仅图标, 2=仅文字) ---
+    //  [新增] --- 底栏显示模式 (0=图标+文字, 1=仅图标, 2=仅文字) ---
     fun getBottomBarLabelMode(context: Context): Flow<Int> = context.settingsDataStore.data
         .map { preferences -> preferences[KEY_BOTTOM_BAR_LABEL_MODE] ?: 0 }  // 默认图标+文字
 
@@ -257,7 +257,7 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> preferences[KEY_BOTTOM_BAR_LABEL_MODE] = value }
     }
     
-    // 🔥🔥 [新增] --- 搜索框模糊效果 ---
+    //  [新增] --- 搜索框模糊效果 ---
     fun getHeaderBlurEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data
         .map { preferences -> preferences[KEY_HEADER_BLUR_ENABLED] ?: true }
 
@@ -265,7 +265,7 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> preferences[KEY_HEADER_BLUR_ENABLED] = value }
     }
     
-    // 🔥🔥 [新增] --- 底栏模糊效果 ---
+    //  [新增] --- 底栏模糊效果 ---
     fun getBottomBarBlurEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data
         .map { preferences -> preferences[KEY_BOTTOM_BAR_BLUR_ENABLED] ?: true }
 
@@ -273,12 +273,12 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> preferences[KEY_BOTTOM_BAR_BLUR_ENABLED] = value }
     }
     
-    // 🔥🔥 [修复] --- 模糊强度 (THIN, THICK, APPLE_DOCK) ---
+    //  [修复] --- 模糊强度 (THIN, THICK, APPLE_DOCK) ---
     fun getBlurIntensity(context: Context): Flow<BlurIntensity> = context.settingsDataStore.data
         .map { preferences ->
             when (preferences[KEY_BLUR_INTENSITY]) {
                 "THICK" -> BlurIntensity.THICK
-                "APPLE_DOCK" -> BlurIntensity.APPLE_DOCK  // 🔥 修复：添加 APPLE_DOCK 支持
+                "APPLE_DOCK" -> BlurIntensity.APPLE_DOCK  //  修复：添加 APPLE_DOCK 支持
                 else -> BlurIntensity.THIN  // 默认标准
             }
         }
@@ -289,7 +289,7 @@ object SettingsManager {
         }
     }
     
-    // ========== 🔥🔥 弹幕设置 ==========
+    // ==========  弹幕设置 ==========
     
     private const val DANMAKU_DEFAULTS_VERSION = 2
     private const val DEFAULT_DANMAKU_OPACITY = 0.85f
@@ -366,7 +366,7 @@ object SettingsManager {
         }
     }
     
-    // ========== 🧪 实验性功能 ==========
+    // ==========  实验性功能 ==========
     
     private val KEY_AUTO_1080P = booleanPreferencesKey("exp_auto_1080p")
     private val KEY_AUTO_SKIP_OP_ED = booleanPreferencesKey("exp_auto_skip_op_ed")
@@ -416,11 +416,11 @@ object SettingsManager {
 
     suspend fun setWifiQuality(context: Context, value: Int) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_WIFI_QUALITY] = value }
-        // 🔥 同步到 SharedPreferences，供 NetworkUtils 同步读取
+        //  同步到 SharedPreferences，供 NetworkUtils 同步读取
         // 使用 commit() 确保立即写入
         val success = context.getSharedPreferences("quality_settings", Context.MODE_PRIVATE)
             .edit().putInt("wifi_quality", value).commit()
-        com.android.purebilibili.core.util.Logger.d("SettingsManager", "📶 WiFi 画质已设置: $value (写入成功: $success)")
+        com.android.purebilibili.core.util.Logger.d("SettingsManager", " WiFi 画质已设置: $value (写入成功: $success)")
     }
     
     // --- 流量默认画质 (默认 64 = 720P) ---
@@ -429,14 +429,14 @@ object SettingsManager {
 
     suspend fun setMobileQuality(context: Context, value: Int) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_MOBILE_QUALITY] = value }
-        // 🔥 同步到 SharedPreferences，供 NetworkUtils 同步读取
+        //  同步到 SharedPreferences，供 NetworkUtils 同步读取
         // 使用 commit() 确保立即写入
         val success = context.getSharedPreferences("quality_settings", Context.MODE_PRIVATE)
             .edit().putInt("mobile_quality", value).commit()
-        com.android.purebilibili.core.util.Logger.d("SettingsManager", "📱 流量画质已设置: $value (写入成功: $success)")
+        com.android.purebilibili.core.util.Logger.d("SettingsManager", " 流量画质已设置: $value (写入成功: $success)")
     }
     
-    // 🔥 同步读取画质设置（用于 PlayerViewModel）
+    //  同步读取画质设置（用于 PlayerViewModel）
     fun getWifiQualitySync(context: Context): Int {
         return context.getSharedPreferences("quality_settings", Context.MODE_PRIVATE)
             .getInt("wifi_quality", 80)
@@ -447,7 +447,7 @@ object SettingsManager {
             .getInt("mobile_quality", 64)
     }
     
-    // ========== 🚀 空降助手 (SponsorBlock) ==========
+    // ==========  空降助手 (SponsorBlock) ==========
     
     private val KEY_SPONSOR_BLOCK_ENABLED = booleanPreferencesKey("sponsor_block_enabled")
     private val KEY_SPONSOR_BLOCK_AUTO_SKIP = booleanPreferencesKey("sponsor_block_auto_skip")
@@ -458,7 +458,7 @@ object SettingsManager {
 
     suspend fun setSponsorBlockEnabled(context: Context, value: Boolean) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_SPONSOR_BLOCK_ENABLED] = value }
-        // 🔥🔥 [修复] 同步到PluginStore，使插件系统能正确识别空降助手状态
+        //  [修复] 同步到PluginStore，使插件系统能正确识别空降助手状态
         com.android.purebilibili.core.plugin.PluginManager.setEnabled("sponsor_block", value)
     }
     
@@ -470,7 +470,7 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> preferences[KEY_SPONSOR_BLOCK_AUTO_SKIP] = value }
     }
     
-    // ========== 🔥 崩溃追踪 (Crashlytics) ==========
+    // ==========  崩溃追踪 (Crashlytics) ==========
     
     private val KEY_CRASH_TRACKING_ENABLED = booleanPreferencesKey("crash_tracking_enabled")
     // KEY_CRASH_TRACKING_CONSENT_SHOWN 已在顶部定义
@@ -481,7 +481,7 @@ object SettingsManager {
 
     suspend fun setCrashTrackingEnabled(context: Context, value: Boolean) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_CRASH_TRACKING_ENABLED] = value }
-        // 🔥 同步到 SharedPreferences，供 Application 同步读取
+        //  同步到 SharedPreferences，供 Application 同步读取
         context.getSharedPreferences("crash_tracking", Context.MODE_PRIVATE)
             .edit().putBoolean("enabled", value).apply()
     }
@@ -494,7 +494,7 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> preferences[KEY_CRASH_TRACKING_CONSENT_SHOWN] = value }
     }
     
-    // ========== 📊 用户行为分析 (Analytics) ==========
+    // ==========  用户行为分析 (Analytics) ==========
     
     private val KEY_ANALYTICS_ENABLED = booleanPreferencesKey("analytics_enabled")
     
@@ -504,12 +504,12 @@ object SettingsManager {
 
     suspend fun setAnalyticsEnabled(context: Context, value: Boolean) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_ANALYTICS_ENABLED] = value }
-        // 🔥 同步到 SharedPreferences，供 Application 同步读取
+        //  同步到 SharedPreferences，供 Application 同步读取
         context.getSharedPreferences("analytics_tracking", Context.MODE_PRIVATE)
             .edit().putBoolean("enabled", value).apply()
     }
     
-    // ========== 🔒 隐私无痕模式 ==========
+    // ==========  隐私无痕模式 ==========
     
     private val KEY_PRIVACY_MODE_ENABLED = booleanPreferencesKey("privacy_mode_enabled")
     
@@ -519,23 +519,23 @@ object SettingsManager {
 
     suspend fun setPrivacyModeEnabled(context: Context, value: Boolean) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_PRIVACY_MODE_ENABLED] = value }
-        // 🔥 同步到 SharedPreferences，供同步读取使用 (VideoRepository 等)
+        //  同步到 SharedPreferences，供同步读取使用 (VideoRepository 等)
         context.getSharedPreferences("privacy_mode", Context.MODE_PRIVATE)
             .edit().putBoolean("enabled", value).apply()
     }
     
-    // 🔥 同步读取隐私模式状态（用于非协程环境）
+    //  同步读取隐私模式状态（用于非协程环境）
     fun isPrivacyModeEnabledSync(context: Context): Boolean {
         return context.getSharedPreferences("privacy_mode", Context.MODE_PRIVATE)
             .getBoolean("enabled", false)
     }
     
-    // ========== 🎬 小窗播放模式 ==========
+    // ==========  小窗播放模式 ==========
     
     private val KEY_MINI_PLAYER_MODE = intPreferencesKey("mini_player_mode")
     
     /**
-     * 🔥 小窗播放模式
+     *  小窗播放模式
      * - OFF: 关闭小窗功能
      * - IN_APP_ONLY: 仅应用内小窗（返回首页时显示）
      * - SYSTEM_PIP: 系统画中画（退出应用时自动进入PiP）
@@ -562,24 +562,24 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> 
             preferences[KEY_MINI_PLAYER_MODE] = mode.value 
         }
-        // 🔥 同步到 SharedPreferences，供 MiniPlayerManager 同步读取
+        //  同步到 SharedPreferences，供 MiniPlayerManager 同步读取
         context.getSharedPreferences("mini_player", Context.MODE_PRIVATE)
             .edit().putInt("mode", mode.value).apply()
     }
     
-    // 🔥 同步读取小窗模式（用于 MiniPlayerManager）
+    //  同步读取小窗模式（用于 MiniPlayerManager）
     fun getMiniPlayerModeSync(context: Context): MiniPlayerMode {
         val value = context.getSharedPreferences("mini_player", Context.MODE_PRIVATE)
             .getInt("mode", MiniPlayerMode.IN_APP_ONLY.value)
         return MiniPlayerMode.fromValue(value)
     }
     
-    // ========== 🔥 底栏显示模式 ==========
+    // ==========  底栏显示模式 ==========
     
     private val KEY_BOTTOM_BAR_VISIBILITY_MODE = intPreferencesKey("bottom_bar_visibility_mode")
     
     /**
-     * 🔥 底栏显示模式
+     *  底栏显示模式
      * - SCROLL_HIDE: 上滑隐藏，下滑显示
      * - ALWAYS_VISIBLE: 始终显示（默认）
      * - ALWAYS_HIDDEN: 永久隐藏
@@ -606,12 +606,12 @@ object SettingsManager {
         }
     }
     
-    // ========== 📥 下载路径设置 ==========
+    // ==========  下载路径设置 ==========
     
     private val KEY_DOWNLOAD_PATH = stringPreferencesKey("download_path")
     
     /**
-     * 🔥 获取用户自定义下载路径
+     *  获取用户自定义下载路径
      * 返回 null 表示使用默认路径
      */
     fun getDownloadPath(context: Context): Flow<String?> = context.settingsDataStore.data
@@ -620,7 +620,7 @@ object SettingsManager {
         }
     
     /**
-     * 🔥 设置自定义下载路径
+     *  设置自定义下载路径
      * 传入 null 重置为默认路径
      */
     suspend fun setDownloadPath(context: Context, path: String?) {
@@ -634,7 +634,7 @@ object SettingsManager {
     }
     
     /**
-     * 🔥 获取默认下载路径描述
+     *  获取默认下载路径描述
      */
     fun getDefaultDownloadPath(context: Context): String {
         return context.getExternalFilesDir(null)?.absolutePath + "/downloads"
@@ -645,7 +645,7 @@ object SettingsManager {
     private val KEY_DATA_SAVER_MODE = intPreferencesKey("data_saver_mode")
     
     /**
-     * 🔥 省流量模式
+     *  省流量模式
      * - OFF: 关闭省流量
      * - MOBILE_ONLY: 仅移动数据时启用（默认）
      * - ALWAYS: 始终启用
@@ -670,12 +670,12 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> 
             preferences[KEY_DATA_SAVER_MODE] = mode.value 
         }
-        // 🔥 同步到 SharedPreferences，供同步读取使用
+        //  同步到 SharedPreferences，供同步读取使用
         context.getSharedPreferences("data_saver", Context.MODE_PRIVATE)
             .edit().putInt("mode", mode.value).apply()
     }
     
-    // 🔥 同步读取省流量模式
+    //  同步读取省流量模式
     fun getDataSaverModeSync(context: Context): DataSaverMode {
         val value = context.getSharedPreferences("data_saver", Context.MODE_PRIVATE)
             .getInt("mode", DataSaverMode.MOBILE_ONLY.value)
@@ -683,7 +683,7 @@ object SettingsManager {
     }
     
     /**
-     * 🔥 判断当前是否应该启用省流量
+     *  判断当前是否应该启用省流量
      * 根据模式和当前网络状态判断
      */
     fun isDataSaverActive(context: Context): Boolean {
@@ -703,7 +703,7 @@ object SettingsManager {
         }
     }
     
-    // 🔥🔥 [新增] --- 底栏顺序配置 ---
+    //  [新增] --- 底栏顺序配置 ---
     // 默认顺序: HOME,DYNAMIC,HISTORY,PROFILE
     fun getBottomBarOrder(context: Context): Flow<List<String>> = context.settingsDataStore.data.map { prefs ->
         val orderString = prefs[KEY_BOTTOM_BAR_ORDER] ?: "HOME,DYNAMIC,HISTORY,PROFILE"
@@ -716,7 +716,7 @@ object SettingsManager {
         }
     }
     
-    // 🔥🔥 [新增] --- 底栏可见项配置 ---
+    //  [新增] --- 底栏可见项配置 ---
     // 默认可见: HOME,DYNAMIC,HISTORY,PROFILE
     // 可选项: HOME,DYNAMIC,HISTORY,PROFILE,FAVORITE,LIVE,WATCHLATER
     fun getBottomBarVisibleTabs(context: Context): Flow<Set<String>> = context.settingsDataStore.data.map { prefs ->
@@ -730,7 +730,7 @@ object SettingsManager {
         }
     }
     
-    // 🔥🔥 [新增] 获取有序的可见底栏项目列表
+    //  [新增] 获取有序的可见底栏项目列表
     fun getOrderedVisibleTabs(context: Context): Flow<List<String>> = context.settingsDataStore.data.map { prefs ->
         val orderString = prefs[KEY_BOTTOM_BAR_ORDER] ?: "HOME,DYNAMIC,HISTORY,PROFILE"
         val tabsString = prefs[KEY_BOTTOM_BAR_VISIBLE_TABS] ?: "HOME,DYNAMIC,HISTORY,PROFILE"
@@ -739,7 +739,7 @@ object SettingsManager {
         order.filter { it in visibleSet }
     }
     
-    // 🔥🔥 [新增] --- 底栏项目颜色自定义 ---
+    //  [新增] --- 底栏项目颜色自定义 ---
     /**
      * 获取所有底栏项目的颜色索引映射
      * @return Map<项目ID, 颜色索引>
@@ -779,7 +779,7 @@ object SettingsManager {
         }
     }
     
-    // ========== 🥚 彩蛋设置 ==========
+    // ==========  彩蛋设置 ==========
     
     private val KEY_EASTER_EGG_ENABLED = booleanPreferencesKey("easter_egg_enabled")
     
@@ -789,18 +789,18 @@ object SettingsManager {
 
     suspend fun setEasterEggEnabled(context: Context, value: Boolean) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_EASTER_EGG_ENABLED] = value }
-        // 🔥 同步到 SharedPreferences，供同步读取使用
+        //  同步到 SharedPreferences，供同步读取使用
         context.getSharedPreferences("easter_egg", Context.MODE_PRIVATE)
             .edit().putBoolean("enabled", value).apply()
     }
     
-    // 🔥 同步读取彩蛋开关（用于 ViewModel）
+    //  同步读取彩蛋开关（用于 ViewModel）
     fun isEasterEggEnabledSync(context: Context): Boolean {
         return context.getSharedPreferences("easter_egg", Context.MODE_PRIVATE)
             .getBoolean("enabled", false)  // 默认关闭
     }
     
-    // ========== 🎬 播放器设置 ==========
+    // ==========  播放器设置 ==========
     
     private val KEY_SWIPE_HIDE_PLAYER = booleanPreferencesKey("swipe_hide_player")
     

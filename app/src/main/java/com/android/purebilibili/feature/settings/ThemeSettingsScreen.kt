@@ -27,7 +27,7 @@ import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 
 /**
- * 🎨 主题设置二级页面
+ *  主题设置二级页面
  * 专门管理主题相关设置：深色模式、动态取色、主题色
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -117,7 +117,7 @@ fun ThemeSettingsScreen(
             contentPadding = WindowInsets.navigationBars.asPaddingValues()
         ) {
             
-            // 🌙 外观模式
+            //  外观模式
             item { SettingsSectionTitle("外观模式") }
             item {
                 SettingsGroup {
@@ -165,7 +165,7 @@ fun ThemeSettingsScreen(
                 }
             }
             
-            // 🎨 动态取色
+            //  动态取色
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 item { SettingsSectionTitle("动态取色") }
                 item {
@@ -193,7 +193,7 @@ fun ThemeSettingsScreen(
                 }
             }
             
-            // 🎨 主题色
+            //  主题色
             item { SettingsSectionTitle("主题色") }
             item {
                 SettingsGroup {
@@ -290,7 +290,7 @@ fun ThemeSettingsScreen(
                         if (state.dynamicColor) {
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "💡 关闭动态取色后可手动选择主题色",
+                                text = " 关闭动态取色后可手动选择主题色",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = iOSOrange
                             )

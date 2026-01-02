@@ -6,7 +6,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -56,20 +56,22 @@ fun BottomControlBar(
     onSpeedClick: () -> Unit = {},
     onRatioClick: () -> Unit = {},
     onToggleFullscreen: () -> Unit,
-    // 🔥🔥 [新增] 竖屏模式弹幕开关
+    //  [新增] 竖屏模式弹幕开关
     danmakuEnabled: Boolean = true,
     onDanmakuToggle: () -> Unit = {},
-    // 🔥🔥 [新增] 竖屏模式清晰度选择
+    //  [新增] 竖屏模式清晰度选择
     currentQualityLabel: String = "",
     onQualityClick: () -> Unit = {},
+    // 🖼️ [新增] 视频预览图数据
+    videoshotData: com.android.purebilibili.data.model.response.VideoshotData? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp)  // 🔥 减小水平 padding
+            .padding(horizontal = 12.dp)  //  减小水平 padding
             .padding(bottom = 4.dp)
-            // 🔥🔥 只在全屏横屏时才需要避开导航栏
+            //  只在全屏横屏时才需要避开导航栏
             // 竖屏时导航栏在页面底部，不在播放器区域内
             .let { if (isFullscreen) it.navigationBarsPadding() else it }
     ) {
@@ -77,7 +79,8 @@ fun BottomControlBar(
             currentPosition = progress.current,
             duration = progress.duration,
             bufferedPosition = progress.buffered,
-            onSeek = onSeek
+            onSeek = onSeek,
+            videoshotData = videoshotData
         )
 
         Row(
@@ -85,7 +88,7 @@ fun BottomControlBar(
                 .fillMaxWidth()
                 .padding(top = 0.dp),
             verticalAlignment = Alignment.CenterVertically,
-            // 🔥 使用 SpaceBetween 确保两端元素始终可见
+            //  使用 SpaceBetween 确保两端元素始终可见
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // 左侧：播放按钮和时间
@@ -95,20 +98,20 @@ fun BottomControlBar(
             ) {
                 IconButton(
                     onClick = onPlayPauseClick,
-                    modifier = Modifier.size(36.dp)  // 🔥 缩小按钮
+                    modifier = Modifier.size(36.dp)  //  缩小按钮
                 ) {
                     Icon(
                         if (isPlaying) CupertinoIcons.Default.Pause else CupertinoIcons.Default.Play,
                         null,
                         tint = Color.White,
-                        modifier = Modifier.size(24.dp)  // 🔥 缩小图标
+                        modifier = Modifier.size(24.dp)  //  缩小图标
                     )
                 }
 
                 Text(
                     text = "${FormatUtils.formatDuration((progress.current / 1000).toInt())} / ${FormatUtils.formatDuration((progress.duration / 1000).toInt())}",
                     color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 11.sp,  // 🔥 缩小字体
+                    fontSize = 11.sp,  //  缩小字体
                     fontWeight = FontWeight.Medium,
                     maxLines = 1
                 )
@@ -129,15 +132,15 @@ fun BottomControlBar(
                     Text(
                         text = if (currentSpeed == 1.0f) "倍速" else "${currentSpeed}x",
                         color = if (currentSpeed != 1.0f) MaterialTheme.colorScheme.primary else Color.White,
-                        fontSize = 10.sp,  // 🔥 缩小字体
+                        fontSize = 10.sp,  //  缩小字体
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp)  // 🔥 缩小 padding
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp)  //  缩小 padding
                     )
                 }
                 
-                Spacer(modifier = Modifier.width(3.dp))  // 🔥 缩小间距
+                Spacer(modifier = Modifier.width(3.dp))  //  缩小间距
                 
-                // 🔥 Aspect Ratio button
+                //  Aspect Ratio button
                 Surface(
                     onClick = onRatioClick,
                     color = Color.White.copy(alpha = 0.2f),
@@ -146,29 +149,29 @@ fun BottomControlBar(
                     Text(
                         text = currentRatio.displayName,
                         color = if (currentRatio != VideoAspectRatio.FIT) MaterialTheme.colorScheme.primary else Color.White,
-                        fontSize = 10.sp,  // 🔥 缩小字体
+                        fontSize = 10.sp,  //  缩小字体
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp)  // 🔥 缩小 padding
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp)  //  缩小 padding
                     )
                 }
                 
-                // 🔥🔥 [新增] 竖屏模式弹幕开关和清晰度
+                //  [新增] 竖屏模式弹幕开关和清晰度
                 if (!isFullscreen) {
-                    Spacer(modifier = Modifier.width(2.dp))  // 🔥 缩小间距
+                    Spacer(modifier = Modifier.width(2.dp))  //  缩小间距
                     
                     IconButton(
                         onClick = onDanmakuToggle,
-                        modifier = Modifier.size(26.dp)  // 🔥 缩小按钮
+                        modifier = Modifier.size(26.dp)  //  缩小按钮
                     ) {
                         Icon(
                             if (danmakuEnabled) CupertinoIcons.Default.TextBubble else CupertinoIcons.Outlined.TextBubble,
                             contentDescription = if (danmakuEnabled) "关闭弹幕" else "开启弹幕",
                             tint = if (danmakuEnabled) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.7f),
-                            modifier = Modifier.size(16.dp)  // 🔥 缩小图标
+                            modifier = Modifier.size(16.dp)  //  缩小图标
                         )
                     }
                     
-                    // 🔥🔥 清晰度选择 - 优化布局确保完整显示
+                    //  清晰度选择 - 优化布局确保完整显示
                     if (currentQualityLabel.isNotEmpty()) {
                         Spacer(modifier = Modifier.width(2.dp))
                         Surface(
@@ -179,27 +182,27 @@ fun BottomControlBar(
                             Text(
                                 text = currentQualityLabel,
                                 color = Color.White,
-                                fontSize = 10.sp,  // 🔥 统一字体大小
+                                fontSize = 10.sp,  //  统一字体大小
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp),
-                                maxLines = 1,  // 🔥 确保单行显示
-                                softWrap = false  // 🔥 禁止换行
+                                maxLines = 1,  //  确保单行显示
+                                softWrap = false  //  禁止换行
                             )
                         }
                     }
                 }
             }
             
-            // 🔥 右侧：全屏按钮 - 始终显示，不会被挤出
+            //  右侧：全屏按钮 - 始终显示，不会被挤出
             IconButton(
                 onClick = onToggleFullscreen,
-                modifier = Modifier.size(36.dp)  // 🔥 缩小按钮
+                modifier = Modifier.size(36.dp)  //  缩小按钮
             ) {
                 Icon(
                     if (isFullscreen) CupertinoIcons.Default.ArrowDownRightAndArrowUpLeft else CupertinoIcons.Default.ArrowUpLeftAndArrowDownRight,
                     null,
                     tint = Color.White,
-                    modifier = Modifier.size(24.dp)  // 🔥 缩小图标
+                    modifier = Modifier.size(24.dp)  //  缩小图标
                 )
             }
         }
@@ -207,19 +210,22 @@ fun BottomControlBar(
 }
 
 /**
- * Video Progress Bar - 自定义细进度条
+ * Video Progress Bar - 自定义细进度条（支持拖动预览）
  */
 @Composable
 fun VideoProgressBar(
     currentPosition: Long,
     duration: Long,
     bufferedPosition: Long,
-    onSeek: (Long) -> Unit
+    onSeek: (Long) -> Unit,
+    videoshotData: com.android.purebilibili.data.model.response.VideoshotData? = null
 ) {
     val progress = if (duration > 0) currentPosition.toFloat() / duration else 0f
     val bufferedProgress = if (duration > 0) bufferedPosition.toFloat() / duration else 0f
     var tempProgress by remember { mutableFloatStateOf(0f) }
     var isDragging by remember { mutableStateOf(false) }
+    var dragOffsetX by remember { mutableFloatStateOf(0f) }
+    var containerWidth by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(progress) {
         if (!isDragging) {
@@ -229,26 +235,33 @@ fun VideoProgressBar(
     
     val displayProgress = if (isDragging) tempProgress else progress
     val primaryColor = MaterialTheme.colorScheme.primary
+    
+    // 计算拖动时的目标时间
+    val targetPositionMs = (tempProgress * duration).toLong()
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(24.dp)
+            .height(if (isDragging && videoshotData != null) 120.dp else 24.dp)  // 拖动时增加高度显示预览
             .pointerInput(Unit) {
+                containerWidth = size.width.toFloat()
                 detectTapGestures { offset ->
                     val newProgress = (offset.x / size.width).coerceIn(0f, 1f)
                     onSeek((newProgress * duration).toLong())
                 }
             }
             .pointerInput(Unit) {
+                containerWidth = size.width.toFloat()
                 detectDragGestures(
                     onDragStart = { offset ->
                         isDragging = true
                         tempProgress = (offset.x / size.width).coerceIn(0f, 1f)
+                        dragOffsetX = offset.x
                     },
                     onDrag = { change, _ ->
                         change.consume()
                         tempProgress = (change.position.x / size.width).coerceIn(0f, 1f)
+                        dragOffsetX = change.position.x
                     },
                     onDragEnd = {
                         isDragging = false
@@ -259,45 +272,81 @@ fun VideoProgressBar(
                         tempProgress = progress
                     }
                 )
-            },
-        contentAlignment = Alignment.CenterStart
+            }
     ) {
-        // 背景轨道
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(3.dp)
-                .background(Color.White.copy(alpha = 0.3f), RoundedCornerShape(1.5.dp))
-        )
-        
-        // 缓冲进度
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(bufferedProgress.coerceIn(0f, 1f))
-                .height(3.dp)
-                .background(Color.White.copy(alpha = 0.5f), RoundedCornerShape(1.5.dp))
-        )
-        
-        // 当前进度
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(displayProgress.coerceIn(0f, 1f))
-                .height(3.dp)
-                .background(primaryColor, RoundedCornerShape(1.5.dp))
-        )
-        
-        // 滑块（圆点）
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(displayProgress.coerceIn(0f, 1f))
-        ) {
+        // 🖼️ 拖动时显示预览气泡
+        if (isDragging) {
             Box(
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(12.dp)
-                    .offset(x = 6.dp)
-                    .background(primaryColor, androidx.compose.foundation.shape.CircleShape)
+                    .align(Alignment.TopStart)
+                    .padding(bottom = 8.dp)
+            ) {
+                if (videoshotData != null && videoshotData.isValid) {
+                    com.android.purebilibili.feature.video.ui.components.SeekPreviewBubble(
+                        videoshotData = videoshotData,
+                        targetPositionMs = targetPositionMs,
+                        currentPositionMs = currentPosition,
+                        durationMs = duration,
+                        offsetX = dragOffsetX,
+                        containerWidth = containerWidth
+                    )
+                } else {
+                    // 无预览图时使用简化版气泡
+                    com.android.purebilibili.feature.video.ui.components.SeekPreviewBubbleSimple(
+                        targetPositionMs = targetPositionMs,
+                        currentPositionMs = currentPosition,
+                        offsetX = dragOffsetX,
+                        containerWidth = containerWidth
+                    )
+                }
+            }
+        }
+        
+        // 进度条本体（放在底部）
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .height(24.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            // 背景轨道
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .background(Color.White.copy(alpha = 0.3f), RoundedCornerShape(1.5.dp))
             )
+            
+            // 缓冲进度
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(bufferedProgress.coerceIn(0f, 1f))
+                    .height(3.dp)
+                    .background(Color.White.copy(alpha = 0.5f), RoundedCornerShape(1.5.dp))
+            )
+            
+            // 当前进度
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(displayProgress.coerceIn(0f, 1f))
+                    .height(3.dp)
+                    .background(primaryColor, RoundedCornerShape(1.5.dp))
+            )
+            
+            // 滑块（圆点）- 拖动时放大
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(displayProgress.coerceIn(0f, 1f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(if (isDragging) 16.dp else 12.dp)
+                        .offset(x = if (isDragging) 8.dp else 6.dp)
+                        .background(primaryColor, androidx.compose.foundation.shape.CircleShape)
+                )
+            }
         }
     }
 }

@@ -13,7 +13,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentLinkedDeque
 
 /**
- * 🔥 统一日志工具类
+ *  统一日志工具类
  * 
  * 在 Release 版本中自动禁用日志输出，减少性能开销
  * 同时收集日志到内存缓冲区，支持导出供用户反馈
@@ -72,7 +72,7 @@ object Logger {
 }
 
 /**
- * 📋 日志收集器
+ *  日志收集器
  * 
  * 使用环形缓冲区保留最近 1000 条日志，支持导出分享
  */
@@ -102,7 +102,7 @@ object LogCollector {
      * 添加日志条目（带隐私过滤）
      */
     fun add(level: String, tag: String, message: String) {
-        // 🔒 隐私过滤：脱敏敏感信息
+        //  隐私过滤：脱敏敏感信息
         val sanitizedMessage = sanitizeMessage(message)
         
         val entry = LogEntry(
@@ -121,7 +121,7 @@ object LogCollector {
     }
     
     /**
-     * 🔒 隐私脱敏：移除敏感信息
+     *  隐私脱敏：移除敏感信息
      */
     private fun sanitizeMessage(message: String): String {
         var sanitized = message
@@ -203,7 +203,7 @@ object LogCollector {
             val content = header + entries.joinToString("\n") { it.format() }
             val fileName = "bilipai_log_${fileDateFormat.format(Date())}.txt"
             
-            // 🔥🔥 [优化] 保存到外部 Download 目录，MT 管理器可直接访问
+            //  [优化] 保存到外部 Download 目录，MT 管理器可直接访问
             val savedPath = saveToExternalDownload(context, fileName, content)
             
             if (savedPath != null) {
@@ -235,7 +235,7 @@ object LogCollector {
     }
     
     /**
-     * 🔥 保存日志到外部 Download 目录
+     *  保存日志到外部 Download 目录
      * 
      * 路径: /storage/emulated/0/Download/BiliPai/logs/xxx.txt
      * MT管理器路径: Download/BiliPai/logs/

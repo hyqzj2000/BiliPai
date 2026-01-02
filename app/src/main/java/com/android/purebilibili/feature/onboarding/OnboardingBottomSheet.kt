@@ -49,12 +49,12 @@ import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-// 🎬 Lottie 动画
+//  Lottie 动画
 import com.airbnb.lottie.compose.*
 import com.android.purebilibili.core.ui.LottieUrls
 
 /**
- * 🍎 iOS 风格新手引导底部弹窗
+ *  iOS 风格新手引导底部弹窗
  * 
  * 特色功能：
  * - 多页轮播引导
@@ -68,7 +68,7 @@ import com.android.purebilibili.core.ui.LottieUrls
 fun OnboardingBottomSheet(
     visible: Boolean,
     onDismiss: () -> Unit,
-    mainHazeState: HazeState // 🔥🔥 接收来自 MainActivity 的全局 Haze 状态
+    mainHazeState: HazeState //  接收来自 MainActivity 的全局 Haze 状态
 ) {
     val scope = rememberCoroutineScope()
     val uriHandler = LocalUriHandler.current
@@ -76,16 +76,16 @@ fun OnboardingBottomSheet(
     // 3 页引导
     val pagerState = rememberPagerState(pageCount = { 3 })
     
-    // 🔥 弹窗局部 Haze 状态 (用于内部元素)
+    //  弹窗局部 Haze 状态 (用于内部元素)
     val localHazeState = remember { HazeState() }
     
-    // 🔥 控制进出场动画
+    //  控制进出场动画
     androidx.compose.animation.AnimatedVisibility(
         visible = visible,
         enter = androidx.compose.animation.fadeIn(),
         exit = androidx.compose.animation.fadeOut()
     ) {
-        // 🔥 1. 半透明遮罩层 (点击关闭)
+        //  1. 半透明遮罩层 (点击关闭)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -109,21 +109,21 @@ fun OnboardingBottomSheet(
             animationSpec = spring(dampingRatio = 0.8f, stiffness = 300f)
         )
     ) {
-        // 🔥 2. 内容层 (点击透传)
+        //  2. 内容层 (点击透传)
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.BottomCenter
         ) {
-            // 🔥🔥 iOS 风格毛玻璃效果
+            //  iOS 风格毛玻璃效果
             // 使用多层渐变 + 高透明度模拟真实的毛玻璃质感
             val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
             
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.85f) // 🔥 占 85% 屏幕高度
+                    .fillMaxHeight(0.85f) //  占 85% 屏幕高度
                     .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                    // 🔥🔥 [新方案] 多层背景模拟毛玻璃
+                    //  [新方案] 多层背景模拟毛玻璃
                     .background(
                         brush = Brush.verticalGradient(
                             colors = if (isDark) {
@@ -153,7 +153,7 @@ fun OnboardingBottomSheet(
                         .padding(bottom = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 🔥 iOS 风格拖拽指示器
+                    //  iOS 风格拖拽指示器
                     Box(
                         modifier = Modifier
                             .padding(top = 12.dp, bottom = 8.dp)
@@ -162,14 +162,14 @@ fun OnboardingBottomSheet(
                             .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                     )
                     
-                    // 🔥 多页轮播内容
+                    //  多页轮播内容
                     // 注意：不再作为 Haze 源，而是作为 Haze 的 Child 的内容
                     HorizontalPager(
                         state = pagerState,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            // .haze(state = hazeState) // 🔥 移除旧的 Haze 源，因为现在它是全局 Haze 的一部分
+                            // .haze(state = hazeState) //  移除旧的 Haze 源，因为现在它是全局 Haze 的一部分
                     ) { page ->
                         when (page) {
                             // 传入局部 Haze 状态给内部组件使用 (如果需要)
@@ -184,7 +184,7 @@ fun OnboardingBottomSheet(
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    // 🔥 页面指示器
+                    //  页面指示器
                     Row(
                         modifier = Modifier.padding(vertical = 8.dp),
                         horizontalArrangement = Arrangement.Center
@@ -210,7 +210,7 @@ fun OnboardingBottomSheet(
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    // 🔥 底部按钮区域
+                    //  底部按钮区域
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -270,7 +270,7 @@ fun OnboardingBottomSheet(
                         }
                     }
                     
-                    // 🔥 GitHub 链接
+                    //  GitHub 链接
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         "github.com/jay3-yy/BiliPai",
@@ -287,11 +287,11 @@ fun OnboardingBottomSheet(
 }
 
 /**
- * 🔥 第一页：欢迎页
+ *  第一页：欢迎页
  */
 @Composable
 private fun WelcomePage(hazeState: HazeState) {
-    // 🔥 iOS 风格交错入场动画
+    //  iOS 风格交错入场动画
     val animatedItems = remember { List(6) { Animatable(0f) } }
     
     LaunchedEffect(Unit) {
@@ -309,13 +309,13 @@ private fun WelcomePage(hazeState: HazeState) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()) // 🔥 可滚动
+            .verticalScroll(rememberScrollState()) //  可滚动
             .padding(horizontal = 32.dp)
             .padding(vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // 🎬 Lottie 欢迎动画 - 动画项 0
+        //  Lottie 欢迎动画 - 动画项 0
         val welcomeComposition by rememberLottieComposition(
             LottieCompositionSpec.Url("https://assets9.lottiefiles.com/packages/lf20_touohxv0.json") // 欢迎/庆祝动画
         )
@@ -342,7 +342,7 @@ private fun WelcomePage(hazeState: HazeState) {
                     .size(80.dp)
                     .clip(RoundedCornerShape(20.dp))
             )
-            // 🎬 Lottie 装饰动画 (环绕效果)
+            //  Lottie 装饰动画 (环绕效果)
             LottieAnimation(
                 composition = welcomeComposition,
                 progress = { welcomeProgress },
@@ -388,7 +388,7 @@ private fun WelcomePage(hazeState: HazeState) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             FeatureBadge(
-                emoji = "🎨", 
+                emoji = "", 
                 label = "个性外观",
                 animationProgress = animatedItems[3].value
             )
@@ -398,7 +398,7 @@ private fun WelcomePage(hazeState: HazeState) {
                 animationProgress = animatedItems[4].value
             )
             FeatureBadge(
-                emoji = "🔒", 
+                emoji = "", 
                 label = "隐私优先",
                 animationProgress = animatedItems[5].value
             )
@@ -428,11 +428,11 @@ private fun WelcomePage(hazeState: HazeState) {
 }
 
 /**
- * 🔥 第二页：外观设置介绍
+ *  第二页：外观设置介绍
  */
 @Composable
 private fun AppearanceSettingsPage(hazeState: HazeState) {
-    // 🔥 iOS 风格交错入场动画
+    //  iOS 风格交错入场动画
     val animatedItems = remember { List(7) { Animatable(0f) } }
     
     LaunchedEffect(Unit) {
@@ -447,7 +447,7 @@ private fun AppearanceSettingsPage(hazeState: HazeState) {
         }
     }
     
-    // 🔥 图标呼吸动画
+    //  图标呼吸动画
     val infiniteTransition = rememberInfiniteTransition(label = "iconPulse")
     val iconScale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -459,7 +459,7 @@ private fun AppearanceSettingsPage(hazeState: HazeState) {
         label = "iconScale"
     )
     
-    // 🎬 Lottie 外观主题动画 - 彩虹渐变
+    //  Lottie 外观主题动画 - 彩虹渐变
     val themeComposition by rememberLottieComposition(
         LottieCompositionSpec.Url(LottieUrls.THEME_COLORS)
     )
@@ -471,13 +471,13 @@ private fun AppearanceSettingsPage(hazeState: HazeState) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()) // 🔥 可滚动
+            .verticalScroll(rememberScrollState()) //  可滚动
             .padding(horizontal = 32.dp)
             .padding(vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // 🎬 Lottie 动画 - 动画项 0
+        //  Lottie 动画 - 动画项 0
         Box(
             modifier = Modifier
                 .size(100.dp)
@@ -526,7 +526,7 @@ private fun AppearanceSettingsPage(hazeState: HazeState) {
         
         // 功能列表 - 动画项 3, 4, 5, 6
         FeatureListItem(
-            icon = "🎨",
+            icon = "",
             title = "多种主题色",
             description = "粉色、蓝色、紫色...随心切换",
             animationProgress = animatedItems[3].value,
@@ -536,7 +536,7 @@ private fun AppearanceSettingsPage(hazeState: HazeState) {
         Spacer(modifier = Modifier.height(12.dp))
         
         FeatureListItem(
-            icon = "🌗",
+            icon = "",
             title = "深色模式",
             description = "护眼夜间模式，跟随系统或手动切换",
             animationProgress = animatedItems[4].value,
@@ -556,7 +556,7 @@ private fun AppearanceSettingsPage(hazeState: HazeState) {
         Spacer(modifier = Modifier.height(12.dp))
         
         FeatureListItem(
-            icon = "🌙",
+            icon = "",
             title = "护眼模式",
             description = "柔和屏幕色调，保护视力",
             animationProgress = animatedItems[6].value,
@@ -566,11 +566,11 @@ private fun AppearanceSettingsPage(hazeState: HazeState) {
 }
 
 /**
- * 🔥 第三页：播放设置介绍
+ *  第三页：播放设置介绍
  */
 @Composable
 private fun PlaybackSettingsPage(hazeState: HazeState) {
-    // 🔥 iOS 风格交错入场动画
+    //  iOS 风格交错入场动画
     val animatedItems = remember { List(7) { Animatable(0f) } }
     
     LaunchedEffect(Unit) {
@@ -585,7 +585,7 @@ private fun PlaybackSettingsPage(hazeState: HazeState) {
         }
     }
     
-    // 🔥 图标呼吸动画
+    //  图标呼吸动画
     val infiniteTransition = rememberInfiniteTransition(label = "iconPulse")
     val iconScale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -597,7 +597,7 @@ private fun PlaybackSettingsPage(hazeState: HazeState) {
         label = "iconScale"
     )
     
-    // 🎬 Lottie 播放动画 - 视频播放按钮
+    //  Lottie 播放动画 - 视频播放按钮
     val playComposition by rememberLottieComposition(
         LottieCompositionSpec.Url(LottieUrls.VIDEO_PLAY)
     )
@@ -609,13 +609,13 @@ private fun PlaybackSettingsPage(hazeState: HazeState) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()) // 🔥 可滚动
+            .verticalScroll(rememberScrollState()) //  可滚动
             .padding(horizontal = 32.dp)
             .padding(vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // 🎬 Lottie 动画 - 动画项 0
+        //  Lottie 动画 - 动画项 0
         Box(
             modifier = Modifier
                 .size(100.dp)
@@ -664,7 +664,7 @@ private fun PlaybackSettingsPage(hazeState: HazeState) {
         
         // 功能列表 - 动画项 3, 4, 5, 6
         FeatureListItem(
-            icon = "📺",
+            icon = "",
             title = "智能画质",
             description = "WiFi/流量自动切换画质，省流量模式可用",
             animationProgress = animatedItems[3].value,
@@ -684,7 +684,7 @@ private fun PlaybackSettingsPage(hazeState: HazeState) {
         Spacer(modifier = Modifier.height(12.dp))
         
         FeatureListItem(
-            icon = "👆",
+            icon = "",
             title = "手势控制",
             description = "左右滑动快进，上下调节音量亮度",
             animationProgress = animatedItems[5].value,
@@ -704,7 +704,7 @@ private fun PlaybackSettingsPage(hazeState: HazeState) {
 }
 
 /**
- * 🔥 特性徽章（毛玻璃效果）
+ *  特性徽章（毛玻璃效果）
  */
 @Composable
 private fun FeatureBadge(
@@ -712,7 +712,7 @@ private fun FeatureBadge(
     label: String,
     animationProgress: Float = 1f
 ) {
-    // 🔥 徽章呼吸动画
+    //  徽章呼吸动画
     val infiniteTransition = rememberInfiniteTransition(label = "badgePulse")
     val badgeScale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -736,7 +736,7 @@ private fun FeatureBadge(
             modifier = Modifier.size(56.dp),
             contentAlignment = Alignment.Center
         ) {
-            // 🔥 毛玻璃光晕背景
+            //  毛玻璃光晕背景
             Box(
                 modifier = Modifier
                     .size(64.dp)
@@ -783,7 +783,7 @@ private fun FeatureBadge(
 }
 
 /**
- * 🔥 功能列表项（毛玻璃效果）
+ *  功能列表项（毛玻璃效果）
  */
 @Composable
 private fun FeatureListItem(
@@ -793,7 +793,7 @@ private fun FeatureListItem(
     animationProgress: Float = 1f,
     hazeState: HazeState? = null
 ) {
-    // 🔥 真正的毛玻璃卡片效果
+    //  真正的毛玻璃卡片效果
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         shape = RoundedCornerShape(16.dp),
@@ -807,7 +807,7 @@ private fun FeatureListItem(
             }
             .then(
                 if (hazeState != null) {
-                    Modifier.unifiedBlur(hazeState) // 🔥 应用 Haze 毛玻璃
+                    Modifier.unifiedBlur(hazeState) //  应用 Haze 毛玻璃
                 } else {
                     Modifier
                 }

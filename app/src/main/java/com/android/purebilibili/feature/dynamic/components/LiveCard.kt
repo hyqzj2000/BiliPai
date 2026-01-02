@@ -7,7 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -25,13 +25,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.data.model.response.LiveRcmdMajor
 import com.android.purebilibili.feature.dynamic.model.LiveContentInfo
 import kotlinx.serialization.json.Json
 
 /**
- * 🔥 直播卡片
+ *  直播卡片
  */
 @Composable
 fun LiveCard(
@@ -44,7 +44,7 @@ fun LiveCard(
             val json = Json { ignoreUnknownKeys = true }
             json.decodeFromString<LiveContentInfo>(liveRcmd.content)
         } catch (e: Exception) {
-            // 🔥 添加日志帮助调试
+            //  添加日志帮助调试
             Log.e("LiveCard", "Failed to parse live_rcmd content: ${e.message}")
             Log.d("LiveCard", "Raw content: ${liveRcmd.content.take(500)}")
             null
@@ -60,7 +60,7 @@ fun LiveCard(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onLiveClick(roomId, title, "") },  // 🔥 点击跳转直播
+                .clickable { onLiveClick(roomId, title, "") },  //  点击跳转直播
             shape = RoundedCornerShape(8.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)

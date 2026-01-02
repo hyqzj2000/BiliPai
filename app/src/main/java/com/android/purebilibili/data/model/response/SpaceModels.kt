@@ -102,8 +102,8 @@ data class SpaceVideoItem(
     val length: String = "",  // "10:24" 格式
     val created: Long = 0,    // 发布时间戳
     val author: String = "",
-    val typeid: Int = 0,      // 🔥 分区 ID
-    val typename: String = "" // 🔥 分区名称
+    val typeid: Int = 0,      //  分区 ID
+    val typename: String = "" //  分区名称
 )
 
 // /x/relation/stat 粉丝关注数
@@ -140,21 +140,21 @@ data class ArchiveStatInfo(
     val view: Long = 0  // 总播放量
 )
 
-// 🔥 视频分类
+//  视频分类
 data class SpaceVideoCategory(
     val tid: Int,       // 分类 ID
     val name: String,   // 分类名称
     val count: Int      // 该分类下的视频数量
 )
 
-// 🔥 视频排序方式
+//  视频排序方式
 enum class VideoSortOrder(val apiValue: String, val displayName: String) {
     PUBDATE("pubdate", "最新发布"),
     CLICK("click", "最多播放"),
     STOW("stow", "最多收藏")
 }
 
-// ========== 🔥 合集和系列 Models ==========
+// ==========  合集和系列 Models ==========
 
 @kotlinx.serialization.Serializable
 data class SeasonsSeriesListResponse(
@@ -250,7 +250,7 @@ data class SeasonPage(
     val total: Int = 0
 )
 
-// 🔥 系列视频列表响应
+//  系列视频列表响应
 @kotlinx.serialization.Serializable
 data class SeriesArchivesResponse(
     val code: Int = 0,

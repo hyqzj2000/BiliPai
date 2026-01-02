@@ -12,7 +12,7 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeChild
 
 /**
- * 🎨 统一的模糊Modifier
+ *  统一的模糊Modifier
  * 
  * 自动根据用户设置选择模糊强度
  * 
@@ -29,7 +29,7 @@ fun Modifier.unifiedBlur(
     
     val context = LocalContext.current
     
-    // 🔥🔥 读取用户设置的模糊强度
+    //  读取用户设置的模糊强度
     val blurIntensity by SettingsManager.getBlurIntensity(context)
         .collectAsState(initial = BlurIntensity.THIN)
     

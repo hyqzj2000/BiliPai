@@ -5,7 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -24,13 +24,13 @@ import coil.compose.AsyncImage
 import com.android.purebilibili.data.model.response.DrawItem
 
 /**
- * 🔥 图片九宫格V2（支持GIF + 点击预览）
+ *  图片九宫格V2（支持GIF + 点击预览）
  */
 @Composable
 fun DrawGridV2(
     items: List<DrawItem>,
     gifImageLoader: ImageLoader,
-    onImageClick: (Int) -> Unit = {}  // 🔥 图片点击回调
+    onImageClick: (Int) -> Unit = {}  //  图片点击回调
 ) {
     if (items.isEmpty()) return
     
@@ -77,7 +77,7 @@ fun DrawGridV2(
                             .aspectRatio(aspectRatio.coerceIn(0.5f, 2f))
                             .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { onImageClick(currentIndex) },  // 🔥 点击预览
+                            .clickable { onImageClick(currentIndex) },  //  点击预览
                         contentAlignment = Alignment.Center
                     ) {
                         if (imageUrl.isNotEmpty()) {

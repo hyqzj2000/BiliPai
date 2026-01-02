@@ -5,7 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * 🔥 动态页面数据模型
+ *  动态页面数据模型
  * API: x/polymer/web-dynamic/v1/feed/all
  */
 
@@ -33,7 +33,7 @@ data class DynamicItem(
     val type: String = "", // DYNAMIC_TYPE_AV, DYNAMIC_TYPE_DRAW, DYNAMIC_TYPE_WORD, DYNAMIC_TYPE_FORWARD
     val visible: Boolean = true,
     val modules: DynamicModules = DynamicModules(),
-    val orig: DynamicItem? = null  // 🔥 转发动态的原始内容
+    val orig: DynamicItem? = null  //  转发动态的原始内容
 )
 
 // --- 动态模块集合 ---
@@ -111,10 +111,10 @@ data class DynamicMajor(
     val type: String = "", // MAJOR_TYPE_ARCHIVE, MAJOR_TYPE_DRAW, MAJOR_TYPE_LIVE_RCMD, MAJOR_TYPE_NONE
     val archive: ArchiveMajor? = null, // 视频
     val draw: DrawMajor? = null, // 图片
-    val live_rcmd: LiveRcmdMajor? = null // 🔥 直播
+    val live_rcmd: LiveRcmdMajor? = null //  直播
 )
 
-// 🔥 直播推荐
+//  直播推荐
 @Serializable
 data class LiveRcmdMajor(
     val content: String = "" // JSON string，需要解析

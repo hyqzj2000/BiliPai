@@ -11,7 +11,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -27,7 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.data.model.response.ViewInfo
 
@@ -51,15 +51,15 @@ fun ActionButtonsRow(
     isFavorited: Boolean = false,
     isLiked: Boolean = false,
     coinCount: Int = 0,
-    downloadProgress: Float = -1f,  // 🔥 -1 = 未下载, 0-1 = 进度, 1 = 已完成
-    isInWatchLater: Boolean = false,  // 🔥 稍后再看状态
+    downloadProgress: Float = -1f,  //  -1 = 未下载, 0-1 = 进度, 1 = 已完成
+    isInWatchLater: Boolean = false,  //  稍后再看状态
     onFavoriteClick: () -> Unit = {},
     onLikeClick: () -> Unit = {},
     onCoinClick: () -> Unit = {},
     onTripleClick: () -> Unit = {},
     onCommentClick: () -> Unit,
-    onDownloadClick: () -> Unit = {},  // 🔥 下载点击
-    onWatchLaterClick: () -> Unit = {}  // 🔥 稍后再看点击
+    onDownloadClick: () -> Unit = {},  //  下载点击
+    onWatchLaterClick: () -> Unit = {}  //  稍后再看点击
 ) {
     Row(
         modifier = Modifier
@@ -96,7 +96,7 @@ fun ActionButtonsRow(
             onClick = onFavoriteClick
         )
         
-        // 🔥 稍后再看
+        //  稍后再看
         BiliActionButton(
             icon = if (isInWatchLater) CupertinoIcons.Filled.Clock else CupertinoIcons.Default.Clock,
             text = if (isInWatchLater) "已添加" else "稍后看",
@@ -105,7 +105,7 @@ fun ActionButtonsRow(
             onClick = onWatchLaterClick
         )
         
-        // 🔥 Download
+        //  Download
         val downloadText = when {
             downloadProgress >= 1f -> "已缓存"
             downloadProgress >= 0f -> "${(downloadProgress * 100).toInt()}%"

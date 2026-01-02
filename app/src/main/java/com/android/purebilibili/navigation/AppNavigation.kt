@@ -12,8 +12,8 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState // 🔥 新增
-import androidx.compose.runtime.getValue // 🔥 新增
+import androidx.compose.runtime.collectAsState //  新增
+import androidx.compose.runtime.getValue //  新增
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -54,25 +54,25 @@ object VideoRoute {
 @Composable
 fun AppNavigation(
     navController: NavHostController = rememberNavController(),
-    // 🔥 小窗管理器
+    //  小窗管理器
     miniPlayerManager: MiniPlayerManager? = null,
-    // 🔥 PiP 支持参数
-    // 🔥 PiP 支持参数
+    //  PiP 支持参数
+    //  PiP 支持参数
     isInPipMode: Boolean = false,
     onVideoDetailEnter: () -> Unit = {},
     onVideoDetailExit: () -> Unit = {},
-    mainHazeState: dev.chrisbanes.haze.HazeState? = null // 🔥🔥 全局 Haze 状态
+    mainHazeState: dev.chrisbanes.haze.HazeState? = null //  全局 Haze 状态
 ) {
     val homeViewModel: HomeViewModel = viewModel()
     
-    // 🔥 读取卡片过渡动画设置（在 Composable 作用域内）
+    //  读取卡片过渡动画设置（在 Composable 作用域内）
     val context = androidx.compose.ui.platform.LocalContext.current
     val cardTransitionEnabled by com.android.purebilibili.core.store.SettingsManager
         .getCardTransitionEnabled(context).collectAsState(initial = false)
 
     // 统一跳转逻辑
     fun navigateToVideo(bvid: String, cid: Long = 0L, coverUrl: String = "") {
-        // 🔥 如果有小窗在播放，先退出小窗模式
+        //  如果有小窗在播放，先退出小窗模式
         miniPlayerManager?.exitMiniMode()
         navController.navigate(VideoRoute.createRoute(bvid, cid, coverUrl))
     }
@@ -87,12 +87,12 @@ fun AppNavigation(
         // --- 1. 首页 ---
         composable(
             route = ScreenRoutes.Home.route,
-            // 🔥 进入视频详情页时的退出动画
+            //  进入视频详情页时的退出动画
             exitTransition = { fadeOut(animationSpec = tween(200)) },
-            // 🔥🔥 从视频详情页返回时不需要动画（卡片在原位置）
+            //  从视频详情页返回时不需要动画（卡片在原位置）
             popEnterTransition = { fadeIn(animationSpec = tween(250)) }
         ) {
-            // 🔥 提供 AnimatedVisibilityScope 给 HomeScreen 以支持共享元素过渡i l
+            //  提供 AnimatedVisibilityScope 给 HomeScreen 以支持共享元素过渡i l
             ProvideAnimatedVisibilityScope(animatedVisibilityScope = this) {
                 HomeScreen(
                     viewModel = homeViewModel,
@@ -103,23 +103,23 @@ fun AppNavigation(
                     onSettingsClick = { navController.navigate(ScreenRoutes.Settings.route) },
                     onDynamicClick = { navController.navigate(ScreenRoutes.Dynamic.route) },
                     onHistoryClick = { navController.navigate(ScreenRoutes.History.route) },
-                    onPartitionClick = { navController.navigate(ScreenRoutes.Partition.route) },  // 🔥 分区点击
+                    onPartitionClick = { navController.navigate(ScreenRoutes.Partition.route) },  //  分区点击
                     onLiveClick = { roomId, title, uname ->
                         navController.navigate(ScreenRoutes.Live.createRoute(roomId, title, uname))
                     },
-                    // 🔥🔥 [修复] 番剧点击导航，接受类型参数
+                    //  [修复] 番剧点击导航，接受类型参数
                     onBangumiClick = { initialType ->
                         navController.navigate(ScreenRoutes.Bangumi.createRoute(initialType))
                     },
-                    // 🔥 分类点击：跳转到分类详情页面
+                    //  分类点击：跳转到分类详情页面
                     onCategoryClick = { tid, name ->
                         navController.navigate(ScreenRoutes.Category.createRoute(tid, name))
                     },
-                    // 🔥🔥 [新增] 底栏扩展项目导航
+                    //  [新增] 底栏扩展项目导航
                     onFavoriteClick = { navController.navigate(ScreenRoutes.Favorite.route) },
                     onLiveListClick = { navController.navigate(ScreenRoutes.LiveList.route) },
                     onWatchLaterClick = { navController.navigate(ScreenRoutes.WatchLater.route) },
-                    onStoryClick = { navController.navigate(ScreenRoutes.Story.route) }  // 🔥🔥 [新增] 竖屏短视频
+                    onStoryClick = { navController.navigate(ScreenRoutes.Story.route) }  //  [新增] 竖屏短视频
                 )
             }
         }
@@ -133,10 +133,10 @@ fun AppNavigation(
                 navArgument("cover") { type = NavType.StringType; defaultValue = "" },
                 navArgument("fullscreen") { type = NavType.BoolType; defaultValue = false }
             ),
-            // 🔥🔥 进入动画：当卡片过渡开启时用缩放，关闭时用滑入
+            //  进入动画：当卡片过渡开启时用缩放，关闭时用滑入
             enterTransition = { 
                 if (cardTransitionEnabled) {
-                    // 🔥 从记录的卡片位置展开（缩放动画）
+                    //  从记录的卡片位置展开（缩放动画）
                     val origin = CardPositionManager.lastClickedCardCenter?.let {
                         TransformOrigin(it.x, it.y)
                     } ?: TransformOrigin.Center
@@ -150,12 +150,12 @@ fun AppNavigation(
                         )
                     ) + fadeIn(animationSpec = tween(250))
                 } else {
-                    // 🔥 位置感知滑入动画
+                    //  位置感知滑入动画
                     if (CardPositionManager.isSingleColumnCard) {
-                        // 🎬 单列卡片（故事卡片）：从下往上滑入
+                        //  单列卡片（故事卡片）：从下往上滑入
                         slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(animDuration))
                     } else {
-                        // 🔥 双列卡片：左边卡片从左滑入，右边卡片从右滑入
+                        //  双列卡片：左边卡片从左滑入，右边卡片从右滑入
                         val isCardOnLeft = (CardPositionManager.lastClickedCardCenter?.x ?: 0.5f) < 0.5f
                         if (isCardOnLeft) {
                             slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(animDuration))
@@ -165,10 +165,10 @@ fun AppNavigation(
                     }
                 }
             },
-            // 🔥🔥 返回动画：当卡片过渡开启时用缩放，关闭时用滑出
+            //  返回动画：当卡片过渡开启时用缩放，关闭时用滑出
             popExitTransition = { 
                 if (cardTransitionEnabled) {
-                    // 🔥 收缩回到记录的卡片位置（缩放动画）
+                    //  收缩回到记录的卡片位置（缩放动画）
                     val origin = CardPositionManager.lastClickedCardCenter?.let {
                         TransformOrigin(it.x, it.y)
                     } ?: TransformOrigin.Center
@@ -182,12 +182,12 @@ fun AppNavigation(
                         )
                     ) + fadeOut(animationSpec = tween(300))
                 } else {
-                    // 🔥 位置感知滑出动画
+                    //  位置感知滑出动画
                     if (CardPositionManager.isSingleColumnCard) {
-                        // 🎬 单列卡片（故事卡片）：往下滑出
+                        //  单列卡片（故事卡片）：往下滑出
                         slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(animDuration))
                     } else {
-                        // 🔥 双列卡片：返回到原来卡片的方向
+                        //  双列卡片：返回到原来卡片的方向
                         val isCardOnLeft = (CardPositionManager.lastClickedCardCenter?.x ?: 0.5f) < 0.5f
                         if (isCardOnLeft) {
                             slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration))
@@ -202,18 +202,18 @@ fun AppNavigation(
             val coverUrl = backStackEntry.arguments?.getString("cover") ?: ""
             val startFullscreen = backStackEntry.arguments?.getBoolean("fullscreen") ?: false
             
-            // 🔥 使用顶层定义的 cardTransitionEnabled（已在 line 68 定义）
+            //  使用顶层定义的 cardTransitionEnabled（已在 line 68 定义）
 
-            // 🔥 进入视频详情页时通知 MainActivity
-            // 🔥🔥 [修复] 使用 Activity 引用检测配置变化（如旋转）
+            //  进入视频详情页时通知 MainActivity
+            //  [修复] 使用 Activity 引用检测配置变化（如旋转）
             val activity = context as? android.app.Activity
             DisposableEffect(Unit) {
                 onVideoDetailEnter()
                 onDispose {
                     onVideoDetailExit()
-                    // 🔥🔥 [修复] 只有在真正退出页面时才进入小窗模式
+                    //  [修复] 只有在真正退出页面时才进入小窗模式
                     // 配置变化（如旋转）不应触发小窗模式
-                    // 🔥🔥 [新增] 进入音频模式时也不应触发小窗（检查目标路由）
+                    //  [新增] 进入音频模式时也不应触发小窗（检查目标路由）
                     val currentDestination = navController.currentDestination?.route
                     val isNavigatingToAudioMode = currentDestination == ScreenRoutes.AudioMode.route
                     if (activity?.isChangingConfigurations != true && !isNavigatingToAudioMode) {
@@ -226,19 +226,19 @@ fun AppNavigation(
                 VideoDetailScreen(
                     bvid = bvid,
                     coverUrl = coverUrl,
-                    onUpClick = { mid -> navController.navigate(ScreenRoutes.Space.createRoute(mid)) },  // 🔥 点击UP跳转空间
+                    onUpClick = { mid -> navController.navigate(ScreenRoutes.Space.createRoute(mid)) },  //  点击UP跳转空间
                     miniPlayerManager = miniPlayerManager,
                     isInPipMode = isInPipMode,
                     isVisible = true,
-                    startInFullscreen = startFullscreen,  // 🔥 传递全屏参数
-                    transitionEnabled = cardTransitionEnabled,  // 🔥 传递过渡动画开关
+                    startInFullscreen = startFullscreen,  //  传递全屏参数
+                    transitionEnabled = cardTransitionEnabled,  //  传递过渡动画开关
                     onBack = { 
-                        // 🔥 标记正在返回，跳过首页卡片入场动画
+                        //  标记正在返回，跳过首页卡片入场动画
                         CardPositionManager.markReturning()
-                        // 🔥🔥 [修复] 不再在这里调用 enterMiniMode，由 onDispose 统一处理
+                        //  [修复] 不再在这里调用 enterMiniMode，由 onDispose 统一处理
                         navController.popBackStack() 
                     },
-                    // 🔥🔥 [新增] 导航到音频模式
+                    //  [新增] 导航到音频模式
                     onNavigateToAudioMode = { 
                         navController.navigate(ScreenRoutes.AudioMode.route)
                     }
@@ -246,15 +246,15 @@ fun AppNavigation(
             }
         }
         
-        // --- 2.1 🔥🔥 [新增] 音频模式页面 ---
+        // --- 2.1  [新增] 音频模式页面 ---
         composable(
             route = ScreenRoutes.AudioMode.route,
-            // 🔥 从底部滑入
+            //  从底部滑入
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(animDuration)) },
-            // 🔥 向下滑出
+            //  向下滑出
             popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(animDuration)) }
         ) { backStackEntry ->
-            // 🔥🔥 [关键] 共享 PlayerViewModel
+            //  [关键] 共享 PlayerViewModel
             // 尝试获取前一个页面 (VideoDetailScreen) 的 ViewModel
             // 这样可以复用播放器实例，实现无缝切换
             val parentEntry = androidx.compose.runtime.remember(backStackEntry) {
@@ -269,19 +269,19 @@ fun AppNavigation(
                 viewModel()
             }
             
-            // 🔥 获取原始进入音频模式时的 bvid（从父页面参数）
+            //  获取原始进入音频模式时的 bvid（从父页面参数）
             val originalBvid = parentEntry?.arguments?.getString("bvid") ?: ""
             
             com.android.purebilibili.feature.video.screen.AudioModeScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onVideoModeClick = { currentBvid ->
-                    // 🔥 如果当前播放的视频与原始视频相同，直接返回
+                    //  如果当前播放的视频与原始视频相同，直接返回
                     // 否则需要导航到正确的视频详情页
                     if (currentBvid == originalBvid) {
                         navController.popBackStack()
                     } else {
-                        // 🔥 先返回到首页，再导航到新视频
+                        //  先返回到首页，再导航到新视频
                         navController.popBackStack(ScreenRoutes.Home.route, false)
                         navController.navigate(VideoRoute.createRoute(currentBvid, 0L, ""))
                     }
@@ -317,7 +317,7 @@ fun AppNavigation(
         ) {
             val historyViewModel: HistoryViewModel = viewModel()
             
-            // 🔥🔥 [修复] 每次进入历史记录页面时刷新数据
+            //  [修复] 每次进入历史记录页面时刷新数据
             androidx.compose.runtime.LaunchedEffect(Unit) {
                 historyViewModel.loadData()
             }
@@ -343,7 +343,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 5.3 🔥🔥 [新增] 稍后再看 ---
+        // --- 5.3  [新增] 稍后再看 ---
         composable(
             route = ScreenRoutes.WatchLater.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration)) },
@@ -355,7 +355,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 5.4 🔥🔥 [新增] 直播列表 ---
+        // --- 5.4  [新增] 直播列表 ---
         composable(
             route = ScreenRoutes.LiveList.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration)) },
@@ -369,7 +369,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 5.5 🔥 关注列表 ---
+        // --- 5.5  关注列表 ---
         composable(
             route = ScreenRoutes.Following.route,
             arguments = listOf(
@@ -386,7 +386,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 5.6 🔥 离线缓存列表 ---
+        // --- 5.6  离线缓存列表 ---
         composable(
             route = ScreenRoutes.DownloadList.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration)) },
@@ -407,16 +407,16 @@ fun AppNavigation(
             DynamicScreen(
                 onVideoClick = { bvid -> navigateToVideo(bvid, 0L, "") },
                 onUserClick = { mid -> navController.navigate(ScreenRoutes.Space.createRoute(mid)) },
-                onLiveClick = { roomId, title, uname ->  // 🔥 直播点击
+                onLiveClick = { roomId, title, uname ->  //  直播点击
                     navController.navigate(ScreenRoutes.Live.createRoute(roomId, title, uname))
                 },
                 onBack = { navController.popBackStack() },
-                onLoginClick = { navController.navigate(ScreenRoutes.Login.route) },  // 🔥 跳转登录
-                onHomeClick = { navController.popBackStack() }  // 🔥 返回首页
+                onLoginClick = { navController.navigate(ScreenRoutes.Login.route) },  //  跳转登录
+                onHomeClick = { navController.popBackStack() }  //  返回首页
             )
         }
         
-        // --- 6.5 🔥🔥 [新增] 竖屏短视频 (故事模式) ---
+        // --- 6.5  [新增] 竖屏短视频 (故事模式) ---
         composable(
             route = ScreenRoutes.Story.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(animDuration)) },
@@ -432,22 +432,22 @@ fun AppNavigation(
         composable(
             route = ScreenRoutes.Search.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration)) },
-            // 🔥 进入视频详情页时的退出动画（与首页一致）
+            //  进入视频详情页时的退出动画（与首页一致）
             exitTransition = { fadeOut(animationSpec = tween(200)) },
-            // 🔥🔥 从视频详情页返回时的动画（与首页一致，让卡片回到原位）
+            //  从视频详情页返回时的动画（与首页一致，让卡片回到原位）
             popEnterTransition = { fadeIn(animationSpec = tween(250)) },
             popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(animDuration)) }
         ) {
-            // 🔥 从 homeViewModel 获取最新的用户状态 (包括头像)
+            //  从 homeViewModel 获取最新的用户状态 (包括头像)
             val homeState by homeViewModel.uiState.collectAsState()
 
-            // 🔥🔥 提供 AnimatedVisibilityScope 给 SearchScreen 以支持共享元素过渡
+            //  提供 AnimatedVisibilityScope 给 SearchScreen 以支持共享元素过渡
             ProvideAnimatedVisibilityScope(animatedVisibilityScope = this) {
                 SearchScreen(
                     userFace = homeState.user.face, // 传入头像 URL
                     onBack = { navController.popBackStack() },
                     onVideoClick = { bvid, cid -> navigateToVideo(bvid, cid, "") },
-                    onUpClick = { mid -> navController.navigate(ScreenRoutes.Space.createRoute(mid)) },  // 🔥 点击UP主跳转到空间
+                    onUpClick = { mid -> navController.navigate(ScreenRoutes.Space.createRoute(mid)) },  //  点击UP主跳转到空间
                     onAvatarClick = {
                         // 如果已登录 -> 去个人中心，未登录 -> 去登录页
                         if (homeState.user.isLogin) {
@@ -473,7 +473,7 @@ fun AppNavigation(
                 onPlaybackClick = { navController.navigate(ScreenRoutes.PlaybackSettings.route) },
                 onPermissionClick = { navController.navigate(ScreenRoutes.PermissionSettings.route) },
                 onPluginsClick = { navController.navigate(ScreenRoutes.PluginsSettings.route) },
-                mainHazeState = mainHazeState // 🔥🔥 传递全局 Haze 状态
+                mainHazeState = mainHazeState //  传递全局 Haze 状态
             )
         }
 
@@ -502,7 +502,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 🔥 外观设置二级页面 ---
+        // ---  外观设置二级页面 ---
         composable(
             route = ScreenRoutes.AppearanceSettings.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration)) },
@@ -517,7 +517,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 🎨 主题设置页面 ---
+        // ---  主题设置页面 ---
         composable(
             route = ScreenRoutes.ThemeSettings.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration)) },
@@ -528,7 +528,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 🎨 图标设置页面 ---
+        // ---  图标设置页面 ---
         composable(
             route = ScreenRoutes.IconSettings.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration)) },
@@ -539,7 +539,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 🎬 动画设置页面 ---
+        // ---  动画设置页面 ---
         composable(
             route = ScreenRoutes.AnimationSettings.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration)) },
@@ -550,7 +550,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 🔥 播放设置二级页面 ---
+        // ---  播放设置二级页面 ---
         composable(
             route = ScreenRoutes.PlaybackSettings.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration)) },
@@ -561,7 +561,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 🔐 权限管理页面 ---
+        // ---  权限管理页面 ---
         composable(
             route = ScreenRoutes.PermissionSettings.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration)) },
@@ -572,7 +572,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 🔌 插件中心页面 ---
+        // ---  插件中心页面 ---
         composable(
             route = ScreenRoutes.PluginsSettings.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration)) },
@@ -583,7 +583,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 🔥 底栏管理页面 ---
+        // ---  底栏管理页面 ---
         composable(
             route = ScreenRoutes.BottomBarSettings.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(animDuration)) },
@@ -594,7 +594,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 9. 🔥🔥 [新增] UP主空间页面 ---
+        // --- 9.  [新增] UP主空间页面 ---
         composable(
             route = ScreenRoutes.Space.route,
             arguments = listOf(
@@ -611,7 +611,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 10. 🔥🔥 [新增] 直播播放页面 ---
+        // --- 10.  [新增] 直播播放页面 ---
         composable(
             route = ScreenRoutes.Live.route,
             arguments = listOf(
@@ -633,7 +633,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 11. 🔥🔥 [新增] 番剧/影视主页面 ---
+        // --- 11.  [新增] 番剧/影视主页面 ---
         composable(
             route = ScreenRoutes.Bangumi.route,
             arguments = listOf(
@@ -648,11 +648,11 @@ fun AppNavigation(
                 onBangumiClick = { seasonId ->
                     navController.navigate(ScreenRoutes.BangumiDetail.createRoute(seasonId))
                 },
-                initialType = initialType  // 🔥🔥 [修复] 传入初始类型
+                initialType = initialType  //  [修复] 传入初始类型
             )
         }
         
-        // --- 12. 🔥🔥 [新增] 番剧/影视详情页面 ---
+        // --- 12.  [新增] 番剧/影视详情页面 ---
         composable(
             route = ScreenRoutes.BangumiDetail.route,
             arguments = listOf(
@@ -666,11 +666,11 @@ fun AppNavigation(
                 seasonId = seasonId,
                 onBack = { navController.popBackStack() },
                 onEpisodeClick = { episode ->
-                    // 🔥🔥 [修改] 跳转到番剧播放页
+                    //  [修改] 跳转到番剧播放页
                     navController.navigate(ScreenRoutes.BangumiPlayer.createRoute(seasonId, episode.id))
                 },
                 onSeasonClick = { newSeasonId ->
-                    // 🔥 切换到其他季度（替换当前页面）
+                    //  切换到其他季度（替换当前页面）
                     navController.navigate(ScreenRoutes.BangumiDetail.createRoute(newSeasonId)) {
                         popUpTo(ScreenRoutes.BangumiDetail.createRoute(seasonId)) { inclusive = true }
                     }
@@ -678,7 +678,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 13. 🔥🔥 [新增] 番剧播放页面 ---
+        // --- 13.  [新增] 番剧播放页面 ---
         composable(
             route = ScreenRoutes.BangumiPlayer.route,
             arguments = listOf(
@@ -697,7 +697,7 @@ fun AppNavigation(
             )
         }
         
-        // --- 14. 🔥 分区页面 ---
+        // --- 14.  分区页面 ---
         composable(
             route = ScreenRoutes.Partition.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(animDuration)) },
@@ -706,13 +706,13 @@ fun AppNavigation(
             com.android.purebilibili.feature.partition.PartitionScreen(
                 onBack = { navController.popBackStack() },
                 onPartitionClick = { id, name ->
-                    // 🔥 点击分区后，跳转到分类详情页面
+                    //  点击分区后，跳转到分类详情页面
                     navController.navigate(ScreenRoutes.Category.createRoute(id, name))
                 }
             )
         }
         
-        // --- 15. 🔥 分类详情页面 ---
+        // --- 15.  分类详情页面 ---
         composable(
             route = ScreenRoutes.Category.route,
             arguments = listOf(

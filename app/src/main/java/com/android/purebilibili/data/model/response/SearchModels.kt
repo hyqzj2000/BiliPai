@@ -42,7 +42,7 @@ data class SearchResultCategory(
     val data: List<SearchVideoItem>? = null
 )
 
-// 🔥🔥 [新增] 分类搜索响应 (search/type API)
+//  [新增] 分类搜索响应 (search/type API)
 @Serializable
 data class SearchTypeResponse(
     val code: Int = 0,
@@ -69,14 +69,14 @@ data class SearchVideoItem(
     val play: Int = 0,
     val video_review: Int = 0,
     val duration: String = "",
-    // 🔥 新增：发布时间戳（秒）
+    //  新增：发布时间戳（秒）
     val pubdate: Long = 0
 ) {
     fun toVideoItem(): VideoItem {
         return VideoItem(
             id = id,
             bvid = bvid,
-            // 🔥🔥🔥 核心修复：使用正则表达式清洗 HTML 标签和转义字符 🔥🔥🔥
+            //  核心修复：使用正则表达式清洗 HTML 标签和转义字符 
             title = title.replace(Regex("<.*?>"), "") // 去除 <em class="..."> 和 </em>
                 .replace("&quot;", "\"")      // 修复双引号转义
                 .replace("&amp;", "&")        // 修复 & 符号转义
@@ -87,7 +87,7 @@ data class SearchVideoItem(
             owner = Owner(name = author),
             stat = Stat(view = play, danmaku = video_review),
             duration = parseDuration(duration),
-            // 🔥 传递发布时间
+            //  传递发布时间
             pubdate = pubdate
         )
     }
@@ -104,7 +104,7 @@ data class SearchVideoItem(
     }
 }
 
-// 🔥🔥 [新增] UP主搜索响应模型
+//  [新增] UP主搜索响应模型
 @Serializable
 data class SearchUpResponse(
     val code: Int = 0,
@@ -121,7 +121,7 @@ data class SearchUpData(
     val result: List<SearchUpItem>? = null  // 直接返回 UP 主列表
 )
 
-// --- 3. 🔥 UP主 搜索结果模型 ---
+// --- 3.  UP主 搜索结果模型 ---
 @Serializable
 data class SearchUpItem(
     val mid: Long = 0,
@@ -149,7 +149,7 @@ data class SearchOfficialVerify(
     val desc: String = ""
 )
 
-// --- 4. 🔥 搜索类型枚举 ---
+// --- 4.  搜索类型枚举 ---
 enum class SearchType(val value: String, val displayName: String) {
     VIDEO("video", "视频"),
     UP("bili_user", "UP主"),
@@ -163,7 +163,7 @@ enum class SearchType(val value: String, val displayName: String) {
     }
 }
 
-// --- 5. 🔥 搜索建议模型 ---
+// --- 5.  搜索建议模型 ---
 @Serializable
 data class SearchSuggestResponse(
     val code: Int = 0,

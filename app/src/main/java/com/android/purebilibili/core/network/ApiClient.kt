@@ -47,8 +47,8 @@ interface BilibiliApi {
     @GET("x/web-interface/history/cursor")
     suspend fun getHistoryList(
         @Query("ps") ps: Int = 30,
-        @Query("max") max: Long = 0,         // 🔥 游标: 上一页最后一条的 oid
-        @Query("view_at") viewAt: Long = 0,  // 🔥 游标: 上一页最后一条的 view_at
+        @Query("max") max: Long = 0,         //  游标: 上一页最后一条的 oid
+        @Query("view_at") viewAt: Long = 0,  //  游标: 上一页最后一条的 view_at
         @Query("business") business: String = ""  // 空字符串=全部类型
     ): HistoryResponse
 
@@ -70,9 +70,9 @@ interface BilibiliApi {
     suspend fun getPopularVideos(
         @Query("pn") pn: Int = 1,
         @Query("ps") ps: Int = 20
-    ): PopularResponse  // 🔥 使用专用响应类型
+    ): PopularResponse  //  使用专用响应类型
     
-    // 🔥🔥 [修复] 分区视频 - 使用 dynamic/region API 返回完整 stat（包含播放量）
+    //  [修复] 分区视频 - 使用 dynamic/region API 返回完整 stat（包含播放量）
     // 原 newlist API 不返回 stat 数据
     @GET("x/web-interface/dynamic/region")
     suspend fun getRegionVideos(
@@ -91,18 +91,18 @@ interface BilibiliApi {
         @Query("sort_type") sortType: String = "online"  // 按人气排序
     ): LiveResponse
     
-    // 🔥🔥 [新增] 获取关注的直播 - 需要登录
+    //  [新增] 获取关注的直播 - 需要登录
     @GET("https://api.live.bilibili.com/xlive/web-ucenter/user/following")
     suspend fun getFollowedLive(
         @Query("page") page: Int = 1,
         @Query("page_size") pageSize: Int = 30
     ): FollowedLiveResponse
     
-    // 🔥🔥 [新增] 获取直播分区列表
+    //  [新增] 获取直播分区列表
     @GET("https://api.live.bilibili.com/room/v1/Area/getList")
     suspend fun getLiveAreaList(): LiveAreaListResponse
     
-    // 🔥🔥 [新增] 分区推荐直播列表 (xlive API)
+    //  [新增] 分区推荐直播列表 (xlive API)
     @GET("https://api.live.bilibili.com/xlive/web-interface/v1/second/getList")
     suspend fun getLiveSecondAreaList(
         @Query("platform") platform: String = "web",
@@ -112,25 +112,25 @@ interface BilibiliApi {
         @Query("sort_type") sortType: String = "online"
     ): LiveSecondAreaResponse
     
-    // 🔥🔥 [新增] 获取直播间初始化信息 (真实房间号)
+    //  [新增] 获取直播间初始化信息 (真实房间号)
     @GET("https://api.live.bilibili.com/room/v1/Room/room_init")
     suspend fun getLiveRoomInit(
         @Query("id") roomId: Long
     ): LiveRoomInitResponse
     
-    // 🔥🔥 [新增] 获取直播间详细信息 (含主播信息)
+    //  [新增] 获取直播间详细信息 (含主播信息)
     @GET("https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByRoom")
     suspend fun getLiveRoomDetail(
         @Query("room_id") roomId: Long
     ): LiveRoomDetailResponse
     
-    // 🔥🔥 [新增] 获取直播间详情（包含在线人数）
+    //  [新增] 获取直播间详情（包含在线人数）
     @GET("https://api.live.bilibili.com/room/v1/Room/get_info")
     suspend fun getRoomInfo(
         @Query("room_id") roomId: Long
     ): RoomInfoResponse
     
-    // 🔥🔥 [新增] 获取直播流 URL - 使用更可靠的 xlive API
+    //  [新增] 获取直播流 URL - 使用更可靠的 xlive API
     @GET("https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo")
     suspend fun getLivePlayUrl(
         @Query("room_id") roomId: Long,
@@ -142,7 +142,7 @@ interface BilibiliApi {
         @Query("ptype") ptype: Int = 8
     ): LivePlayUrlResponse
     
-    // 🔥🔥 [新增] 旧版直播流 API - 可靠返回 quality_description 画质列表
+    //  [新增] 旧版直播流 API - 可靠返回 quality_description 画质列表
     @GET("https://api.live.bilibili.com/room/v1/Room/playUrl")
     suspend fun getLivePlayUrlLegacy(
         @Query("cid") cid: Long,              // 房间号 (room_id)
@@ -154,18 +154,18 @@ interface BilibiliApi {
     @GET("x/web-interface/view")
     suspend fun getVideoInfo(@Query("bvid") bvid: String): VideoDetailResponse
     
-    // 🔥 获取视频标签
+    //  获取视频标签
     @GET("x/tag/archive/tags")
     suspend fun getVideoTags(@Query("bvid") bvid: String): VideoTagResponse
 
     @GET("x/player/wbi/playurl")
     suspend fun getPlayUrl(@QueryMap params: Map<String, String>): PlayUrlResponse
     
-    // 🔥 HTML5 降级方案 (无 Referer 鉴权，仅 MP4 格式)
+    //  HTML5 降级方案 (无 Referer 鉴权，仅 MP4 格式)
     @GET("x/player/wbi/playurl")
     suspend fun getPlayUrlHtml5(@QueryMap params: Map<String, String>): PlayUrlResponse
     
-    // 🔥🔥 [新增] 上报播放心跳（记录播放历史）
+    //  [新增] 上报播放心跳（记录播放历史）
     @POST("x/click-interface/web/heartbeat")
     suspend fun reportHeartbeat(
         @Query("bvid") bvid: String,
@@ -175,7 +175,7 @@ interface BilibiliApi {
         @Query("start_ts") startTs: Long = System.currentTimeMillis() / 1000
     ): BaseResponse
 
-    // 🔥🔥 [新增] 无 WBI 签名的旧版 API (可能绕过 412)
+    //  [新增] 无 WBI 签名的旧版 API (可能绕过 412)
     @GET("x/player/playurl")
     suspend fun getPlayUrlLegacy(
         @Query("bvid") bvid: String,
@@ -188,7 +188,7 @@ interface BilibiliApi {
         @Query("high_quality") highQuality: Int = 1
     ): PlayUrlResponse
     
-    // 🔥🔥 [新增] 通过 aid 获取播放地址 - 用于 Story 模式
+    //  [新增] 通过 aid 获取播放地址 - 用于 Story 模式
     @GET("x/player/playurl")
     suspend fun getPlayUrlByAid(
         @Query("avid") aid: Long,
@@ -201,18 +201,25 @@ interface BilibiliApi {
         @Query("high_quality") highQuality: Int = 1
     ): PlayUrlResponse
     
-    // 🔥🔥 [新增] APP playurl API - 使用 access_token 获取高画质视频流 (4K/HDR/1080P60)
+    //  [新增] APP playurl API - 使用 access_token 获取高画质视频流 (4K/HDR/1080P60)
     @GET("https://api.bilibili.com/x/player/playurl")
     suspend fun getPlayUrlApp(@QueryMap params: Map<String, String>): PlayUrlResponse
+
+    @GET("x/player/videoshot")
+    suspend fun getVideoshot(
+        @Query("bvid") bvid: String,
+        @Query("cid") cid: Long,
+        @Query("index") index: Int = 1  // 是否返回时间索引，1=是
+    ): VideoshotResponse
 
     @GET("x/web-interface/archive/related")
     suspend fun getRelatedVideos(@Query("bvid") bvid: String): RelatedResponse
 
-    // 🔥🔥 [修复] 使用 comment.bilibili.com 弹幕端点，避免 412 错误
+    //  [修复] 使用 comment.bilibili.com 弹幕端点，避免 412 错误
     @GET("https://comment.bilibili.com/{cid}.xml")
     suspend fun getDanmakuXml(@retrofit2.http.Path("cid") cid: Long): ResponseBody
     
-    // 🔥🔥 [新增] Protobuf 弹幕 API - 分段加载 (每段 6 分钟)
+    //  [新增] Protobuf 弹幕 API - 分段加载 (每段 6 分钟)
     @GET("https://api.bilibili.com/x/v2/dm/web/seg.so")
     suspend fun getDanmakuSeg(
         @Query("type") type: Int = 1,              // 视频类型: 1=视频
@@ -225,7 +232,7 @@ interface BilibiliApi {
     @GET("x/v2/reply/wbi/main")
     suspend fun getReplyList(@QueryMap params: Map<String, String>): ReplyResponse
     
-    // 🔥🔥 [新增] 旧版评论 API - 用于时间排序 (sort=0)
+    //  [新增] 旧版评论 API - 用于时间排序 (sort=0)
     // 此 API 不需要 WBI 签名，分页更稳定
     @GET("x/v2/reply")
     suspend fun getReplyListLegacy(
@@ -256,13 +263,13 @@ interface BilibiliApi {
         @Query("fid") fid: Long  // UP 主 mid
     ): RelationResponse
     
-    // 🔥🔥 [新增] 查询视频是否已收藏
+    //  [新增] 查询视频是否已收藏
     @GET("x/v2/fav/video/favoured")
     suspend fun checkFavoured(
         @Query("aid") aid: Long
     ): FavouredResponse
     
-    // 🔥🔥 [新增] 关注/取关 UP 主
+    //  [新增] 关注/取关 UP 主
     @retrofit2.http.FormUrlEncoded
     @retrofit2.http.POST("x/relation/modify")
     suspend fun modifyRelation(
@@ -271,7 +278,7 @@ interface BilibiliApi {
         @retrofit2.http.Field("csrf") csrf: String
     ): SimpleApiResponse
     
-    // 🔥🔥 [新增] 收藏/取消收藏视频
+    //  [新增] 收藏/取消收藏视频
     @retrofit2.http.FormUrlEncoded
     @retrofit2.http.POST("x/v3/fav/resource/deal")
     suspend fun dealFavorite(
@@ -282,7 +289,7 @@ interface BilibiliApi {
         @retrofit2.http.Field("csrf") csrf: String
     ): SimpleApiResponse
     
-    // 🔥🔥 [新增] 点赞/取消点赞视频
+    //  [新增] 点赞/取消点赞视频
     @retrofit2.http.FormUrlEncoded
     @retrofit2.http.POST("x/web-interface/archive/like")
     suspend fun likeVideo(
@@ -291,13 +298,13 @@ interface BilibiliApi {
         @retrofit2.http.Field("csrf") csrf: String
     ): SimpleApiResponse
     
-    // 🔥🔥 [新增] 查询是否已点赞
+    //  [新增] 查询是否已点赞
     @GET("x/web-interface/archive/has/like")
     suspend fun hasLiked(
         @Query("aid") aid: Long
     ): HasLikedResponse
     
-    // 🔥🔥 [新增] 投币
+    //  [新增] 投币
     @retrofit2.http.FormUrlEncoded
     @retrofit2.http.POST("x/web-interface/coin/add")
     suspend fun coinVideo(
@@ -307,13 +314,13 @@ interface BilibiliApi {
         @retrofit2.http.Field("csrf") csrf: String
     ): SimpleApiResponse
     
-    // 🔥🔥 [新增] 查询已投币数
+    //  [新增] 查询已投币数
     @GET("x/web-interface/archive/coins")
     suspend fun hasCoined(
         @Query("aid") aid: Long
     ): HasCoinedResponse
     
-    // 🔥🔥 [新增] 获取关注列表（用于首页显示"已关注"标签）
+    //  [新增] 获取关注列表（用于首页显示"已关注"标签）
     @GET("x/relation/followings")
     suspend fun getFollowings(
         @Query("vmid") vmid: Long,        // 用户 mid
@@ -322,7 +329,7 @@ interface BilibiliApi {
         @Query("order") order: String = "desc"  // 排序
     ): FollowingsResponse
     
-    // 🔥🔥🔥 [官方适配] 获取视频在线观看人数
+    //  [官方适配] 获取视频在线观看人数
     @GET("x/player/online/total")
     suspend fun getOnlineCount(
         @Query("bvid") bvid: String,
@@ -333,7 +340,7 @@ interface BilibiliApi {
     @GET("x/v2/history/toview")
     suspend fun getWatchLaterList(): WatchLaterResponse
     
-    // 🔥🔥 [新增] 添加到稍后再看
+    //  [新增] 添加到稍后再看
     @retrofit2.http.FormUrlEncoded
     @retrofit2.http.POST("x/v2/history/toview/add")
     suspend fun addToWatchLater(
@@ -341,7 +348,7 @@ interface BilibiliApi {
         @retrofit2.http.Field("csrf") csrf: String
     ): SimpleApiResponse
     
-    // 🔥🔥 [新增] 从稍后再看删除
+    //  [新增] 从稍后再看删除
     @retrofit2.http.FormUrlEncoded
     @retrofit2.http.POST("x/v2/history/toview/del")
     suspend fun deleteFromWatchLater(
@@ -350,7 +357,7 @@ interface BilibiliApi {
     ): SimpleApiResponse
 }
 
-// 🔥 [新增] Buvid SPI 响应模型 (用于获取正确的设备指纹)
+//  [新增] Buvid SPI 响应模型 (用于获取正确的设备指纹)
 @kotlinx.serialization.Serializable
 data class BuvidSpiData(
     val b_3: String = "",  // buvid3
@@ -363,12 +370,12 @@ data class BuvidSpiResponse(
     val data: BuvidSpiData? = null
 )
 
-// 🔥 [新增] Buvid API
+//  [新增] Buvid API
 interface BuvidApi {
     @GET("x/frontend/finger/spi")
     suspend fun getSpi(): BuvidSpiResponse
     
-    // 🔥 Buvid 激活 (PiliPala 中关键的一步)
+    //  Buvid 激活 (PiliPala 中关键的一步)
     @retrofit2.http.FormUrlEncoded
     @POST("x/internal/gaia-gateway/ExClimbWuzhi")
     suspend fun activateBuvid(
@@ -380,23 +387,23 @@ interface SearchApi {
     @GET("x/web-interface/search/square")
     suspend fun getHotSearch(@Query("limit") limit: Int = 10): HotSearchResponse
 
-    // 🔥 综合搜索 (不支持排序)
+    //  综合搜索 (不支持排序)
     @GET("x/web-interface/search/all/v2")
     suspend fun searchAll(@QueryMap params: Map<String, String>): SearchResponse
     
-    // 🔥🔥 [修复] 分类搜索 - 支持排序和时长筛选
+    //  [修复] 分类搜索 - 支持排序和时长筛选
     @GET("x/web-interface/wbi/search/type")
     suspend fun search(@QueryMap params: Map<String, String>): SearchTypeResponse
     
-    // 🔥🔥 [新增] UP主搜索 - 专用解析
+    //  [新增] UP主搜索 - 专用解析
     @GET("x/web-interface/wbi/search/type")
     suspend fun searchUp(@QueryMap params: Map<String, String>): com.android.purebilibili.data.model.response.SearchUpResponse
     
-    // 🔥🔥 [新增] 番剧搜索 - search_type=media_bangumi
+    //  [新增] 番剧搜索 - search_type=media_bangumi
     @GET("x/web-interface/wbi/search/type")
     suspend fun searchBangumi(@QueryMap params: Map<String, String>): com.android.purebilibili.data.model.response.BangumiSearchResponse
     
-    // 🔥 搜索建议/联想
+    //  搜索建议/联想
     @GET("https://s.search.bilibili.com/main/suggest")
     suspend fun getSearchSuggest(
         @Query("term") term: String,
@@ -405,7 +412,7 @@ interface SearchApi {
     ): SearchSuggestResponse
 }
 
-// 🔥🔥 [新增] 故事模式 (竖屏短视频) API
+//  [新增] 故事模式 (竖屏短视频) API
 interface StoryApi {
     // 获取故事流 (竖屏短视频列表)
     @GET("x/v2/feed/index/story")
@@ -421,7 +428,7 @@ interface StoryApi {
     ): StoryResponse
 }
 
-// 🔥 动态 API
+//  动态 API
 interface DynamicApi {
     @GET("x/polymer/web-dynamic/v1/feed/all")
     suspend fun getDynamicFeed(
@@ -430,7 +437,7 @@ interface DynamicApi {
         @Query("page") page: Int = 1
     ): DynamicFeedResponse
     
-    // 🔥🔥 [新增] 获取动态评论列表 (type=17 表示动态)
+    //  [新增] 获取动态评论列表 (type=17 表示动态)
     @GET("x/v2/reply")
     suspend fun getDynamicReplies(
         @Query("oid") oid: Long,       // 动态 id_str (转为 Long)
@@ -440,7 +447,7 @@ interface DynamicApi {
         @Query("sort") sort: Int = 0   // 0=按时间, 1=按点赞
     ): ReplyResponse
     
-    // 🔥🔥 [新增] 发表动态评论
+    //  [新增] 发表动态评论
     @retrofit2.http.FormUrlEncoded
     @retrofit2.http.POST("x/v2/reply/add")
     suspend fun addDynamicReply(
@@ -450,7 +457,7 @@ interface DynamicApi {
         @retrofit2.http.Field("csrf") csrf: String
     ): SimpleApiResponse
     
-    // 🔥🔥 [新增] 点赞动态
+    //  [新增] 点赞动态
     @retrofit2.http.FormUrlEncoded
     @retrofit2.http.POST("x/dynamic/like")
     suspend fun likeDynamic(
@@ -459,7 +466,7 @@ interface DynamicApi {
         @retrofit2.http.Field("csrf") csrf: String
     ): SimpleApiResponse
     
-    // 🔥🔥 [新增] 转发动态
+    //  [新增] 转发动态
     @retrofit2.http.FormUrlEncoded
     @retrofit2.http.POST("x/dynamic/feed/create/dyn")
     suspend fun repostDynamic(
@@ -470,7 +477,7 @@ interface DynamicApi {
     ): SimpleApiResponse
 }
 
-// 🔥🔥 [新增] UP主空间 API
+//  [新增] UP主空间 API
 interface SpaceApi {
     // 获取用户详细信息 (需要 WBI 签名)
     @GET("x/space/wbi/acc/info")
@@ -488,7 +495,7 @@ interface SpaceApi {
     @GET("x/space/upstat")
     suspend fun getUpStat(@Query("mid") mid: Long): com.android.purebilibili.data.model.response.UpStatResponse
     
-    // 🔥 获取合集和系列列表
+    //  获取合集和系列列表
     @GET("x/polymer/web-space/seasons_series_list")
     suspend fun getSeasonsSeriesList(
         @Query("mid") mid: Long,
@@ -496,7 +503,7 @@ interface SpaceApi {
         @Query("page_size") pageSize: Int = 20
     ): com.android.purebilibili.data.model.response.SeasonsSeriesListResponse
     
-    // 🔥 获取合集内的视频列表
+    //  获取合集内的视频列表
     @GET("x/polymer/web-space/seasons_archives_list")
     suspend fun getSeasonArchives(
         @Query("mid") mid: Long,
@@ -506,7 +513,7 @@ interface SpaceApi {
         @Query("sort_reverse") sortReverse: Boolean = false
     ): com.android.purebilibili.data.model.response.SeasonArchivesResponse
     
-    // 🔥 获取系列内的视频列表
+    //  获取系列内的视频列表
     @GET("x/series/archives")
     suspend fun getSeriesArchives(
         @Query("mid") mid: Long,
@@ -517,7 +524,7 @@ interface SpaceApi {
     ): com.android.purebilibili.data.model.response.SeriesArchivesResponse
 }
 
-// 🔥🔥 [新增] 番剧/影视 API
+//  [新增] 番剧/影视 API
 interface BangumiApi {
     // 番剧时间表
     @GET("pgc/web/timeline")
@@ -527,11 +534,11 @@ interface BangumiApi {
         @Query("after") after: Int = 7
     ): com.android.purebilibili.data.model.response.BangumiTimelineResponse
     
-    // 番剧索引/筛选 - 🔥 需要 st 参数（与 season_type 相同值）
+    // 番剧索引/筛选 -  需要 st 参数（与 season_type 相同值）
     @GET("pgc/season/index/result")
     suspend fun getBangumiIndex(
         @Query("season_type") seasonType: Int,   // 1=番剧 2=电影 3=纪录片 4=国创 5=电视剧 7=综艺
-        @Query("st") st: Int,                    // 🔥🔥 [修复] 必需参数，与 season_type 相同
+        @Query("st") st: Int,                    //  [修复] 必需参数，与 season_type 相同
         @Query("page") page: Int = 1,
         @Query("pagesize") pageSize: Int = 20,
         @Query("order") order: Int = 2,          // 2=播放量排序（默认更热门）
@@ -548,7 +555,7 @@ interface BangumiApi {
         @Query("type") type: Int = 1
     ): com.android.purebilibili.data.model.response.BangumiIndexResponse
     
-    // 番剧详情 - 🔥🔥 返回 ResponseBody 自行解析，防止 OOM
+    // 番剧详情 -  返回 ResponseBody 自行解析，防止 OOM
     @GET("pgc/view/web/season")
     suspend fun getSeasonDetail(
         @Query("season_id") seasonId: Long
@@ -580,7 +587,7 @@ interface BangumiApi {
         @retrofit2.http.Field("csrf") csrf: String
     ): com.android.purebilibili.data.model.response.SimpleApiResponse
     
-    // 🔥🔥 [新增] 我的追番列表
+    //  [新增] 我的追番列表
     @GET("x/space/bangumi/follow/list")
     suspend fun getMyFollowBangumi(
         @Query("vmid") vmid: Long,          // 用户 mid (登录用户的 mid)
@@ -599,7 +606,7 @@ interface PassportApi {
     @GET("x/passport-login/web/qrcode/poll")
     suspend fun pollQrCode(@Query("qrcode_key") key: String): Response<PollResponse>
     
-    // ========== 🔥 极验验证 + 手机号/密码登录 ==========
+    // ==========  极验验证 + 手机号/密码登录 ==========
     
     // 获取极验验证参数 (gt, challenge, token)
     @GET("x/passport-login/captcha")
@@ -652,7 +659,7 @@ interface PassportApi {
         @retrofit2.http.Field("go_url") goUrl: String = "https://www.bilibili.com"
     ): Response<LoginResponse>
     
-    // ========== 🔥🔥 TV 端登录 (获取 access_token 用于高画质视频) ==========
+    // ==========  TV 端登录 (获取 access_token 用于高画质视频) ==========
     
     // TV 端申请二维码
     @retrofit2.http.FormUrlEncoded
@@ -685,22 +692,22 @@ object NetworkModule {
     val okHttpClient: OkHttpClient by lazy {
         val builder = OkHttpClient.Builder()
             .protocols(listOf(Protocol.HTTP_1_1))
-            // 🔥 [新增] 超时配置，提高网络稳定性
+            //  [新增] 超时配置，提高网络稳定性
             .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
             .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-            // 🚀🚀 [性能优化] HTTP 磁盘缓存 - 10MB，减少重复请求
+            //  [性能优化] HTTP 磁盘缓存 - 10MB，减少重复请求
             .cache(okhttp3.Cache(
                 directory = java.io.File(appContext?.cacheDir ?: java.io.File("/tmp"), "okhttp_cache"),
                 maxSize = 10L * 1024 * 1024  // 10 MB
             ))
-            // 🚀🚀 [性能优化] 连接池优化 - 保持更多空闲连接
+            //  [性能优化] 连接池优化 - 保持更多空闲连接
             .connectionPool(okhttp3.ConnectionPool(
                 maxIdleConnections = 10,
                 keepAliveDuration = 5,
                 timeUnit = java.util.concurrent.TimeUnit.MINUTES
             ))
-            // 🔥 [新增] 自动重试和重定向
+            //  [新增] 自动重试和重定向
             .retryOnConnectionFailure(true)
             .followRedirects(true)
             .followSslRedirects(true)
@@ -720,7 +727,7 @@ object NetworkModule {
         val cookieLock = Any()
         
         builder
-            // 🔥🔥 [关键] 添加 CookieJar 自动管理 Cookie（参考 PiliPala）
+            //  [关键] 添加 CookieJar 自动管理 Cookie（参考 PiliPala）
             .cookieJar(object : okhttp3.CookieJar {
                 private val cookieStore = mutableMapOf<String, MutableList<okhttp3.Cookie>>()
                 
@@ -732,7 +739,7 @@ object NetworkModule {
                             // 移除同名旧 cookie，添加新 cookie
                             existingCookies.removeAll { it.name == newCookie.name }
                             existingCookies.add(newCookie)
-                            com.android.purebilibili.core.util.Logger.d("CookieJar", "🍪 Saved cookie: ${newCookie.name} for $host")
+                            com.android.purebilibili.core.util.Logger.d("CookieJar", " Saved cookie: ${newCookie.name} for $host")
                         }
                     }
                 }
@@ -745,7 +752,7 @@ object NetworkModule {
                         cookieStore[url.host]?.let { cookies.addAll(it) }
                     }
                     
-                    // 🔥 确保 buvid3 存在
+                    //  确保 buvid3 存在
                     var buvid3 = TokenManager.buvid3Cache
                     if (buvid3.isNullOrEmpty()) {
                         buvid3 = UUID.randomUUID().toString() + "infoc"
@@ -759,11 +766,11 @@ object NetworkModule {
                             .build())
                     }
                     
-                    // 🔥🔥 [修复] 使用 bilibili.com 域名，确保 Cookie 在所有子域名生效
+                    //  [修复] 使用 bilibili.com 域名，确保 Cookie 在所有子域名生效
                     // OkHttp 会自动处理子域名匹配（不需要前导点）
                     val biliBiliDomain = if (url.host.endsWith("bilibili.com")) "bilibili.com" else url.host
                     
-                    // 🔥 如果有 SESSDATA，添加它
+                    //  如果有 SESSDATA，添加它
                     val sessData = TokenManager.sessDataCache
                     if (!sessData.isNullOrEmpty() && cookies.none { it.name == "SESSDATA" }) {
                         cookies.add(okhttp3.Cookie.Builder()
@@ -773,7 +780,7 @@ object NetworkModule {
                             .build())
                     }
                     
-                    // 🔥🔥 [新增] 添加 bili_jct (CSRF Token) - VIP 画质验证可能需要
+                    //  [新增] 添加 bili_jct (CSRF Token) - VIP 画质验证可能需要
                     val biliJct = TokenManager.csrfCache
                     if (!biliJct.isNullOrEmpty() && cookies.none { it.name == "bili_jct" }) {
                         cookies.add(okhttp3.Cookie.Builder()
@@ -783,11 +790,11 @@ object NetworkModule {
                             .build())
                     }
                     
-                    // 🔥🔥 [调试] 输出 Cookie 信息以便排查 VIP 画质问题
+                    //  [调试] 输出 Cookie 信息以便排查 VIP 画质问题
                     if (url.encodedPath.contains("playurl") || url.encodedPath.contains("pgc/view")) {
                         com.android.purebilibili.core.util.Logger.d(
                             "CookieJar",
-                            "🔥 ${url.encodedPath} request: domain=$biliBiliDomain, hasSess=${!sessData.isNullOrEmpty()}, hasCsrf=${!biliJct.isNullOrEmpty()}"
+                            " ${url.encodedPath} request: domain=$biliBiliDomain, hasSess=${!sessData.isNullOrEmpty()}, hasCsrf=${!biliJct.isNullOrEmpty()}"
                         )
                     }
                     
@@ -799,19 +806,19 @@ object NetworkModule {
                 val url = original.url
                 var referer = "https://www.bilibili.com"
                 
-                // 🔥 如果请求中包含 bvid，构造更具体的 Referer (解决 412 问题)
+                //  如果请求中包含 bvid，构造更具体的 Referer (解决 412 问题)
                 val bvid = url.queryParameter("bvid")
                 if (!bvid.isNullOrEmpty()) {
                     referer = "https://www.bilibili.com/video/$bvid"
                 }
                 
-                // 🔥 如果是 Space API 请求，使用 space.bilibili.com 作为 Referer
+                //  如果是 Space API 请求，使用 space.bilibili.com 作为 Referer
                 val mid = url.queryParameter("mid") ?: url.queryParameter("vmid")
                 if (url.encodedPath.contains("/x/space/") && !mid.isNullOrEmpty()) {
                     referer = "https://space.bilibili.com/$mid"
                 }
                 
-                // 🔥🔥 [修复] 弹幕 API 需要使用视频页面作为 Referer (解决 412 问题)
+                //  [修复] 弹幕 API 需要使用视频页面作为 Referer (解决 412 问题)
                 if (url.encodedPath.contains("/dm/list.so") || url.encodedPath.contains("/x/v1/dm/")) {
                     referer = "https://www.bilibili.com/video/"
                 }
@@ -819,11 +826,11 @@ object NetworkModule {
                 val builder = original.newBuilder()
                     .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
                     .header("Referer", referer)
-                    .header("Origin", "https://www.bilibili.com") // 🔥 增加 Origin 头
+                    .header("Origin", "https://www.bilibili.com") //  增加 Origin 头
 
                 com.android.purebilibili.core.util.Logger.d(
                     "ApiClient",
-                    "🔥 Sending request to ${original.url}, Referer: $referer, hasSess=${!TokenManager.sessDataCache.isNullOrEmpty()}, hasCsrf=${!TokenManager.csrfCache.isNullOrEmpty()}"
+                    " Sending request to ${original.url}, Referer: $referer, hasSess=${!TokenManager.sessDataCache.isNullOrEmpty()}, hasCsrf=${!TokenManager.csrfCache.isNullOrEmpty()}"
                 )
 
                 chain.proceed(builder.build())
@@ -847,35 +854,35 @@ object NetworkModule {
             .create(SearchApi::class.java)
     }
     
-    // 🔥 动态 API
+    //  动态 API
     val dynamicApi: DynamicApi by lazy {
         Retrofit.Builder().baseUrl("https://api.bilibili.com/").client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType())).build()
             .create(DynamicApi::class.java)
     }
     
-    // 🔥 Buvid API (用于获取设备指纹)
+    //  Buvid API (用于获取设备指纹)
     val buvidApi: BuvidApi by lazy {
         Retrofit.Builder().baseUrl("https://api.bilibili.com/").client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType())).build()
             .create(BuvidApi::class.java)
     }
     
-    // 🔥🔥 [新增] UP主空间 API
+    //  [新增] UP主空间 API
     val spaceApi: SpaceApi by lazy {
         Retrofit.Builder().baseUrl("https://api.bilibili.com/").client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType())).build()
             .create(SpaceApi::class.java)
     }
     
-    // 🔥🔥 [新增] 番剧/影视 API
+    //  [新增] 番剧/影视 API
     val bangumiApi: BangumiApi by lazy {
         Retrofit.Builder().baseUrl("https://api.bilibili.com/").client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType())).build()
             .create(BangumiApi::class.java)
     }
     
-    // 🔥🔥 [新增] 故事模式 (竖屏短视频) API - 使用 app.bilibili.com
+    //  [新增] 故事模式 (竖屏短视频) API - 使用 app.bilibili.com
     val storyApi: StoryApi by lazy {
         Retrofit.Builder().baseUrl("https://app.bilibili.com/").client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType())).build()

@@ -14,7 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.android.purebilibili.core.store.TokenManager
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.ui.LoadingAnimation
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -287,7 +287,7 @@ private fun LoadingQrCode() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // 🔥 使用 Lottie 加载动画
+        //  使用 Lottie 加载动画
         LoadingAnimation(
             size = 64.dp,
             text = "正在加载..."
@@ -447,7 +447,7 @@ private fun QrCodeHint() {
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        // 🔥 单手机登录提示
+        //  单手机登录提示
         Surface(
             shape = RoundedCornerShape(8.dp),
             color = Color.White.copy(alpha = 0.08f),
@@ -577,7 +577,7 @@ fun WebLoginContent(
             try {
                 val cookies = CookieManager.getInstance().getCookie("https://passport.bilibili.com")
                     ?: CookieManager.getInstance().getCookie("https://www.bilibili.com")
-                com.android.purebilibili.core.util.Logger.d("WebLogin", "🔥 检查 Cookie: $cookies")
+                com.android.purebilibili.core.util.Logger.d("WebLogin", " 检查 Cookie: $cookies")
                 
                 if (!cookies.isNullOrEmpty() && cookies.contains("SESSDATA")) {
                     val sessData = cookies.split(";")
@@ -586,7 +586,7 @@ fun WebLoginContent(
                         ?.substringAfter("SESSDATA=")
                     
                     if (!sessData.isNullOrEmpty()) {
-                        com.android.purebilibili.core.util.Logger.d("WebLogin", "✅ 检测到 SESSDATA")
+                        com.android.purebilibili.core.util.Logger.d("WebLogin", " 检测到 SESSDATA")
                         TokenManager.saveCookies(context, sessData)
                         onLoginSuccess()
                         return@launch
@@ -739,7 +739,7 @@ fun WebLoginContent(
 }
 
 /**
- * 🔥 手机号登录内容
+ *  手机号登录内容
  */
 @Composable
 fun PhoneLoginContent(
@@ -780,7 +780,7 @@ fun PhoneLoginContent(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 🔥 画质限制警告卡片
+        //  画质限制警告卡片
         Surface(
             shape = RoundedCornerShape(12.dp),
             color = Color(0xFFFF9800).copy(alpha = 0.15f),
@@ -852,7 +852,7 @@ fun PhoneLoginContent(
                     }
                     
                     is LoginState.Error -> {
-                        // 🔥 只有手机登录相关的错误才显示错误界面
+                        //  只有手机登录相关的错误才显示错误界面
                         val isPhoneError = state.msg.contains("手机") || 
                                           state.msg.contains("短信") || 
                                           state.msg.contains("验证码") ||
@@ -986,12 +986,12 @@ private fun PhoneInputSection(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             textStyle = androidx.compose.ui.text.TextStyle(
-                color = Color(0xFF333333),  // 🔥 深色输入文字
+                color = Color(0xFF333333),  //  深色输入文字
                 fontSize = 16.sp
             ),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = Color(0xFFDDDDDD),  // 🔥 未聚焦边框灰色
+                unfocusedBorderColor = Color(0xFFDDDDDD),  //  未聚焦边框灰色
                 focusedTextColor = Color(0xFF333333),
                 unfocusedTextColor = Color(0xFF333333),
                 cursorColor = MaterialTheme.colorScheme.primary,
@@ -1009,8 +1009,8 @@ private fun PhoneInputSection(
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
-                disabledContainerColor = Color(0xFFFFD0DC),  // 🔥 禁用时浅粉色背景
-                disabledContentColor = Color(0xFFCC8899)     // 🔥 禁用时深粉色文字
+                disabledContainerColor = Color(0xFFFFD0DC),  //  禁用时浅粉色背景
+                disabledContentColor = Color(0xFFCC8899)     //  禁用时深粉色文字
             ),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier

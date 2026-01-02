@@ -9,7 +9,7 @@ import androidx.compose.foundation.Canvas
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.android.purebilibili.core.plugin.PluginManager
 
 /**
- * 🌙 护眼覆盖层
+ *  护眼覆盖层
  * 
  * 功能：
  * 1. 在夜间护眼模式激活时，添加半透明暖色覆盖层
@@ -56,7 +56,7 @@ fun EyeProtectionOverlay() {
     
     if (!pluginEnabled) return
     
-    // 🔥 护眼滤镜覆盖层
+    //  护眼滤镜覆盖层
     AnimatedVisibility(
         visible = isNightModeActive,
         enter = fadeIn(),
@@ -64,15 +64,15 @@ fun EyeProtectionOverlay() {
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // 第一层：亮度降低 + 暖色滤镜
-            // 🔥🔥 关键修复：使用 Canvas 绘制，不消耗触摸事件
+            //  关键修复：使用 Canvas 绘制，不消耗触摸事件
             Canvas(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // 🔥 亮度降低效果（黑色半透明覆盖）
+                //  亮度降低效果（黑色半透明覆盖）
                 drawRect(
                     color = Color.Black.copy(alpha = (1f - brightnessLevel).coerceIn(0f, 0.7f))
                 )
-                // 🔥 暖色滤镜效果
+                //  暖色滤镜效果
                 drawRect(
                     brush = Brush.verticalGradient(
                         colors = listOf(
@@ -85,7 +85,7 @@ fun EyeProtectionOverlay() {
         }
     }
     
-    // 🔥 休息提醒对话框
+    //  休息提醒对话框
     if (showRestReminder) {
         RestReminderDialog(
             onDismiss = { plugin.dismissRestReminder() },

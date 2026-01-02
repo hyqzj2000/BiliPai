@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * 🔥 开源许可证数据类
+ *  开源许可证数据类
  */
 data class OpenSourceLibrary(
     val name: String,
@@ -31,7 +31,7 @@ data class OpenSourceLibrary(
 )
 
 /**
- * 🔥 所有使用的开源库列表
+ *  所有使用的开源库列表
  */
 val openSourceLibraries = listOf(
     // Jetpack & AndroidX
@@ -136,7 +136,7 @@ val openSourceLibraries = listOf(
 )
 
 /**
- * 🔥 开源许可证页面
+ *  开源许可证页面
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -162,7 +162,7 @@ fun OpenSourceLicensesScreen(
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
-        // 🔥🔥 [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，避免底部填充
+        //  [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，避免底部填充
         contentWindowInsets = WindowInsets(0.dp)
     ) { padding ->
         LazyColumn(
@@ -194,7 +194,7 @@ fun OpenSourceLicensesScreen(
 }
 
 /**
- * 🔥 单个许可证卡片
+ *  单个许可证卡片
  */
 @Composable
 fun LicenseCard(

@@ -16,7 +16,7 @@ import kotlin.reflect.KClass
 private const val TAG = "PluginManager"
 
 /**
- * 🔌 插件管理器
+ *  插件管理器
  * 
  * 负责管理所有插件的注册、启用/禁用、生命周期调用等。
  * 使用单例模式，在 Application 启动时初始化。
@@ -44,7 +44,7 @@ object PluginManager {
         if (isInitialized) return
         appContext = context.applicationContext
         isInitialized = true
-        Logger.d(TAG, "🔌 PluginManager initialized")
+        Logger.d(TAG, " PluginManager initialized")
     }
     
     /** 获取Application Context供插件使用 */
@@ -56,7 +56,7 @@ object PluginManager {
      */
     fun register(plugin: Plugin) {
         if (_plugins.any { it.plugin.id == plugin.id }) {
-            Logger.w(TAG, "⚠️ Plugin already registered: ${plugin.id}")
+            Logger.w(TAG, " Plugin already registered: ${plugin.id}")
             return
         }
         
@@ -69,13 +69,13 @@ object PluginManager {
             if (enabled) {
                 try {
                     plugin.onEnable()
-                    Logger.d(TAG, "✅ Plugin enabled on start: ${plugin.name}")
+                    Logger.d(TAG, " Plugin enabled on start: ${plugin.name}")
                 } catch (e: Exception) {
-                    Logger.e(TAG, "❌ Failed to enable plugin: ${plugin.name}", e)
+                    Logger.e(TAG, " Failed to enable plugin: ${plugin.name}", e)
                 }
             }
             
-            Logger.d(TAG, "📦 Plugin registered: ${plugin.name} (enabled=$enabled)")
+            Logger.d(TAG, " Plugin registered: ${plugin.name} (enabled=$enabled)")
         }
     }
     
@@ -85,7 +85,7 @@ object PluginManager {
     suspend fun setEnabled(pluginId: String, enabled: Boolean) {
         val index = _plugins.indexOfFirst { it.plugin.id == pluginId }
         if (index == -1) {
-            Logger.w(TAG, "⚠️ Plugin not found: $pluginId")
+            Logger.w(TAG, " Plugin not found: $pluginId")
             return
         }
         
@@ -95,7 +95,7 @@ object PluginManager {
         try {
             if (enabled && !info.enabled) {
                 plugin.onEnable()
-                Logger.d(TAG, "✅ Plugin enabled: ${plugin.name}")
+                Logger.d(TAG, " Plugin enabled: ${plugin.name}")
             } else if (!enabled && info.enabled) {
                 plugin.onDisable()
                 Logger.d(TAG, "🔴 Plugin disabled: ${plugin.name}")
@@ -109,7 +109,7 @@ object PluginManager {
             PluginStore.setEnabled(appContext, pluginId, enabled)
             
         } catch (e: Exception) {
-            Logger.e(TAG, "❌ Failed to toggle plugin: ${plugin.name}", e)
+            Logger.e(TAG, " Failed to toggle plugin: ${plugin.name}", e)
         }
     }
     
@@ -139,7 +139,7 @@ object PluginManager {
     fun getEnabledFeedPlugins(): List<FeedPlugin> = getEnabledPlugins(FeedPlugin::class)
     
     /**
-     * 🔥🔥 使用所有启用的 FeedPlugin 过滤视频列表
+     *  使用所有启用的 FeedPlugin 过滤视频列表
      * 用于首页推荐和搜索结果
      */
     fun filterFeedItems(items: List<com.android.purebilibili.data.model.response.VideoItem>): List<com.android.purebilibili.data.model.response.VideoItem> {

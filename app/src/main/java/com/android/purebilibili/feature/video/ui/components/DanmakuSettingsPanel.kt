@@ -10,7 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -174,7 +174,7 @@ private fun DanmakuAreaSelector(
     currentArea: Float,
     onAreaChange: (Float) -> Unit
 ) {
-    // 🔥 本地状态确保即时 UI 响应
+    //  本地状态确保即时 UI 响应
     var localArea by remember(currentArea) { mutableFloatStateOf(currentArea) }
     
     data class AreaOption(val value: Float, val label: String, val subLabel: String)
@@ -208,7 +208,7 @@ private fun DanmakuAreaSelector(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 areaOptions.forEach { option ->
-                    // 🔥 使用本地状态判断选中状态
+                    //  使用本地状态判断选中状态
                     val isSelected = kotlin.math.abs(localArea - option.value) < 0.1f
                     
                     Box(
@@ -229,7 +229,7 @@ private fun DanmakuAreaSelector(
                                 }
                             )
                             .clickable { 
-                                localArea = option.value  // 🔥 即时更新 UI
+                                localArea = option.value  //  即时更新 UI
                                 onAreaChange(option.value) 
                             }
                             .padding(vertical = 14.dp),

@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -42,7 +42,7 @@ import java.util.Calendar
 private const val TAG = "EyeProtectionPlugin"
 
 /**
- * 🌙 夜间护眼提示插件
+ *  夜间护眼提示插件
  * 
  * 功能：
  * 1. 自定义夜间护眼时间段（如 22:00 - 07:00）
@@ -68,14 +68,14 @@ class EyeProtectionPlugin : Plugin {
     // 使用时长（分钟）
     private var usageMinutes = 0
     
-    // 🔥 状态流 - 供 UI 层监听
+    //  状态流 - 供 UI 层监听
     private val _showRestReminder = MutableStateFlow(false)
     val showRestReminder: StateFlow<Boolean> = _showRestReminder.asStateFlow()
     
     private val _isNightModeActive = MutableStateFlow(false)
     val isNightModeActive: StateFlow<Boolean> = _isNightModeActive.asStateFlow()
     
-    // 🔥 护眼效果参数（供 Overlay 使用）
+    //  护眼效果参数（供 Overlay 使用）
     private val _brightnessLevel = MutableStateFlow(1.0f)
     val brightnessLevel: StateFlow<Float> = _brightnessLevel.asStateFlow()
     
@@ -86,7 +86,7 @@ class EyeProtectionPlugin : Plugin {
         loadConfigSuspend()
         startUsageTracking()
         checkNightModeStatus()
-        Logger.d(TAG, "✅ 夜间护眼插件已启用")
+        Logger.d(TAG, " 夜间护眼插件已启用")
     }
     
     override suspend fun onDisable() {
@@ -121,7 +121,7 @@ class EyeProtectionPlugin : Plugin {
                 }
             }
         }
-        Logger.d(TAG, "📊 开始追踪使用时长")
+        Logger.d(TAG, " 开始追踪使用时长")
     }
     
     /**
@@ -159,7 +159,7 @@ class EyeProtectionPlugin : Plugin {
             _isNightModeActive.value = true
             _brightnessLevel.value = config.brightnessLevel
             _warmFilterStrength.value = config.warmFilterStrength
-            Logger.d(TAG, "🌙 进入夜间护眼模式 (${config.nightModeStartHour}:00 - ${config.nightModeEndHour}:00)")
+            Logger.d(TAG, " 进入夜间护眼模式 (${config.nightModeStartHour}:00 - ${config.nightModeEndHour}:00)")
         } else {
             _isNightModeActive.value = false
             _brightnessLevel.value = 1.0f
@@ -180,7 +180,7 @@ class EyeProtectionPlugin : Plugin {
     fun resetUsageTime() {
         usageMinutes = 0
         _showRestReminder.value = false
-        Logger.d(TAG, "🔄 使用时长已重置")
+        Logger.d(TAG, " 使用时长已重置")
     }
     
     /**
@@ -190,7 +190,7 @@ class EyeProtectionPlugin : Plugin {
         config = config.copy(forceEnabled = enabled)
         saveConfig()
         checkNightModeStatus()
-        Logger.d(TAG, "💡 手动${if (enabled) "开启" else "关闭"}护眼模式")
+        Logger.d(TAG, " 手动${if (enabled) "开启" else "关闭"}护眼模式")
     }
     
     private suspend fun loadConfigSuspend() {
@@ -508,7 +508,7 @@ class EyeProtectionPlugin : Plugin {
     }
     
     companion object {
-        // 🔥 单例获取插件实例（用于 Overlay 层访问状态）
+        //  单例获取插件实例（用于 Overlay 层访问状态）
         fun getInstance(): EyeProtectionPlugin? {
             return PluginManager.plugins.find { it.plugin.id == "eye_protection" }?.plugin as? EyeProtectionPlugin
         }

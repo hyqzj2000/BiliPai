@@ -9,7 +9,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -210,7 +210,7 @@ fun GestureIndicator(
         ) {
             when (mode) {
                 GestureMode.Brightness -> {
-                    // 🔥 亮度图标：CupertinoIcons SunMax (iOS SF Symbols 风格)
+                    //  亮度图标：CupertinoIcons SunMax (iOS SF Symbols 风格)
                     Icon(CupertinoIcons.Default.SunMax, null, tint = Color.White, modifier = Modifier.size(36.dp))
                     Spacer(Modifier.height(8.dp))
                     Text("亮度", color = Color.White, fontSize = 14.sp)
@@ -218,7 +218,7 @@ fun GestureIndicator(
                     Text("${(value * 100).toInt()}%", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 }
                 GestureMode.Volume -> {
-                    // 🔥 动态音量图标：3 级
+                    //  动态音量图标：3 级
                     val volumeIcon = when {
                         value < 0.01f -> CupertinoIcons.Default.SpeakerSlash
                         value < 0.5f -> CupertinoIcons.Default.Speaker

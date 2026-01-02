@@ -43,7 +43,7 @@ object HistoryRepository {
                     Result.failure(Exception(response.message))
                 }
             } catch (e: Exception) {
-                android.util.Log.e("HistoryRepo", "❌ Error: ${e.message}")
+                android.util.Log.e("HistoryRepo", " Error: ${e.message}")
                 Result.failure(e)
             }
         }

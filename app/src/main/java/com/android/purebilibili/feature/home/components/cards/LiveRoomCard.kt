@@ -30,7 +30,7 @@ import com.android.purebilibili.data.model.response.LiveRoom
 import com.android.purebilibili.core.util.iOSTapEffect
 
 /**
- * 🍎 iOS 风格直播间卡片
+ *  iOS 风格直播间卡片
  */
 @Composable
 fun LiveRoomCard(
@@ -47,16 +47,16 @@ fun LiveRoomCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            // 🍎 iOS 点击动画
+            //  iOS 点击动画
             .iOSTapEffect(
                 scale = 0.97f,
                 hapticEnabled = true
             ) {
                 onClick(room.roomid)
             }
-            .padding(bottom = 6.dp)  // 🔥 减少间距
+            .padding(bottom = 6.dp)  //  减少间距
     ) {
-        // 🍎 封面容器 - iOS 风格
+        //  封面容器 - iOS 风格
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -70,7 +70,7 @@ fun LiveRoomCard(
                 .clip(RoundedCornerShape(14.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            // 封面图 - 🚀 优化
+            // 封面图 -  优化
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(coverUrl)
@@ -154,7 +154,7 @@ fun LiveRoomCard(
             }
         }
         
-        Spacer(modifier = Modifier.height(6.dp))  // 🔥 减少间距
+        Spacer(modifier = Modifier.height(6.dp))  //  减少间距
         
         // 标题
         Text(

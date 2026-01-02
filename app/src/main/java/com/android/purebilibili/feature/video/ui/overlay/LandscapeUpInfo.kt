@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 
 /**
- * 🔥 横屏 UP 主信息组件
+ *  横屏 UP 主信息组件
  * 
  * 显示在横屏左上角，包含：
  * - UP 主头像（圆形）
@@ -70,7 +70,7 @@ fun LandscapeUpInfo(
 }
 
 /**
- * 🔥 横屏观看人数组件
+ *  横屏观看人数组件
  */
 @Composable
 fun LandscapeViewerCount(

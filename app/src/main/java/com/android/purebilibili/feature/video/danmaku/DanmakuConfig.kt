@@ -53,24 +53,24 @@ class DanmakuConfig {
             val baseTime = 5000L
             scroll.moveTime = (baseTime * speedFactor).toLong().coerceIn(2000L, 10000L)
             
-            // 🔥🔥 [修复] 显示区域控制
+            //  [修复] 显示区域控制
             // 通过 lineCount 限制最大行数来实现显示区域控制
             val maxLines = getMaxLines()
             scroll.lineCount = maxLines
             
-            android.util.Log.w("DanmakuConfig", "📋 Applied: opacity=$opacity, fontSize=${text.size}, moveTime=${scroll.moveTime}ms, displayArea=$displayAreaRatio, maxLines=$maxLines")
+            android.util.Log.w("DanmakuConfig", " Applied: opacity=$opacity, fontSize=${text.size}, moveTime=${scroll.moveTime}ms, displayArea=$displayAreaRatio, maxLines=$maxLines")
         }
     }
     
     /**
      * 根据显示区域比例计算最大行数
-     * 🔥🔥 [修复] 不能返回 Int.MAX_VALUE，否则弹幕引擎会尝试为海量行分配内存导致 OOM
+     *  [修复] 不能返回 Int.MAX_VALUE，否则弹幕引擎会尝试为海量行分配内存导致 OOM
      */
     private fun getMaxLines(): Int = when {
         displayAreaRatio <= 0.25f -> 3
         displayAreaRatio <= 0.5f -> 5
         displayAreaRatio <= 0.75f -> 8
-        else -> 12  // 🔥🔥 [修复] 最大 12 行，不能用 Int.MAX_VALUE
+        else -> 12  //  [修复] 最大 12 行，不能用 Int.MAX_VALUE
     }
     
     companion object {

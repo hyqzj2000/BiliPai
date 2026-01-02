@@ -4,7 +4,7 @@ package com.android.purebilibili.feature.video.ui.overlay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -19,11 +19,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.util.FormatUtils
 
 /**
- * 🔥🔥🔥 横屏顶部控制栏（官方 B 站样式）
+ *  横屏顶部控制栏（官方 B 站样式）
  * 
  * 布局结构：
  * - 左侧：返回按钮 + 标题 + 观看人数
@@ -60,7 +60,7 @@ fun LandscapeTopControlBar(
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 🔥 左侧：返回 + 标题
+        //  左侧：返回 + 标题
         IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
             Icon(
                 CupertinoIcons.Default.ChevronBackward,
@@ -95,7 +95,7 @@ fun LandscapeTopControlBar(
         
         Spacer(modifier = Modifier.width(16.dp))
         
-        // 🔥 右侧：操作按钮（官方样式：图标+数字，横向排列）
+        //  右侧：操作按钮（官方样式：图标+数字，横向排列）
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -142,14 +142,14 @@ fun LandscapeTopControlBar(
 }
 
 /**
- * 🔥 顶部栏操作按钮
+ *  顶部栏操作按钮
  */
 @Composable
 private fun TopBarActionButton(
     icon: ImageVector,
     label: String,
     isActive: Boolean = false,
-    activeColor: Color = Color.Unspecified,  // 🔥 默认用主题色
+    activeColor: Color = Color.Unspecified,  //  默认用主题色
     onClick: () -> Unit
 ) {
     Surface(

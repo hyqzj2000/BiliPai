@@ -25,7 +25,7 @@ data class JsonRulePlugin(
 )
 
 /**
- * 🆕 条件表达式（支持 AND/OR 嵌套）
+ *  条件表达式（支持 AND/OR 嵌套）
  * 
  * 使用自定义序列化器根据 JSON 结构自动判断类型
  */
@@ -169,7 +169,7 @@ data class Rule(
     val op: String? = null,
     val value: JsonElement? = null,
     
-    // 🆕 新格式：复合条件
+    //  新格式：复合条件
     val condition: Condition? = null,
     
     val action: String,       // 动作: hide, highlight

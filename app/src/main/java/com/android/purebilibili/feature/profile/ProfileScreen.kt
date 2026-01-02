@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -37,7 +37,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.theme.iOSBlue
 import com.android.purebilibili.core.theme.iOSGreen
 import com.android.purebilibili.core.theme.iOSOrange
@@ -61,14 +61,14 @@ fun ProfileScreen(
     onSettingsClick: () -> Unit,
     onHistoryClick: () -> Unit,
     onFavoriteClick: () -> Unit,
-    onFollowingClick: (Long) -> Unit = {},  // 🔥 关注列表点击
-    onDownloadClick: () -> Unit = {}  // 🔥 离线缓存点击
+    onFollowingClick: (Long) -> Unit = {},  //  关注列表点击
+    onDownloadClick: () -> Unit = {}  //  离线缓存点击
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val view = LocalView.current
 
-    // 🔥 设置沉浸式状态栏和导航栏（进入时修改，离开时恢复）
+    //  设置沉浸式状态栏和导航栏（进入时修改，离开时恢复）
     DisposableEffect(state) {
         val window = (context as? Activity)?.window
         val insetsController = if (window != null) {
@@ -105,7 +105,7 @@ fun ProfileScreen(
         viewModel.loadProfile()
     }
 
-    // 🔥 未登录状态使用沉浸式全屏布局，已登录使用正常 Scaffold
+    //  未登录状态使用沉浸式全屏布局，已登录使用正常 Scaffold
     when (val s = state) {
         is ProfileUiState.Loading -> {
             Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) {
@@ -113,7 +113,7 @@ fun ProfileScreen(
             }
         }
         is ProfileUiState.LoggedOut -> {
-            // 🔥 沉浸式全屏布局
+            //  沉浸式全屏布局
             GuestProfileContent(
                 onGoToLogin = onGoToLogin,
                 onBack = onBack,
@@ -149,7 +149,7 @@ fun ProfileScreen(
                         },
                         onHistoryClick = onHistoryClick,
                         onFavoriteClick = onFavoriteClick,
-                        onFollowingClick = { onFollowingClick(s.user.mid) },  // 🔥 传递用户 mid
+                        onFollowingClick = { onFollowingClick(s.user.mid) },  //  传递用户 mid
                         onDownloadClick = onDownloadClick
                     )
                 }
@@ -177,7 +177,7 @@ fun GuestProfileContent(
                 )
             )
     ) {
-        // 🔥 沉浸式顶部栏
+        //  沉浸式顶部栏
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -237,7 +237,7 @@ fun GuestProfileContent(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // 🔥 登录按钮 - 使用现代化渐变按钮
+            //  登录按钮 - 使用现代化渐变按钮
             BiliGradientButton(
                 text = "安全登录",
                 onClick = onGoToLogin,
@@ -277,8 +277,8 @@ fun UserProfileContent(
     onLogout: () -> Unit,
     onHistoryClick: () -> Unit,
     onFavoriteClick: () -> Unit,
-    onFollowingClick: () -> Unit = {},  // 🔥 关注列表点击
-    onDownloadClick: () -> Unit = {}    // 🔥 离线缓存点击
+    onFollowingClick: () -> Unit = {},  //  关注列表点击
+    onDownloadClick: () -> Unit = {}    //  离线缓存点击
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -303,7 +303,7 @@ fun UserInfoSection(user: UserState) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            // 🔥 修复：背景色
+            //  修复：背景色
             .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -319,7 +319,7 @@ fun UserInfoSection(user: UserState) {
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column {
-            // 🔥 修复：用户名颜色
+            //  修复：用户名颜色
             Text(
                 text = user.name,
                 style = MaterialTheme.typography.titleLarge,
@@ -356,7 +356,7 @@ fun UserStatsSection(user: UserState, onFollowingClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            // 🔥 修复：背景色
+            //  修复：背景色
             .background(MaterialTheme.colorScheme.surface)
             .padding(bottom = 16.dp),
         horizontalArrangement = Arrangement.SpaceAround
@@ -375,7 +375,7 @@ fun StatItem(count: String, label: String, onClick: (() -> Unit)? = null) {
             Modifier.clickable { onClick() }
         } else Modifier
     ) {
-        // 🔥 修复：数字和标签颜色
+        //  修复：数字和标签颜色
         Text(text = count, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
         Text(text = label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -389,7 +389,7 @@ fun VipBannerSection(user: UserState) {
             .padding(horizontal = 16.dp, vertical = 12.dp)
             .height(60.dp)
             .clip(RoundedCornerShape(8.dp))
-            // 🔥 保持 VIP 金色，因为这是品牌色，不需要随深色模式变黑
+            //  保持 VIP 金色，因为这是品牌色，不需要随深色模式变黑
             .background(Brush.horizontalGradient(colors = listOf(Color(0xFFFFEECC), Color(0xFFFFCC99))))
     ) {
         Row(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
@@ -406,17 +406,17 @@ fun VipBannerSection(user: UserState) {
 fun ServicesSection(
     onHistoryClick: () -> Unit,
     onFavoriteClick: () -> Unit,
-    onDownloadClick: () -> Unit = {}  // 🔥 离线缓存
+    onDownloadClick: () -> Unit = {}  //  离线缓存
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .clip(RoundedCornerShape(8.dp))
-            // 🔥 修复：卡片背景
+            //  修复：卡片背景
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        // 🔥 修复：标题颜色
+        //  修复：标题颜色
         Text(
             "更多服务",
             style = MaterialTheme.typography.titleSmall,
@@ -454,9 +454,9 @@ fun ServiceItem(
     ) {
         Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(24.dp))
         Spacer(modifier = Modifier.width(16.dp))
-        // 🔥 修复：文字颜色
+        //  修复：文字颜色
         Text(text = title, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-        // 🔥 修复：箭头颜色
+        //  修复：箭头颜色
         Icon(CupertinoIcons.Default.ChevronForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
     }
 }

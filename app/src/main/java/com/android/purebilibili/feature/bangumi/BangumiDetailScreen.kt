@@ -12,7 +12,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -44,7 +44,7 @@ fun BangumiDetailScreen(
     seasonId: Long,
     onBack: () -> Unit,
     onEpisodeClick: (BangumiEpisode) -> Unit,  // 点击剧集播放
-    onSeasonClick: (Long) -> Unit = {},        // 🔥 点击切换季度
+    onSeasonClick: (Long) -> Unit = {},        //  点击切换季度
     viewModel: BangumiViewModel = viewModel()
 ) {
     val detailState by viewModel.detailState.collectAsState()
@@ -122,16 +122,16 @@ private fun BangumiDetailContent(
     onSeasonClick: (Long) -> Unit,
     onToggleFollow: (Boolean) -> Unit
 ) {
-    // 🔥🔥 [修复] 使用 detail 本身作为 key，这样当 ViewModel 更新 detail 时，状态会正确同步
+    //  [修复] 使用 detail 本身作为 key，这样当 ViewModel 更新 detail 时，状态会正确同步
     val followFromApi = detail.userStatus?.follow == 1
     var isFollowing by remember(detail.seasonId, followFromApi) { 
         mutableStateOf(followFromApi) 
     }
     
-    // 🔥🔥 [修复] 移除 LaunchedEffect，避免重置用户的点击状态
+    //  [修复] 移除 LaunchedEffect，避免重置用户的点击状态
     // 状态同步现在通过 remember 的 key 来实现
     
-    // 🔥 选集相关状态（必须在函数顶层定义）
+    //  选集相关状态（必须在函数顶层定义）
     var showEpisodeSheet by remember { mutableStateOf(false) }
     var showJumpDialog by remember { mutableStateOf(false) }
     var jumpInputText by remember { mutableStateOf("") }
@@ -147,7 +147,7 @@ private fun BangumiDetailContent(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(320.dp)  // 🔥 [修复] 增大高度防止文字被裁切
+                        .height(320.dp)  //  [修复] 增大高度防止文字被裁切
                 ) {
                     // 封面背景（模糊）
                     AsyncImage(
@@ -267,7 +267,7 @@ private fun BangumiDetailContent(
                 ) {
                     // 追番按钮
                     if (isFollowing) {
-                        // 🔥 已追番：使用带边框的样式，更清晰可见
+                        //  已追番：使用带边框的样式，更清晰可见
                         OutlinedButton(
                             onClick = { 
                                 val wasFollowing = isFollowing
@@ -292,7 +292,7 @@ private fun BangumiDetailContent(
                             Text("已追番")
                         }
                     } else {
-                        // 🔥 未追番：使用填充的主色按钮
+                        //  未追番：使用填充的主色按钮
                         Button(
                             onClick = { 
                                 val wasFollowing = isFollowing
@@ -341,7 +341,7 @@ private fun BangumiDetailContent(
             // 剧集列表
             if (!detail.episodes.isNullOrEmpty()) {
                 item {
-                    // 🔥 选集标题和快速跳转
+                    //  选集标题和快速跳转
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -355,7 +355,7 @@ private fun BangumiDetailContent(
                             fontSize = 16.sp
                         )
                         
-                        // 🔥 跳转按钮
+                        //  跳转按钮
                         Surface(
                             onClick = { 
                                 jumpInputText = ""
@@ -374,7 +374,7 @@ private fun BangumiDetailContent(
                     }
                 }
                 
-                // 🔥 分页选择器（超过50集时显示）
+                //  分页选择器（超过50集时显示）
                 if (detail.episodes.size > 50) {
                     item {
                         val episodesPerPage = 50
@@ -408,7 +408,7 @@ private fun BangumiDetailContent(
                     }
                 }
                 
-                // 🔥 剧集预览（只显示前6个，点击展开完整列表）
+                //  剧集预览（只显示前6个，点击展开完整列表）
                 item {
                     val previewEpisodes = detail.episodes.take(6)
                     
@@ -507,7 +507,7 @@ private fun BangumiDetailContent(
             }
         }
         
-        // 🔥 快速跳转对话框（在 LazyColumn 外部）
+        //  快速跳转对话框（在 LazyColumn 外部）
         if (showJumpDialog && !detail.episodes.isNullOrEmpty()) {
             AlertDialog(
                 onDismissRequest = { showJumpDialog = false },
@@ -561,7 +561,7 @@ private fun BangumiDetailContent(
             )
         }
         
-        // 🔥 官方风格：底部弹出选集面板（在 LazyColumn 外部）
+        //  官方风格：底部弹出选集面板（在 LazyColumn 外部）
         if (showEpisodeSheet && !detail.episodes.isNullOrEmpty()) {
             EpisodeSelectionSheet(
                 detail = detail,
@@ -581,7 +581,7 @@ private fun EpisodeChip(
     episode: BangumiEpisode,
     onClick: () -> Unit
 ) {
-    // 🔥 带封面图的设计，集数和标题在同一行
+    //  带封面图的设计，集数和标题在同一行
     Column(
         modifier = Modifier
             .width(120.dp)
@@ -625,7 +625,7 @@ private fun EpisodeChip(
         
         Spacer(modifier = Modifier.height(6.dp))
         
-        // 🔥 集数和标题在同一行：数字在左，标题在右
+        //  集数和标题在同一行：数字在左，标题在右
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
@@ -655,7 +655,7 @@ private fun EpisodeChip(
 }
 
 /**
- * 🔥 官方风格：底部弹出选集面板
+ *  官方风格：底部弹出选集面板
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -673,15 +673,15 @@ private fun EpisodeSelectionSheet(
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = null,  // 使用自定义标题栏
-        contentWindowInsets = { WindowInsets(0.dp) }  // 🔥 沉浸式
+        contentWindowInsets = { WindowInsets(0.dp) }  //  沉浸式
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.8f)  // 占屏幕80%高度
-                .navigationBarsPadding()  // 🔥 底部安全区域
+                .navigationBarsPadding()  //  底部安全区域
         ) {
-            // 🔥 标题栏
+            //  标题栏
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -704,7 +704,7 @@ private fun EpisodeSelectionSheet(
                 }
             }
             
-            // 🔥 季度标签（如果有多个季度）
+            //  季度标签（如果有多个季度）
             if (!detail.seasons.isNullOrEmpty() && detail.seasons.size > 1) {
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp),
@@ -744,7 +744,7 @@ private fun EpisodeSelectionSheet(
                 }
             }
             
-            // 🔥 更新信息
+            //  更新信息
             detail.newEp?.desc?.let { desc ->
                 Text(
                     text = desc,
@@ -759,7 +759,7 @@ private fun EpisodeSelectionSheet(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
             )
             
-            // 🔥 分页选择器（超过50集时显示）
+            //  分页选择器（超过50集时显示）
             val episodes = detail.episodes ?: emptyList()
             val episodesPerPage = 50
             val totalPages = if (episodes.size > episodesPerPage) {
@@ -794,7 +794,7 @@ private fun EpisodeSelectionSheet(
                 }
             }
             
-            // 🔥 剧集列表（两列网格布局）
+            //  剧集列表（两列网格布局）
             val displayEpisodes = if (totalPages > 0) {
                 val pageStart = selectedPage * episodesPerPage
                 val pageEnd = minOf(pageStart + episodesPerPage, episodes.size)
@@ -826,7 +826,7 @@ private fun EpisodeSelectionSheet(
 }
 
 /**
- * 🔥 官方风格：剧集列表项（用于底部面板）
+ *  官方风格：剧集列表项（用于底部面板）
  */
 @Composable
 private fun EpisodeListItem(

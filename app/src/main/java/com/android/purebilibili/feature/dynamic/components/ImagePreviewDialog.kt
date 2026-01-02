@@ -16,7 +16,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -53,7 +53,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.ui.graphics.toArgb
 
 /**
- * 🔥 图片预览对话框 - 支持左右滑动切换和3D立体动画
+ *  图片预览对话框 - 支持左右滑动切换和3D立体动画
  */
 @Composable
 fun ImagePreviewDialog(
@@ -67,7 +67,7 @@ fun ImagePreviewDialog(
     val scope = rememberCoroutineScope()
     var isSaving by remember { mutableStateOf(false) }
     
-    // 🔥 获取 Activity 和 Window 用于沉浸式控制
+    //  获取 Activity 和 Window 用于沉浸式控制
     val activity = remember {
         var ctx = context
         while (ctx is ContextWrapper) {
@@ -81,10 +81,10 @@ fun ImagePreviewDialog(
         window?.let { WindowCompat.getInsetsController(it, it.decorView) }
     }
     
-    // 🔥 保存原始导航栏颜色
+    //  保存原始导航栏颜色
     val originalNavBarColor = remember { window?.navigationBarColor ?: android.graphics.Color.BLACK }
     
-    // 🔥 进入时设置沉浸式导航栏（透明黑色），退出时恢复
+    //  进入时设置沉浸式导航栏（透明黑色），退出时恢复
     DisposableEffect(Unit) {
         window?.navigationBarColor = Color.Transparent.toArgb()
         insetsController?.isAppearanceLightNavigationBars = false
@@ -94,7 +94,7 @@ fun ImagePreviewDialog(
         }
     }
     
-    // 🔥 动画状态控制
+    //  动画状态控制
     // 0f = 关闭/初始状态 (at sourceRect), 1f = 打开状态 (Fullscreen)
     val animateTrigger = remember { androidx.compose.animation.core.Animatable(0f) }
     var isDismissing by remember { mutableStateOf(false) }
@@ -115,7 +115,7 @@ fun ImagePreviewDialog(
         }
     }
 
-    // 🔥 GIF 图片加载器
+    //  GIF 图片加载器
     val gifImageLoader = remember {
         ImageLoader.Builder(context)
             .components {
@@ -129,13 +129,13 @@ fun ImagePreviewDialog(
             .build()
     }
 
-    // 🔥 使用 HorizontalPager 实现滑动切换
+    //  使用 HorizontalPager 实现滑动切换
     val pagerState = rememberPagerState(
         initialPage = initialIndex,
         pageCount = { images.size }
     )
     
-    // 🔐 存储权限状态（Android 9 及以下需要）
+    //  存储权限状态（Android 9 及以下需要）
     var pendingSaveUrl by remember { mutableStateOf<String?>(null) }
     val storagePermission = com.android.purebilibili.core.util.rememberStoragePermissionState { granted ->
         if (granted && pendingSaveUrl != null) {
@@ -177,7 +177,7 @@ fun ImagePreviewDialog(
             
             val progress = animateTrigger.value
             
-            // 🔥 计算容器位置和大小
+            //  计算容器位置和大小
             // 如果切走了或者没有源矩形，则全屏显示（仅淡入淡出）
             val isInitialPage = pagerState.currentPage == initialIndex
             val shouldUseRectAnim = sourceRect != null && isInitialPage
@@ -225,7 +225,7 @@ fun ImagePreviewDialog(
                      .size(width = currentWidth, height = currentHeight)
                      // 如果需要裁切圆角，可在此添加 graphicsLayer
             ) {
-                // 🔥 使用 HorizontalPager 实现滑动切换 + 3D立体动画
+                //  使用 HorizontalPager 实现滑动切换 + 3D立体动画
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
@@ -244,23 +244,23 @@ fun ImagePreviewDialog(
                             .fillMaxSize()
                             .graphicsLayer {
                                 if (apply3D) {
-                                    // 🔥 3D 旋转角度（最大45度）
+                                    //  3D 旋转角度（最大45度）
                                     val rotationAngle = pageOffset * 45f
                                     rotationY = rotationAngle
                                     
-                                    // 🔥 设置旋转中心点
+                                    //  设置旋转中心点
                                     cameraDistance = 12f * density.density
                                     transformOrigin = androidx.compose.ui.graphics.TransformOrigin(
                                         pivotFractionX = if (pageOffset < 0) 1f else 0f,
                                         pivotFractionY = 0.5f
                                     )
                                     
-                                    // 🔥 缩放效果
+                                    //  缩放效果
                                     val scale = 1f - (abs(pageOffset) * 0.1f).coerceIn(0f, 0.15f)
                                     scaleX = scale
                                     scaleY = scale
                                     
-                                    // 🔥 透明度渐变
+                                    //  透明度渐变
                                     alpha = 1f - (abs(pageOffset) * 0.3f).coerceIn(0f, 0.5f)
                                 }
                             }
@@ -280,12 +280,12 @@ fun ImagePreviewDialog(
                         AsyncImage(
                             model = ImageRequest.Builder(context)
                                 .data(imageUrl)
-                                .size(coil.size.Size.ORIGINAL)  // 🔥 强制加载原图，避免模糊
+                                .size(coil.size.Size.ORIGINAL)  //  强制加载原图，避免模糊
                                 .addHeader("Referer", "https://www.bilibili.com/")
                                 .crossfade(300)
                                 .build(),
                             contentDescription = null,
-                            imageLoader = gifImageLoader,  // 🔥 使用 GIF 加载器
+                            imageLoader = gifImageLoader,  //  使用 GIF 加载器
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Fit
                         )
@@ -301,12 +301,12 @@ fun ImagePreviewDialog(
                     .fillMaxSize()
                     .graphicsLayer { alpha = progress }
             ) {
-                // 🔥 页码指示器（圆点样式）
+                //  页码指示器（圆点样式）
                 if (images.size > 1) {
                     Row(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .navigationBarsPadding()  // 🔥 避开导航栏
+                            .navigationBarsPadding()  //  避开导航栏
                             .padding(bottom = 16.dp)
                             .background(Color.Black.copy(0.5f), RoundedCornerShape(16.dp))
                             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -366,7 +366,7 @@ fun ImagePreviewDialog(
                         )
                     }
                     
-                    // 🔥 页码文字
+                    //  页码文字
                     if (images.size > 1) {
                         Text(
                             "${pagerState.currentPage + 1} / ${images.size}",
@@ -378,11 +378,11 @@ fun ImagePreviewDialog(
                         )
                     }
                     
-                    // 🔥 下载按钮
+                    //  下载按钮
                     FilledIconButton(
                         onClick = {
                             if (!isSaving && currentImageUrl.isNotEmpty()) {
-                                // 🔐 检查权限（Android 10+ 自动授权）
+                                //  检查权限（Android 10+ 自动授权）
                                 if (storagePermission.isGranted) {
                                     isSaving = true
                                     scope.launch {
@@ -432,7 +432,7 @@ fun ImagePreviewDialog(
 data class Quad(val left: androidx.compose.ui.unit.Dp, val top: androidx.compose.ui.unit.Dp, val width: androidx.compose.ui.unit.Dp, val height: androidx.compose.ui.unit.Dp)
 
 /**
- * 🔥 规范化图片 URL
+ *  规范化图片 URL
  * 1. 修复协议头（http -> https, // -> https://）
  * 2. 移除分辨率限制参数（@...）以获取原图
  */
@@ -446,7 +446,7 @@ private fun normalizeImageUrl(rawSrc: String): String {
         else -> ""
     }
     
-    // 🔥 移除 Bilibili 图片尺寸参数（例如 @640w_400h.webp）以获取最高质量
+    //  移除 Bilibili 图片尺寸参数（例如 @640w_400h.webp）以获取最高质量
     if (result.contains("@")) {
         result = result.substringBefore("@")
     }
@@ -455,17 +455,17 @@ private fun normalizeImageUrl(rawSrc: String): String {
 }
 
 /**
- * 🔥 保存图片到相册 - 支持 GIF/WebP 等格式保留
+ *  保存图片到相册 - 支持 GIF/WebP 等格式保留
  */
 suspend fun saveImageToGallery(context: android.content.Context, imageUrl: String): Boolean {
     return withContext(Dispatchers.IO) {
         try {
-            // 🔥 检测图片格式
+            //  检测图片格式
             val isGif = imageUrl.contains(".gif", ignoreCase = true)
             val isWebp = imageUrl.contains(".webp", ignoreCase = true)
             val isPng = imageUrl.contains(".png", ignoreCase = true)
             
-            // 🔥 对于 GIF/WebP，直接下载原始字节流保留动画
+            //  对于 GIF/WebP，直接下载原始字节流保留动画
             if (isGif || isWebp) {
                 val url = java.net.URL(imageUrl)
                 val connection = url.openConnection() as java.net.HttpURLConnection
@@ -524,7 +524,7 @@ suspend fun saveImageToGallery(context: android.content.Context, imageUrl: Strin
                 return@withContext true
             }
             
-            // 🔥 对于 JPEG/PNG 等静态图片，使用 Coil 下载并转换
+            //  对于 JPEG/PNG 等静态图片，使用 Coil 下载并转换
             val imageLoader = ImageLoader(context)
             val request = ImageRequest.Builder(context)
                 .data(imageUrl)

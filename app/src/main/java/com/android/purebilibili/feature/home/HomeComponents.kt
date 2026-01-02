@@ -69,7 +69,7 @@ fun ErrorState(message: String, onRetry: () -> Unit) {
 // ==========================================
 
 /**
- * 🔥 直播子分类行（关注/热门切换）
+ *  直播子分类行（关注/热门切换）
  */
 @Composable
 fun LiveSubCategoryRow(
@@ -89,8 +89,8 @@ fun LiveSubCategoryRow(
                 onClick = { onSubCategorySelected(subCategory) },
                 label = { Text(subCategory.label) },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,  // 🔥 使用主题色
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary     // 🔥 使用主题对应的前景色
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,  //  使用主题色
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary     //  使用主题对应的前景色
                 )
             )
         }

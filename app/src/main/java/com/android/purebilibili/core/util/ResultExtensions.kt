@@ -14,7 +14,7 @@ suspend inline fun <T> safeApiCall(crossinline block: suspend () -> T): Result<T
     return try {
         Result.success(block())
     } catch (e: Exception) {
-        Logger.e("SafeApiCall", "❌ API call failed: ${e.message}")
+        Logger.e("SafeApiCall", " API call failed: ${e.message}")
         Result.failure(e)
     }
 }
@@ -26,7 +26,7 @@ suspend inline fun <T> safeApiCallOrDefault(default: T, crossinline block: suspe
     return try {
         block()
     } catch (e: Exception) {
-        Logger.e("SafeApiCall", "⚠️ API call failed, using default: ${e.message}")
+        Logger.e("SafeApiCall", " API call failed, using default: ${e.message}")
         default
     }
 }
@@ -38,7 +38,7 @@ suspend inline fun <T> safeApiCallOrNull(crossinline block: suspend () -> T): T?
     return try {
         block()
     } catch (e: Exception) {
-        Logger.e("SafeApiCall", "⚠️ API call failed, returning null: ${e.message}")
+        Logger.e("SafeApiCall", " API call failed, returning null: ${e.message}")
         null
     }
 }
@@ -47,7 +47,7 @@ suspend inline fun <T> safeApiCallOrNull(crossinline block: suspend () -> T): T?
  * Result 扩展：成功时执行 action
  */
 inline fun <T> Result<T>.onSuccessLog(tag: String, message: (T) -> String): Result<T> {
-    onSuccess { Logger.d(tag, "✅ ${message(it)}") }
+    onSuccess { Logger.d(tag, " ${message(it)}") }
     return this
 }
 
@@ -55,7 +55,7 @@ inline fun <T> Result<T>.onSuccessLog(tag: String, message: (T) -> String): Resu
  * Result 扩展：失败时执行 action 并记录日志
  */
 inline fun <T> Result<T>.onFailureLog(tag: String, message: (Throwable) -> String = { it.message ?: "Unknown error" }): Result<T> {
-    onFailure { Logger.e(tag, "❌ ${message(it)}") }
+    onFailure { Logger.e(tag, " ${message(it)}") }
     return this
 }
 

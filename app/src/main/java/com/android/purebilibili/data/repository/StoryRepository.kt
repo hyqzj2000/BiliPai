@@ -31,14 +31,14 @@ object StoryRepository {
             
             if (response.code == 0 && response.data != null) {
                 val items = response.data.items ?: emptyList()
-                Logger.d(TAG, "🎬 获取故事流成功: ${items.size} 条视频")
+                Logger.d(TAG, " 获取故事流成功: ${items.size} 条视频")
                 Result.success(items)
             } else {
-                Logger.e(TAG, "🔥 获取故事流失败: code=${response.code}, msg=${response.message}")
+                Logger.e(TAG, " 获取故事流失败: code=${response.code}, msg=${response.message}")
                 Result.failure(Exception("获取失败: ${response.message}"))
             }
         } catch (e: Exception) {
-            Logger.e(TAG, "🔥 获取故事流异常", e)
+            Logger.e(TAG, " 获取故事流异常", e)
             Result.failure(e)
         }
     }
@@ -50,7 +50,7 @@ object StoryRepository {
      */
     suspend fun getVideoPlayUrl(bvid: String, cid: Long): String? {
         if (bvid.isEmpty()) {
-            Logger.e(TAG, "🔥 bvid 为空，无法获取播放 URL")
+            Logger.e(TAG, " bvid 为空，无法获取播放 URL")
             return null
         }
         return try {
@@ -58,7 +58,7 @@ object StoryRepository {
             val playData = VideoRepository.getPlayUrlData(bvid, cid, 80)
             extractPlayUrl(playData)
         } catch (e: Exception) {
-            Logger.e(TAG, "🔥 获取播放 URL 异常", e)
+            Logger.e(TAG, " 获取播放 URL 异常", e)
             null
         }
     }
@@ -70,11 +70,11 @@ object StoryRepository {
      */
     suspend fun getVideoPlayUrlByAid(aid: Long, cid: Long): String? {
         if (aid <= 0 || cid <= 0) {
-            Logger.e(TAG, "🔥 aid=$aid 或 cid=$cid 无效")
+            Logger.e(TAG, " aid=$aid 或 cid=$cid 无效")
             return null
         }
         return try {
-            Logger.d(TAG, "🎬 获取播放 URL: aid=$aid, cid=$cid")
+            Logger.d(TAG, " 获取播放 URL: aid=$aid, cid=$cid")
             
             // 使用 Legacy API 通过 aid 获取播放地址
             val response = NetworkModule.api.getPlayUrlByAid(aid = aid, cid = cid)
@@ -82,15 +82,15 @@ object StoryRepository {
             if (response.code == 0 && response.data != null) {
                 val url = extractPlayUrl(response.data)
                 if (url != null) {
-                    Logger.d(TAG, "✅ 获取播放 URL 成功: ${url.take(50)}...")
+                    Logger.d(TAG, " 获取播放 URL 成功: ${url.take(50)}...")
                     return url
                 }
             }
             
-            Logger.e(TAG, "🔥 获取播放 URL 失败: code=${response.code}")
+            Logger.e(TAG, " 获取播放 URL 失败: code=${response.code}")
             null
         } catch (e: Exception) {
-            Logger.e(TAG, "🔥 获取播放 URL 异常", e)
+            Logger.e(TAG, " 获取播放 URL 异常", e)
             null
         }
     }
@@ -104,18 +104,18 @@ object StoryRepository {
         // 优先取 durl (MP4) - 对短视频更友好
         val durlUrl = playData.durl?.firstOrNull()?.url
         if (!durlUrl.isNullOrEmpty()) {
-            Logger.d(TAG, "🎬 durl URL: ${durlUrl.take(50)}...")
+            Logger.d(TAG, " durl URL: ${durlUrl.take(50)}...")
             return durlUrl
         }
         
         // 降级到 DASH 视频流
         val dashUrl = playData.dash?.video?.firstOrNull()?.baseUrl
         if (!dashUrl.isNullOrEmpty()) {
-            Logger.d(TAG, "🎬 DASH URL: ${dashUrl.take(50)}...")
+            Logger.d(TAG, " DASH URL: ${dashUrl.take(50)}...")
             return dashUrl
         }
         
-        Logger.e(TAG, "🔥 无法获取播放 URL")
+        Logger.e(TAG, " 无法获取播放 URL")
         return null
     }
 }

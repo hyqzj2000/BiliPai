@@ -20,7 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -44,10 +44,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.purebilibili.core.database.entity.SearchHistory
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.ui.LoadingAnimation
-import com.android.purebilibili.feature.home.components.cards.ElegantVideoCard  // 🔥 使用首页卡片
-import com.android.purebilibili.core.store.SettingsManager  // 🔥 读取动画设置
+import com.android.purebilibili.feature.home.components.cards.ElegantVideoCard  //  使用首页卡片
+import com.android.purebilibili.core.store.SettingsManager  //  读取动画设置
 import com.android.purebilibili.data.repository.SearchOrder
 import com.android.purebilibili.data.repository.SearchDuration
 import com.android.purebilibili.data.model.response.VideoItem
@@ -67,13 +67,13 @@ fun SearchScreen(
     userFace: String = "",
     onBack: () -> Unit,
     onVideoClick: (String, Long) -> Unit,
-    onUpClick: (Long) -> Unit,  // 🔥 点击UP主跳转到空间
+    onUpClick: (Long) -> Unit,  //  点击UP主跳转到空间
     onAvatarClick: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val keyboardController = LocalSoftwareKeyboardController.current
     
-    // 🔥 自动聚焦搜索框
+    //  自动聚焦搜索框
     val searchFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
 
     // 1. 滚动状态监听 (用于列表)
@@ -86,7 +86,7 @@ fun SearchScreen(
     val topBarHeight = 64.dp // 搜索栏高度
     val contentTopPadding = statusBarHeight + topBarHeight
     
-    // 🔥 读取动画设置开关
+    //  读取动画设置开关
     val context = LocalContext.current
     val cardAnimationEnabled by SettingsManager.getCardAnimationEnabled(context).collectAsState(initial = true)
     val cardTransitionEnabled by SettingsManager.getCardTransitionEnabled(context).collectAsState(initial = false)
@@ -94,7 +94,7 @@ fun SearchScreen(
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         containerColor = Color.Transparent,
-        // 🔥 移除 bottomBar，搜索栏现在位于顶部 Box 中
+        //  移除 bottomBar，搜索栏现在位于顶部 Box 中
     ) { padding ->
         Box(
             modifier = Modifier
@@ -105,7 +105,7 @@ fun SearchScreen(
             // --- 列表内容层 ---
             if (state.showResults) {
                 if (state.isSearching) {
-                    // 🔥 使用 Lottie 加载动画
+                    //  使用 Lottie 加载动画
                     LoadingAnimation(
                         modifier = Modifier.align(Alignment.Center),
                         size = 80.dp,
@@ -119,7 +119,7 @@ fun SearchScreen(
                     )
                 } else {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        // 🔥 筛选条件栏 (含类型切换)
+                        //  筛选条件栏 (含类型切换)
                         Spacer(modifier = Modifier.height(contentTopPadding + 4.dp))
                         SearchFilterBar(
                             currentType = state.searchType,
@@ -130,7 +130,7 @@ fun SearchScreen(
                             onDurationChange = { viewModel.setSearchDuration(it) }
                         )
                         
-                        // 🥚 搜索彩蛋消息横幅
+                        //  搜索彩蛋消息横幅
                         val easterEggMsg = state.easterEggMessage
                         if (easterEggMsg != null) {
                             Surface(
@@ -156,7 +156,7 @@ fun SearchScreen(
                                 }
                             }
                         }
-                        // 🔥 根据搜索类型显示不同结果
+                        //  根据搜索类型显示不同结果
                         when (state.searchType) {
                             com.android.purebilibili.data.model.response.SearchType.VIDEO -> {
                                 // 视频搜索结果
@@ -181,7 +181,7 @@ fun SearchScreen(
                                 }
                             }
                             com.android.purebilibili.data.model.response.SearchType.UP -> {
-                                // 🔥 UP主搜索结果
+                                //  UP主搜索结果
                                 LazyColumn(
                                     contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
                                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -214,14 +214,14 @@ fun SearchScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     state = historyListState,
-                    // 🔥 contentPadding 顶部避让搜索栏
+                    //  contentPadding 顶部避让搜索栏
                     contentPadding = PaddingValues(top = contentTopPadding + 16.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
                 ) {
 
                     
-                    // 🔥 搜索发现 (恢复此板块)
+                    //  搜索发现 (恢复此板块)
                     item {
-                            // 🔥 搜索发现 / 个性化推荐
+                            //  搜索发现 / 个性化推荐
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -234,7 +234,7 @@ fun SearchScreen(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        state.discoverTitle, // 🔥 使用动态标题
+                                        state.discoverTitle, //  使用动态标题
                                         style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -262,7 +262,7 @@ fun SearchScreen(
                                 verticalArrangement = Arrangement.spacedBy(10.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                state.discoverList.forEach { keyword -> // 🔥 使用动态列表
+                                state.discoverList.forEach { keyword -> //  使用动态列表
                                     Surface(
                                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                         shape = RoundedCornerShape(6.dp),
@@ -285,10 +285,10 @@ fun SearchScreen(
 
                     if (state.hotList.isNotEmpty()) {
                         item {
-                            // 🔥 热搜标题
+                            //  热搜标题
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    "🔥",
+                                    "",
                                     fontSize = 16.sp
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -300,7 +300,7 @@ fun SearchScreen(
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                             
-                            // 🔥 热搜列表 (双列布局)
+                            //  热搜列表 (双列布局)
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -376,7 +376,7 @@ fun SearchScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                         
-                        // 🔥 气泡化历史记录
+                        //  气泡化历史记录
                         item {
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -396,7 +396,7 @@ fun SearchScreen(
                 }
             }
 
-            // --- 🔥 顶部搜索栏 (常驻顶部) ---
+            // ---  顶部搜索栏 (常驻顶部) ---
             SearchTopBar(
                 query = state.query,
                 onBack = onBack,
@@ -406,11 +406,11 @@ fun SearchScreen(
                     keyboardController?.hide()
                 },
                 onClearQuery = { viewModel.onQueryChange("") },
-                focusRequester = searchFocusRequester,  // 🔥 传递 focusRequester
+                focusRequester = searchFocusRequester,  //  传递 focusRequester
                 modifier = Modifier.align(Alignment.TopCenter)
             )
             
-            // --- 🔥 搜索建议下拉列表 ---
+            // ---  搜索建议下拉列表 ---
             if (state.suggestions.isNotEmpty() && state.query.isNotEmpty() && !state.showResults) {
                 Surface(
                     modifier = Modifier
@@ -457,7 +457,7 @@ fun SearchScreen(
     }
 }
 
-// 🔥 新设计的顶部搜索栏 (含 Focus 高亮动画)
+//  新设计的顶部搜索栏 (含 Focus 高亮动画)
 @Composable
 fun SearchTopBar(
     query: String,
@@ -468,23 +468,23 @@ fun SearchTopBar(
     focusRequester: androidx.compose.ui.focus.FocusRequester = remember { androidx.compose.ui.focus.FocusRequester() },
     modifier: Modifier = Modifier
 ) {
-    // 🔥 Focus 状态追踪
+    //  Focus 状态追踪
     var isFocused by remember { mutableStateOf(false) }
     
-    // 🔥 自动聚焦并弹出键盘
+    //  自动聚焦并弹出键盘
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(100)  // 等待页面加载完成
         focusRequester.requestFocus()
     }
     
-    // 🔥 边框宽度动画
+    //  边框宽度动画
     val borderWidth by animateDpAsState(
         targetValue = if (isFocused) 2.dp else 0.dp,
         animationSpec = tween(durationMillis = 200),
         label = "borderWidth"
     )
     
-    // 🔥 搜索图标颜色动画
+    //  搜索图标颜色动画
     val searchIconColor by animateColorAsState(
         targetValue = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
         animationSpec = tween(durationMillis = 200),
@@ -516,7 +516,7 @@ fun SearchTopBar(
 
                 Spacer(modifier = Modifier.width(4.dp))
 
-                // 🔥 搜索输入框 (带 Focus 边框动画)
+                //  搜索输入框 (带 Focus 边框动画)
                 Row(
                     modifier = Modifier
                         .weight(1f)
@@ -545,7 +545,7 @@ fun SearchTopBar(
                         onValueChange = onQueryChange,
                         modifier = Modifier
                             .weight(1f)
-                            .focusRequester(focusRequester)  // 🔥 应用 focusRequester
+                            .focusRequester(focusRequester)  //  应用 focusRequester
                             .onFocusChanged { isFocused = it.isFocused },
                         textStyle = TextStyle(
                             color = MaterialTheme.colorScheme.onSurface,
@@ -603,7 +603,7 @@ fun SearchTopBar(
     }
 }
 
-// 🔥 气泡化历史记录组件
+//  气泡化历史记录组件
 @Composable
 fun HistoryChip(
     keyword: String,
@@ -675,7 +675,7 @@ fun HistoryItem(
 }
 
 /**
- * 🔥 快捷分类入口
+ *  快捷分类入口
  */
 @Composable
 fun QuickCategory(
@@ -709,7 +709,7 @@ fun QuickCategory(
 }
 
 /**
- * 🔥 搜索筛选条件栏 (含类型切换)
+ *  搜索筛选条件栏 (含类型切换)
  */
 @Composable
 fun SearchFilterBar(
@@ -726,7 +726,7 @@ fun SearchFilterBar(
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
-        // 🔥 搜索类型切换 Tab
+        //  搜索类型切换 Tab
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -752,7 +752,7 @@ fun SearchFilterBar(
             }
         }
         
-        // 🔥 只有视频类型才显示排序和时长筛选
+        //  只有视频类型才显示排序和时长筛选
         if (currentType == com.android.purebilibili.data.model.response.SearchType.VIDEO) {
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -875,7 +875,7 @@ fun SearchFilterBar(
 }
 
 /**
- * 🔥 搜索结果卡片 (显示发布时间)
+ *  搜索结果卡片 (显示发布时间)
  */
 @Composable
 fun SearchResultCard(
@@ -959,7 +959,7 @@ fun SearchResultCard(
                 )
                 if (video.stat.danmaku > 0) {
                     Text(
-                        text = "  💬 ${FormatUtils.formatStat(video.stat.danmaku.toLong())}",
+                        text = "   ${FormatUtils.formatStat(video.stat.danmaku.toLong())}",
                         color = Color.White.copy(alpha = 0.85f),
                         fontSize = 11.sp
                     )
@@ -998,7 +998,7 @@ fun SearchResultCard(
                 modifier = Modifier.weight(1f, fill = false)
             )
             
-            // 🔥 显示发布时间
+            //  显示发布时间
             if (video.pubdate > 0) {
                 Text(
                     text = " · ${FormatUtils.formatPublishTime(video.pubdate)}",
@@ -1011,7 +1011,7 @@ fun SearchResultCard(
 }
 
 /**
- * 🔥 UP主搜索结果卡片
+ *  UP主搜索结果卡片
  */
 @Composable
 fun UpSearchResultCard(

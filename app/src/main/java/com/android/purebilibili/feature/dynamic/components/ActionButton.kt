@@ -10,7 +10,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -27,11 +27,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.theme.iOSBlue
 
 /**
- * 🍎 iOS 风格操作按钮 - 现代化胶囊设计
+ *  iOS 风格操作按钮 - 现代化胶囊设计
  * 
  * @param icon 图标
  * @param count 数量
@@ -52,7 +52,7 @@ fun ActionButton(
     val isForward = label == "转发"
     val isComment = label == "评论"
     
-    // 🍎 iOS 风格按压动画
+    //  iOS 风格按压动画
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -64,7 +64,7 @@ fun ActionButton(
         label = "actionButtonScale"
     )
     
-    // 🍎 iOS 风格颜色 - 根据激活状态调整
+    //  iOS 风格颜色 - 根据激活状态调整
     val buttonColor = when {
         isLike && isActive -> Color(0xFFFF6B81)  // 已点赞：粉红色
         isLike -> MaterialTheme.colorScheme.onSurfaceVariant.copy(0.6f)
@@ -73,7 +73,7 @@ fun ActionButton(
         else -> activeColor
     }
     
-    // 🍎 优雅的图标 - 根据状态切换填充/描边
+    //  优雅的图标 - 根据状态切换填充/描边
     val buttonIcon = when {
         isLike && isActive -> CupertinoIcons.Filled.Heart
         isLike -> CupertinoIcons.Default.Heart
@@ -97,7 +97,7 @@ fun ActionButton(
             ) { onClick() }
             .padding(horizontal = 14.dp, vertical = 8.dp)
     ) {
-        // 🍎 使用 SF Symbols 风格图标
+        //  使用 SF Symbols 风格图标
         Icon(
             imageVector = buttonIcon,
             contentDescription = label,
@@ -116,7 +116,7 @@ fun ActionButton(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 color = buttonColor,
-                letterSpacing = (-0.3).sp  // 🍎 iOS 紧凑字距
+                letterSpacing = (-0.3).sp  //  iOS 紧凑字距
             )
         }
     }

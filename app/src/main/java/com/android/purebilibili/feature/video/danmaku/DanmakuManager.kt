@@ -48,7 +48,7 @@ class DanmakuManager private constructor(
             return instance ?: synchronized(this) {
                 instance ?: DanmakuManager(context.applicationContext, scope).also { 
                     instance = it 
-                    Log.d(TAG, "🆕 DanmakuManager instance created")
+                    Log.d(TAG, " DanmakuManager instance created")
                 }
             }
         }
@@ -66,7 +66,7 @@ class DanmakuManager private constructor(
         fun clearInstance() {
             instance?.release()
             instance = null
-            Log.d(TAG, "🗑️ DanmakuManager instance cleared")
+            Log.d(TAG, " DanmakuManager instance cleared")
         }
     }
     
@@ -103,7 +103,7 @@ class DanmakuManager private constructor(
             controller?.let { 
                 config.applyTo(it.config)
                 it.invalidateView()
-                Log.w(TAG, "📋 Opacity changed to $value")
+                Log.w(TAG, " Opacity changed to $value")
             }
         }
     
@@ -114,7 +114,7 @@ class DanmakuManager private constructor(
             controller?.let { 
                 config.applyTo(it.config)
                 it.invalidateView()
-                Log.w(TAG, "📋 FontScale changed to $value")
+                Log.w(TAG, " FontScale changed to $value")
             }
         }
     
@@ -125,7 +125,7 @@ class DanmakuManager private constructor(
             controller?.let { 
                 config.applyTo(it.config)
                 it.invalidateView()
-                Log.w(TAG, "📋 SpeedFactor changed to $value")
+                Log.w(TAG, " SpeedFactor changed to $value")
             }
         }
     
@@ -136,12 +136,12 @@ class DanmakuManager private constructor(
             controller?.let { 
                 config.applyTo(it.config)
                 it.invalidateView()
-                Log.w(TAG, "📋 DisplayArea changed to $value")
+                Log.w(TAG, " DisplayArea changed to $value")
             }
         }
     
     /**
-     * 🔥 批量更新弹幕设置（实时生效）
+     *  批量更新弹幕设置（实时生效）
      */
     fun updateSettings(
         opacity: Float = this.opacity,
@@ -157,18 +157,18 @@ class DanmakuManager private constructor(
         controller?.let { ctrl ->
             config.applyTo(ctrl.config)
             ctrl.invalidateView()
-            Log.w(TAG, "📋 Settings updated: opacity=$opacity, fontScale=$fontScale, speed=$speed, displayArea=$displayArea")
+            Log.w(TAG, " Settings updated: opacity=$opacity, fontScale=$fontScale, speed=$speed, displayArea=$displayArea")
         }
     }
     
-    // 🔥🔥 [新增] 记录上次应用的视图尺寸，用于检测横竖屏切换
+    //  [新增] 记录上次应用的视图尺寸，用于检测横竖屏切换
     private var lastAppliedWidth: Int = 0
     private var lastAppliedHeight: Int = 0
     
     /**
      * 绑定 DanmakuView
      * 
-     * 🔥🔥 [修复] 支持横竖屏切换时重新应用弹幕数据
+     *  [修复] 支持横竖屏切换时重新应用弹幕数据
      * 当同一个视图的尺寸发生变化时，也会重新设置弹幕数据
      */
     fun attachView(view: DanmakuView) {
@@ -176,7 +176,7 @@ class DanmakuManager private constructor(
         Log.w(TAG, "========== attachView CALLED ==========")
         Log.w(TAG, "📎 View size: width=${view.width}, height=${view.height}, lastApplied=${lastAppliedWidth}x${lastAppliedHeight}")
         
-        // 🔥🔥 [关键修复] 如果是同一个视图但尺寸发生变化（横竖屏切换），也需要重新应用弹幕数据
+        //  [关键修复] 如果是同一个视图但尺寸发生变化（横竖屏切换），也需要重新应用弹幕数据
         val isSameView = danmakuView === view
         val sizeChanged = view.width != lastAppliedWidth || view.height != lastAppliedHeight
         val hasValidSize = view.width > 0 && view.height > 0
@@ -207,10 +207,10 @@ class DanmakuManager private constructor(
         // 应用配置
         controller?.let { ctrl ->
             config.applyTo(ctrl.config)
-            Log.w(TAG, "✅ DanmakuController configured")
-        } ?: Log.e(TAG, "❌ Controller is null!")
+            Log.w(TAG, " DanmakuController configured")
+        } ?: Log.e(TAG, " Controller is null!")
         
-        // 🔥🔥 [关键修复] 等待 View 布局完成后再设置弹幕数据
+        //  [关键修复] 等待 View 布局完成后再设置弹幕数据
         // DanmakuRenderEngine 需要有效的 View 尺寸来计算弹幕轨道位置
         if (hasValidSize) {
             // View 已经有有效尺寸，直接设置数据
@@ -234,8 +234,8 @@ class DanmakuManager private constructor(
                         lastAppliedHeight = view.height
                         applyDanmakuDataToController()
                     } else if (danmakuView === view) {
-                        // 🔥🔥 [修复] 如果布局回调时尺寸仍为 0，延迟 100ms 再试一次
-                        Log.w(TAG, "⚠️ View still zero size, scheduling delayed retry...")
+                        //  [修复] 如果布局回调时尺寸仍为 0，延迟 100ms 再试一次
+                        Log.w(TAG, " View still zero size, scheduling delayed retry...")
                         view.postDelayed({
                             if (danmakuView === view && view.width > 0 && view.height > 0) {
                                 Log.w(TAG, "📎 Delayed retry: width=${view.width}, height=${view.height}")
@@ -243,11 +243,11 @@ class DanmakuManager private constructor(
                                 lastAppliedHeight = view.height
                                 applyDanmakuDataToController()
                             } else {
-                                Log.w(TAG, "⚠️ View still invalid after delay, skipping")
+                                Log.w(TAG, " View still invalid after delay, skipping")
                             }
                         }, 100)
                     } else {
-                        Log.w(TAG, "⚠️ View changed, skipping setData")
+                        Log.w(TAG, " View changed, skipping setData")
                     }
                 }
             })
@@ -262,7 +262,7 @@ class DanmakuManager private constructor(
     private fun applyDanmakuDataToController() {
         Log.w(TAG, "📎 cachedDanmakuList is null? ${cachedDanmakuList == null}, size=${cachedDanmakuList?.size ?: 0}")
         cachedDanmakuList?.let { list ->
-            // 🔥🔥 [修复] 始终用 playTime=0 设置数据，因为弹幕的 showAtTime 是相对于视频开头的
+            //  [修复] 始终用 playTime=0 设置数据，因为弹幕的 showAtTime 是相对于视频开头的
             Log.w(TAG, "📎 Calling setData with ${list.size} items, playTime=0 (base reference)")
             controller?.setData(list, 0)
             Log.w(TAG, "📎 setData completed")
@@ -276,18 +276,18 @@ class DanmakuManager private constructor(
                 val position = p.currentPosition
                 Log.w(TAG, "📎 Player state: isPlaying=${p.isPlaying}, isEnabled=${config.isEnabled}, position=${position}ms")
                 
-                // 🔥🔥 [修复] 始终先 start 到当前位置，让 controller 知道视频在哪里
+                //  [修复] 始终先 start 到当前位置，让 controller 知道视频在哪里
                 controller?.start(position)
-                Log.w(TAG, "🚀 controller.start($position) called")
+                Log.w(TAG, " controller.start($position) called")
                 
                 if (p.isPlaying && config.isEnabled) {
                     isPlaying = true
-                    Log.w(TAG, "▶️ Danmaku playing")
+                    Log.w(TAG, " Danmaku playing")
                 } else {
                     // 如果视频暂停中，也暂停弹幕
                     controller?.pause()
                     isPlaying = false
-                    Log.w(TAG, "⏸️ Danmaku paused (player not playing)")
+                    Log.w(TAG, " Danmaku paused (player not playing)")
                 }
             } ?: Log.w(TAG, "📎 Player is null, not syncing")
         } ?: Log.w(TAG, "📎 No cached danmaku list to apply")
@@ -307,7 +307,7 @@ class DanmakuManager private constructor(
      * 绑定 ExoPlayer
      */
     fun attachPlayer(exoPlayer: ExoPlayer) {
-        Log.d(TAG, "🎬 attachPlayer")
+        Log.d(TAG, " attachPlayer")
         
         // 移除旧监听器
         playerListener?.let { player?.removeListener(it) }
@@ -316,29 +316,29 @@ class DanmakuManager private constructor(
         
         playerListener = object : Player.Listener {
             override fun onIsPlayingChanged(isPlayerPlaying: Boolean) {
-                Log.w(TAG, "🎬 onIsPlayingChanged: isPlaying=$isPlayerPlaying, isEnabled=${config.isEnabled}, hasData=${cachedDanmakuList != null}")
+                Log.w(TAG, " onIsPlayingChanged: isPlaying=$isPlayerPlaying, isEnabled=${config.isEnabled}, hasData=${cachedDanmakuList != null}")
                 
                 if (isPlayerPlaying && config.isEnabled) {
-                    // 🔥🔥 [修复] 只有当数据已加载时才启动弹幕
+                    //  [修复] 只有当数据已加载时才启动弹幕
                     if (cachedDanmakuList != null) {
                         val position = exoPlayer.currentPosition
                         controller?.start(position)
                         isPlaying = true
-                        Log.w(TAG, "🎬 Danmaku STARTED at ${position}ms")
+                        Log.w(TAG, " Danmaku STARTED at ${position}ms")
                     } else {
-                        Log.w(TAG, "🎬 Player playing but danmaku data not loaded yet, will start after load")
+                        Log.w(TAG, " Player playing but danmaku data not loaded yet, will start after load")
                         // 数据加载完成后会自动 start
                     }
                 } else if (!isPlayerPlaying) {
                     // 暂停 - DanmakuRenderEngine 的 pause() 会让弹幕停在原地
                     controller?.pause()
                     isPlaying = false
-                    Log.w(TAG, "🎬 Danmaku PAUSED (danmakus stay in place)")
+                    Log.w(TAG, " Danmaku PAUSED (danmakus stay in place)")
                 }
             }
             
             override fun onPlaybackStateChanged(playbackState: Int) {
-                Log.d(TAG, "🎬 onPlaybackStateChanged: state=$playbackState")
+                Log.d(TAG, " onPlaybackStateChanged: state=$playbackState")
                 when (playbackState) {
                     Player.STATE_READY -> {
                         if (exoPlayer.isPlaying && config.isEnabled) {
@@ -356,7 +356,7 @@ class DanmakuManager private constructor(
                         // 缓冲时暂停弹幕
                         if (isPlaying) {
                             controller?.pause()
-                            Log.d(TAG, "🎬 Buffering, danmaku paused")
+                            Log.d(TAG, " Buffering, danmaku paused")
                         }
                     }
                 }
@@ -368,25 +368,25 @@ class DanmakuManager private constructor(
                 reason: Int
             ) {
                 if (reason == Player.DISCONTINUITY_REASON_SEEK) {
-                    Log.w(TAG, "🎬 Seek detected: ${oldPosition.positionMs}ms -> ${newPosition.positionMs}ms")
+                    Log.w(TAG, " Seek detected: ${oldPosition.positionMs}ms -> ${newPosition.positionMs}ms")
                     
-                    // 🔥 关键修复：Seek 时重新调用 setData(list, 0) + start(newPosition)
+                    //  关键修复：Seek 时重新调用 setData(list, 0) + start(newPosition)
                     cachedDanmakuList?.let { list ->
-                        Log.w(TAG, "🔄 Re-setting data with playTime=0, then start at ${newPosition.positionMs}ms")
+                        Log.w(TAG, " Re-setting data with playTime=0, then start at ${newPosition.positionMs}ms")
                         controller?.setData(list, 0)  // 始终用 0 作为基准
                         controller?.start(newPosition.positionMs)  // 用实际位置启动
                         
                         if (exoPlayer.isPlaying && config.isEnabled) {
                             isPlaying = true
-                            Log.w(TAG, "🚀 Danmaku restarted at ${newPosition.positionMs}ms")
+                            Log.w(TAG, " Danmaku restarted at ${newPosition.positionMs}ms")
                         } else {
                             controller?.pause()
                             isPlaying = false
-                            Log.w(TAG, "⏸️ Danmaku paused after seek (player not playing)")
+                            Log.w(TAG, " Danmaku paused after seek (player not playing)")
                         }
                     } ?: run {
                         controller?.clear()
-                        Log.w(TAG, "⚠️ No cached danmaku, just cleared screen")
+                        Log.w(TAG, " No cached danmaku, just cleared screen")
                     }
                 }
             }
@@ -403,39 +403,39 @@ class DanmakuManager private constructor(
      */
     fun loadDanmaku(cid: Long, durationMs: Long = 0L) {
         Log.w(TAG, "========== loadDanmaku CALLED cid=$cid, duration=${durationMs}ms ==========")
-        Log.w(TAG, "📥 loadDanmaku: cid=$cid, cached=$cachedCid, isLoading=$isLoading, controller=${controller != null}")
+        Log.w(TAG, " loadDanmaku: cid=$cid, cached=$cachedCid, isLoading=$isLoading, controller=${controller != null}")
         
         // 如果正在加载，跳过
         if (isLoading) {
-            Log.w(TAG, "📥 Already loading, skipping")
+            Log.w(TAG, " Already loading, skipping")
             return
         }
         
         // 如果是同一个 cid 且已有缓存数据，直接使用（横竖屏切换场景）
         if (cid == cachedCid && cachedDanmakuList != null) {
             val currentPos = player?.currentPosition ?: 0L
-            Log.w(TAG, "📥 Using cached danmaku list (${cachedDanmakuList!!.size} items) for cid=$cid, position=${currentPos}ms")
+            Log.w(TAG, " Using cached danmaku list (${cachedDanmakuList!!.size} items) for cid=$cid, position=${currentPos}ms")
             
-            // 🔥🔥 [修复] 仿照 Seek 处理器的模式：先用 0 设置基准，再用 currentPos 启动
+            //  [修复] 仿照 Seek 处理器的模式：先用 0 设置基准，再用 currentPos 启动
             controller?.setData(cachedDanmakuList!!, 0)  // 基准时间 0
             controller?.start(currentPos)  // 跳到当前位置
-            Log.w(TAG, "🚀 Cached data: setData(0) + start(${currentPos}ms)")
+            Log.w(TAG, " Cached data: setData(0) + start(${currentPos}ms)")
             
             player?.let { p ->
                 if (p.isPlaying && config.isEnabled) {
                     isPlaying = true
-                    Log.w(TAG, "▶️ Player playing, danmaku active")
+                    Log.w(TAG, " Player playing, danmaku active")
                 } else {
                     controller?.pause()
                     isPlaying = false
-                    Log.w(TAG, "⏸️ Player paused, danmaku paused")
+                    Log.w(TAG, " Player paused, danmaku paused")
                 }
             }
             return
         }
         
         // 需要从网络加载新 cid 的弹幕
-        Log.w(TAG, "📥 loadDanmaku: New cid=$cid, loading from network")
+        Log.w(TAG, " loadDanmaku: New cid=$cid, loading from network")
         isLoading = true
         cachedCid = cid
         cachedDanmakuList = null
@@ -450,22 +450,22 @@ class DanmakuManager private constructor(
                     var segmentList: List<ByteArray>? = null
                     var xmlData: ByteArray? = null
                     
-                    // 🔥🔥 [新增] 优先使用 Protobuf API (seg.so)
+                    //  [新增] 优先使用 Protobuf API (seg.so)
                     if (durationMs > 0) {
-                        Log.w(TAG, "📥 Trying Protobuf API (seg.so)...")
+                        Log.w(TAG, " Trying Protobuf API (seg.so)...")
                         try {
                             val fetched = com.android.purebilibili.data.repository.DanmakuRepository.getDanmakuSegments(cid, durationMs)
                             if (fetched.isNotEmpty()) {
                                 segmentList = fetched
                             }
                         } catch (e: Exception) {
-                            Log.w(TAG, "⚠️ Protobuf API failed: ${e.message}, falling back to XML")
+                            Log.w(TAG, " Protobuf API failed: ${e.message}, falling back to XML")
                         }
                     }
                     
-                    // 🔥🔥 [后备] 如果 Protobuf 失败或未提供 duration，使用 XML API
+                    //  [后备] 如果 Protobuf 失败或未提供 duration，使用 XML API
                     if (segmentList.isNullOrEmpty()) {
-                        Log.w(TAG, "📥 Trying XML API (fallback)...")
+                        Log.w(TAG, " Trying XML API (fallback)...")
                         xmlData = com.android.purebilibili.data.repository.DanmakuRepository.getDanmakuRawData(cid)
                     }
                     
@@ -476,12 +476,12 @@ class DanmakuManager private constructor(
                     when {
                         !segments.isNullOrEmpty() -> {
                             val parsed = DanmakuParser.parseProtobuf(segments)
-                            Log.w(TAG, "✅ Protobuf parsed ${parsed.size} danmakus")
+                            Log.w(TAG, " Protobuf parsed ${parsed.size} danmakus")
                             parsed
                         }
                         rawData != null && rawData.isNotEmpty() -> {
                             val parsed = DanmakuParser.parse(rawData)
-                            Log.w(TAG, "✅ XML parsed ${parsed.size} danmakus")
+                            Log.w(TAG, " XML parsed ${parsed.size} danmakus")
                             parsed
                         }
                         else -> emptyList()
@@ -489,7 +489,7 @@ class DanmakuManager private constructor(
                 }
                 
                 if (danmakuList.isEmpty()) {
-                    Log.w(TAG, "⚠️ No danmaku data available for cid=$cid")
+                    Log.w(TAG, " No danmaku data available for cid=$cid")
                     withContext(Dispatchers.Main) {
                         isLoading = false
                     }
@@ -497,41 +497,41 @@ class DanmakuManager private constructor(
                 }
                 
                 cachedDanmakuList = danmakuList
-                Log.w(TAG, "📊 Final: ${danmakuList.size} danmakus for cid=$cid")
+                Log.w(TAG, " Final: ${danmakuList.size} danmakus for cid=$cid")
                 
                 withContext(Dispatchers.Main) {
                     isLoading = false
                     
-                    // 🔥🔥 [核心修复] 仿照 Seek 处理器的模式
+                    //  [核心修复] 仿照 Seek 处理器的模式
                     val currentPlayTime = player?.currentPosition ?: 0L
                     Log.w(TAG, "📎 View size: width=${danmakuView?.width}, height=${danmakuView?.height}")
                     
-                    // 🔥🔥 [核心修复] 先用 0 作为基准设置数据，再用实际位置启动
+                    //  [核心修复] 先用 0 作为基准设置数据，再用实际位置启动
                     // 这与 Seek 处理器的模式一致，确保引擎知道完整的时间线
                     Log.w(TAG, "📎 Calling setData with ${danmakuList.size} items, playTime=0 (base)")
                     controller?.setData(danmakuList, 0)  // 基准时间 0
                     Log.w(TAG, "📎 setData completed")
                     
-                    // 🔥🔥 [关键] 强制刷新视图 - 与横竖屏切换路径一致
+                    //  [关键] 强制刷新视图 - 与横竖屏切换路径一致
                     controller?.invalidateView()
                     Log.w(TAG, "📎 invalidateView called")
                     
                     // start 同步到当前位置
                     controller?.start(currentPlayTime)
-                    Log.w(TAG, "🚀 controller.start($currentPlayTime) called - video is at this position")
+                    Log.w(TAG, " controller.start($currentPlayTime) called - video is at this position")
                     
                     // 如果 player 暂停中，也暂停 controller
                     if (player?.isPlaying != true) {
                         controller?.pause()
                         isPlaying = false
-                        Log.w(TAG, "⏸️ Player not playing, controller paused")
+                        Log.w(TAG, " Player not playing, controller paused")
                     } else {
                         isPlaying = true
-                        Log.w(TAG, "▶️ Player is playing, danmaku active")
+                        Log.w(TAG, " Player is playing, danmaku active")
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Failed to load danmaku for cid=$cid: ${e.message}", e)
+                Log.e(TAG, " Failed to load danmaku for cid=$cid: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     isLoading = false
                 }
@@ -561,7 +561,7 @@ class DanmakuManager private constructor(
      * 清除视图引用（防止内存泄漏）
      */
     fun clearViewReference() {
-        Log.d(TAG, "🗑️ clearViewReference: Clearing all references")
+        Log.d(TAG, " clearViewReference: Clearing all references")
         
         // 移除播放器监听器
         playerListener?.let { listener ->
@@ -575,7 +575,7 @@ class DanmakuManager private constructor(
         controller = null
         danmakuView = null
         
-        // 🔥🔥 [修复] 重置尺寸记录
+        //  [修复] 重置尺寸记录
         lastAppliedWidth = 0
         lastAppliedHeight = 0
         
@@ -586,21 +586,21 @@ class DanmakuManager private constructor(
         isPlaying = false
         isLoading = false
         
-        Log.d(TAG, "✅ All references cleared")
+        Log.d(TAG, " All references cleared")
     }
     
     /**
      * 释放所有资源
      */
     fun release() {
-        Log.d(TAG, "🗑️ release")
+        Log.d(TAG, " release")
         clearViewReference()
         
         // 清除缓存
         cachedDanmakuList = null
         cachedCid = 0L
         
-        Log.d(TAG, "✅ DanmakuManager fully released")
+        Log.d(TAG, " DanmakuManager fully released")
     }
 }
 

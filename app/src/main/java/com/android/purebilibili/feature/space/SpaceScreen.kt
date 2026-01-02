@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.data.model.response.*
 import io.github.alexzhirkevich.cupertino.CupertinoActivityIndicator
@@ -68,7 +68,7 @@ fun SpaceScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = padding.calculateTopPadding())  // 🔥 只应用顶部 padding，底部沉浸
+                .padding(top = padding.calculateTopPadding())  //  只应用顶部 padding，底部沉浸
         ) {
             when (val state = uiState) {
                 is SpaceUiState.Loading -> {
@@ -97,7 +97,7 @@ fun SpaceScreen(
                         onVideoClick = onVideoClick,
                         onLoadMore = { viewModel.loadMoreVideos() },
                         onCategoryClick = { viewModel.selectCategory(it) },
-                        onSortOrderClick = { viewModel.selectSortOrder(it) }  // 🔥 排序点击
+                        onSortOrderClick = { viewModel.selectSortOrder(it) }  //  排序点击
                     )
                 }
             }
@@ -110,10 +110,10 @@ private fun SpaceContent(
     state: SpaceUiState.Success,
     onVideoClick: (String) -> Unit,
     onLoadMore: () -> Unit,
-    onCategoryClick: (Int) -> Unit,  // 🔥 分类点击回调
-    onSortOrderClick: (VideoSortOrder) -> Unit  // 🔥 排序点击回调
+    onCategoryClick: (Int) -> Unit,  //  分类点击回调
+    onSortOrderClick: (VideoSortOrder) -> Unit  //  排序点击回调
 ) {
-    // 🔥 当前选中的 Tab（目前只实现投稿页）
+    //  当前选中的 Tab（目前只实现投稿页）
     var selectedTab by remember { mutableIntStateOf(2) }  // 默认投稿
     
     LazyColumn(
@@ -128,7 +128,7 @@ private fun SpaceContent(
             )
         }
         
-        // 🔥 Tab 导航栏
+        //  Tab 导航栏
         item {
             SpaceTabRow(
                 selectedTab = selectedTab,
@@ -138,7 +138,7 @@ private fun SpaceContent(
             )
         }
         
-        // 🔥 根据 Tab 显示不同内容
+        //  根据 Tab 显示不同内容
         when (selectedTab) {
             2 -> {  // 投稿
                 // 投稿视频标题和排序按钮
@@ -284,12 +284,12 @@ private fun SpaceHeader(
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        // 🔥 头图 Banner - 更紧凑的高度
+        //  头图 Banner - 更紧凑的高度
         if (userInfo.topPhoto.isNotEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)  // 🔥 减少高度
+                    .height(80.dp)  //  减少高度
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -316,12 +316,12 @@ private fun SpaceHeader(
             }
         }
         
-        // 🔥 头像和基本信息区域
+        //  头像和基本信息区域
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .offset(y = if (userInfo.topPhoto.isNotEmpty()) (-20).dp else 4.dp),  // 🔥 减少 offset
+                .offset(y = if (userInfo.topPhoto.isNotEmpty()) (-20).dp else 4.dp),  //  减少 offset
             verticalAlignment = Alignment.Bottom
         ) {
             // 头像（带边框）
@@ -341,7 +341,7 @@ private fun SpaceHeader(
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
                 
-                // 🔥 直播状态标识（如果正在直播）
+                //  直播状态标识（如果正在直播）
                 if (userInfo.liveRoom?.liveStatus == 1) {
                     Box(
                         modifier = Modifier
@@ -378,7 +378,7 @@ private fun SpaceHeader(
                     
                     Spacer(Modifier.width(6.dp))
                     
-                    // 🔥 等级徽章
+                    //  等级徽章
                     Surface(
                         color = when {
                             userInfo.level >= 6 -> Color(0xFFFF6699)  // 粉色高等级
@@ -396,7 +396,7 @@ private fun SpaceHeader(
                         )
                     }
                     
-                    // 🔥 性别图标
+                    //  性别图标
                     if (userInfo.sex == "男") {
                         Spacer(Modifier.width(4.dp))
                         Text(
@@ -590,7 +590,7 @@ private fun SpaceVideoItem(video: SpaceVideoItem, onClick: () -> Unit) {
 }
 
 /**
- * 🔥 分类标签行组件
+ *  分类标签行组件
  */
 @Composable
 private fun CategoryTabRow(
@@ -626,7 +626,7 @@ private fun CategoryTabRow(
 }
 
 /**
- * 🔥 分类标签芯片
+ *  分类标签芯片
  */
 @Composable
 private fun CategoryChip(
@@ -658,7 +658,7 @@ private fun CategoryChip(
 }
 
 /**
- * 🔥 排序按钮行
+ *  排序按钮行
  */
 @Composable
 private fun SortButtonRow(
@@ -680,7 +680,7 @@ private fun SortButtonRow(
 }
 
 /**
- * 🔥 排序芯片
+ *  排序芯片
  */
 @Composable
 private fun SortChip(
@@ -712,7 +712,7 @@ private fun SortChip(
 }
 
 /**
- * 🔥 Space Tab 导航栏
+ *  Space Tab 导航栏
  */
 @Composable
 private fun SpaceTabRow(
@@ -824,7 +824,7 @@ private fun SpaceTab(
 }
 
 /**
- * 🔥 合集区块 - 横向滚动
+ *  合集区块 - 横向滚动
  */
 @Composable
 private fun SeasonSection(
@@ -874,7 +874,7 @@ private fun SeasonSection(
 }
 
 /**
- * 🔥 系列区块
+ *  系列区块
  */
 @Composable
 private fun SeriesSection(
@@ -932,7 +932,7 @@ private fun SeriesSection(
 }
 
 /**
- * 🔥 合集视频卡片 - 紧凑横向布局
+ *  合集视频卡片 - 紧凑横向布局
  */
 @Composable
 private fun SeasonVideoCard(
@@ -1012,7 +1012,7 @@ private fun SeasonVideoCard(
 }
 
 /**
- * 🔥 系列视频卡片 - 紧凑横向布局
+ *  系列视频卡片 - 紧凑横向布局
  */
 @Composable
 private fun SeriesVideoCard(

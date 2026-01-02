@@ -5,7 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -24,14 +24,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.ImageLoader
 import coil.compose.AsyncImage
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.theme.iOSBlue
 import com.android.purebilibili.data.model.response.DynamicDesc
 import com.android.purebilibili.data.model.response.DynamicItem
 import com.android.purebilibili.data.model.response.DynamicType
 
 /**
- * 🔥 动态卡片V2 - 官方风格
+ *  动态卡片V2 - 官方风格
  */
 @Composable
 fun DynamicCardV2(
@@ -40,7 +40,7 @@ fun DynamicCardV2(
     onUserClick: (Long) -> Unit,
     onLiveClick: (roomId: Long, title: String, uname: String) -> Unit = { _, _, _ -> },
     gifImageLoader: ImageLoader,
-    // 🔥🔥 [新增] 评论/转发/点赞回调
+    //  [新增] 评论/转发/点赞回调
     onCommentClick: (dynamicId: String) -> Unit = {},
     onRepostClick: (dynamicId: String) -> Unit = {},
     onLikeClick: (dynamicId: String) -> Unit = {},
@@ -57,11 +57,11 @@ fun DynamicCardV2(
             .background(MaterialTheme.colorScheme.surface)
             .padding(16.dp)
     ) {
-        // 🔥🔥 [新增] 更多菜单状态
+        //  [新增] 更多菜单状态
         var showMoreMenu by remember { mutableStateOf(false) }
         val context = LocalContext.current
         
-        // 🔥 用户头部（头像 + 名称 + 时间 + 更多）
+        //  用户头部（头像 + 名称 + 时间 + 更多）
         if (author != null) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -97,7 +97,7 @@ fun DynamicCardV2(
                     )
                 }
                 
-                // 🔥🔥 [修复] 更多按钮 + 下拉菜单
+                //  [修复] 更多按钮 + 下拉菜单
                 Box {
                     IconButton(onClick = { showMoreMenu = true }) {
                         Icon(
@@ -156,7 +156,7 @@ fun DynamicCardV2(
             Spacer(modifier = Modifier.height(12.dp))
         }
         
-        // 🔥 动态内容文字（支持@高亮）
+        //  动态内容文字（支持@高亮）
         content?.desc?.let { desc ->
             if (desc.text.isNotEmpty()) {
                 RichTextContent(
@@ -167,7 +167,7 @@ fun DynamicCardV2(
             }
         }
         
-        // 🔥 视频类型动态 - 大图预览
+        //  视频类型动态 - 大图预览
         content?.major?.archive?.let { archive ->
             VideoCardLarge(
                 archive = archive,
@@ -176,7 +176,7 @@ fun DynamicCardV2(
             Spacer(modifier = Modifier.height(12.dp))
         }
         
-        // 🔥 图片类型动态（支持GIF + 点击预览）
+        //  图片类型动态（支持GIF + 点击预览）
         content?.major?.draw?.let { draw ->
             var selectedImageIndex by remember { mutableIntStateOf(-1) }
             
@@ -197,7 +197,7 @@ fun DynamicCardV2(
             }
         }
         
-        // 🔥 直播推荐动态
+        //  直播推荐动态
         content?.major?.live_rcmd?.let { liveRcmd ->
             LiveCard(
                 liveRcmd = liveRcmd,
@@ -206,7 +206,7 @@ fun DynamicCardV2(
             Spacer(modifier = Modifier.height(12.dp))
         }
         
-        // 🔥 转发动态 - 嵌套显示原始内容
+        //  转发动态 - 嵌套显示原始内容
         if (type == DynamicType.FORWARD && item.orig != null) {
             ForwardedContent(
                 orig = item.orig,
@@ -217,7 +217,7 @@ fun DynamicCardV2(
             Spacer(modifier = Modifier.height(12.dp))
         }
         
-        // 🔥🔥 [新增] 底部操作栏：转发、评论、点赞
+        //  [新增] 底部操作栏：转发、评论、点赞
         stat?.let { statModule ->
             Row(
                 modifier = Modifier
@@ -256,7 +256,7 @@ fun DynamicCardV2(
 }
 
 /**
- * 🔥 富文本内容（支持@提及高亮）
+ *  富文本内容（支持@提及高亮）
  */
 @Composable
 fun RichTextContent(
@@ -296,7 +296,7 @@ fun RichTextContent(
 }
 
 /**
- * 🔥 紧凑列表卡片 - 单行显示
+ *  紧凑列表卡片 - 单行显示
  */
 @Composable
 fun DynamicCardCompact(
@@ -321,7 +321,7 @@ fun DynamicCardCompact(
                 content?.major?.archive?.let { onVideoClick(it.bvid) }
                     ?: author?.let { onUserClick(it.mid) }
             }
-            .padding(horizontal = 16.dp, vertical = 12.dp),  // 🔥 优化间距
+            .padding(horizontal = 16.dp, vertical = 12.dp),  //  优化间距
         verticalAlignment = Alignment.CenterVertically
     ) {
         // 头像

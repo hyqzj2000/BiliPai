@@ -102,19 +102,19 @@ class BangumiViewModel : ViewModel() {
     private val _detailState = MutableStateFlow<BangumiDetailState>(BangumiDetailState.Loading)
     val detailState: StateFlow<BangumiDetailState> = _detailState.asStateFlow()
     
-    // 🔥 新增：搜索状态
+    //  新增：搜索状态
     private val _searchState = MutableStateFlow<BangumiSearchState>(BangumiSearchState.Idle)
     val searchState: StateFlow<BangumiSearchState> = _searchState.asStateFlow()
     
-    // 🔥 新增：我的追番状态
+    //  新增：我的追番状态
     private val _myFollowState = MutableStateFlow<MyFollowState>(MyFollowState.Loading)
     val myFollowState: StateFlow<MyFollowState> = _myFollowState.asStateFlow()
     
-    // 🔥 新增：筛选条件
+    //  新增：筛选条件
     private val _filter = MutableStateFlow(BangumiFilter())
     val filter: StateFlow<BangumiFilter> = _filter.asStateFlow()
     
-    // 🔥 新增：搜索关键词
+    //  新增：搜索关键词
     private val _searchKeyword = MutableStateFlow("")
     val searchKeyword: StateFlow<String> = _searchKeyword.asStateFlow()
     
@@ -124,23 +124,23 @@ class BangumiViewModel : ViewModel() {
     private var searchPage = 1
     private var myFollowPage = 1
     
-    // 🔥🔥 [修复] 本地追番状态缓存
+    //  [修复] 本地追番状态缓存
     // 由于 B站 PGC API 返回的 userStatus.follow 不可靠，我们使用本地缓存来覆盖
     // Key: seasonId, Value: 是否追番
     private val followStatusCache = mutableMapOf<Long, Boolean>()
     
-    // 🔥🔥 [修复] 预加载的已追番 seasonId 集合（从"我的追番"API 获取）
+    //  [修复] 预加载的已追番 seasonId 集合（从"我的追番"API 获取）
     private val followedSeasonIds = mutableSetOf<Long>()
     private var hasPreloadedFollowList = false
     
     init {
         loadBangumiList()
-        // 🔥 预加载用户的追番列表以获取正确的追番状态
+        //  预加载用户的追番列表以获取正确的追番状态
         preloadFollowedSeasons()
     }
     
     /**
-     * 🔥🔥 [新增] 预加载用户已追番的 seasonId 列表
+     *  [新增] 预加载用户已追番的 seasonId 列表
      */
     private fun preloadFollowedSeasons() {
         viewModelScope.launch {
@@ -197,7 +197,7 @@ class BangumiViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 更新筛选条件
+     *  更新筛选条件
      */
     fun updateFilter(newFilter: BangumiFilter) {
         _filter.value = newFilter
@@ -231,7 +231,7 @@ class BangumiViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 带筛选条件加载番剧列表
+     *  带筛选条件加载番剧列表
      */
     private fun loadBangumiListWithFilter() {
         viewModelScope.launch {
@@ -314,7 +314,7 @@ class BangumiViewModel : ViewModel() {
             
             BangumiRepository.getSeasonDetail(seasonId).fold(
                 onSuccess = { detail ->
-                    // 🔥🔥 [修复] 确定追番状态的优先级：
+                    //  [修复] 确定追番状态的优先级：
                     // 1. 本地缓存（用户在本次会话中点击追番/取消追番）
                     // 2. 预加载的追番列表（从"我的追番"API 获取）
                     // 3. API 返回的 userStatus.follow
@@ -350,7 +350,7 @@ class BangumiViewModel : ViewModel() {
     
     /**
      * 追番/取消追番
-     * 🔥 [修复] 成功后不再重新加载详情（因为 API 可能有延迟返回错误的 follow 状态）
+     *  [修复] 成功后不再重新加载详情（因为 API 可能有延迟返回错误的 follow 状态）
      * UI 层已经做了乐观更新，只有失败时才需要刷新以恢复正确状态
      */
     fun toggleFollow(seasonId: Long, isFollowing: Boolean) {
@@ -363,7 +363,7 @@ class BangumiViewModel : ViewModel() {
             
             result.fold(
                 onSuccess = {
-                    // 🔥🔥 [修复] 成功后更新本地缓存和预加载列表
+                    //  [修复] 成功后更新本地缓存和预加载列表
                     val newFollowStatus = !isFollowing
                     followStatusCache[seasonId] = newFollowStatus
                     if (newFollowStatus) {
@@ -371,11 +371,11 @@ class BangumiViewModel : ViewModel() {
                     } else {
                         followedSeasonIds.remove(seasonId)
                     }
-                    android.util.Log.d("BangumiVM", "✅ ${if (isFollowing) "取消追番" else "追番"}成功，状态更新为: $newFollowStatus")
+                    android.util.Log.d("BangumiVM", " ${if (isFollowing) "取消追番" else "追番"}成功，状态更新为: $newFollowStatus")
                 },
                 onFailure = { error ->
                     android.util.Log.e("BangumiVM", "Toggle follow failed: ${error.message}")
-                    // 🔥 失败时清除缓存并重新加载详情，恢复正确状态
+                    //  失败时清除缓存并重新加载详情，恢复正确状态
                     followStatusCache.remove(seasonId)
                     loadSeasonDetail(seasonId)
                 }
@@ -383,10 +383,10 @@ class BangumiViewModel : ViewModel() {
         }
     }
     
-    // ========== 🔥 新增功能 ==========
+    // ==========  新增功能 ==========
     
     /**
-     * 🔥 搜索番剧
+     *  搜索番剧
      */
     fun searchBangumi(keyword: String) {
         if (keyword.isBlank()) return
@@ -417,7 +417,7 @@ class BangumiViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 加载更多搜索结果
+     *  加载更多搜索结果
      */
     fun loadMoreSearchResults() {
         val currentState = _searchState.value
@@ -447,7 +447,7 @@ class BangumiViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 清除搜索
+     *  清除搜索
      */
     fun clearSearch() {
         _searchKeyword.value = ""
@@ -456,7 +456,7 @@ class BangumiViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 加载我的追番列表
+     *  加载我的追番列表
      */
     fun loadMyFollowBangumi(type: Int = 1) {
         myFollowPage = 1
@@ -483,7 +483,7 @@ class BangumiViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 加载更多追番
+     *  加载更多追番
      */
     fun loadMoreMyFollow() {
         val currentState = _myFollowState.value

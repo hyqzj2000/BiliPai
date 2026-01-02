@@ -19,7 +19,7 @@ private const val TAG = "JsonPluginManager"
 private const val STATS_PREFS = "json_plugin_stats"
 
 /**
- * 🔌 JSON 规则插件管理器
+ *  JSON 规则插件管理器
  * 
  * 管理通过 URL 导入的 JSON 规则插件
  */
@@ -32,7 +32,7 @@ object JsonPluginManager {
     private val _plugins = MutableStateFlow<List<LoadedJsonPlugin>>(emptyList())
     val plugins: StateFlow<List<LoadedJsonPlugin>> = _plugins.asStateFlow()
     
-    /** 🆕 过滤统计 (插件ID -> 过滤数量) */
+    /**  过滤统计 (插件ID -> 过滤数量) */
     private val _filterStats = MutableStateFlow<Map<String, Int>>(emptyMap())
     val filterStats: StateFlow<Map<String, Int>> = _filterStats.asStateFlow()
     
@@ -48,9 +48,9 @@ object JsonPluginManager {
         
         // 加载已保存的插件
         loadSavedPlugins()
-        // 🆕 加载持久化统计
+        //  加载持久化统计
         loadFilterStats()
-        Logger.d(TAG, "🔌 JsonPluginManager initialized")
+        Logger.d(TAG, " JsonPluginManager initialized")
     }
     
     /**
@@ -59,9 +59,9 @@ object JsonPluginManager {
     suspend fun importFromUrl(url: String): Result<JsonRulePlugin> {
         return withContext(Dispatchers.IO) {
             try {
-                Logger.d(TAG, "📥 下载插件: $url")
+                Logger.d(TAG, " 下载插件: $url")
                 
-                // 🔥 使用带超时的 OkHttp 请求
+                //  使用带超时的 OkHttp 请求
                 val client = okhttp3.OkHttpClient.Builder()
                     .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
                     .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
@@ -87,7 +87,7 @@ object JsonPluginManager {
                 val plugin = try {
                     json.decodeFromString<JsonRulePlugin>(content)
                 } catch (e: Exception) {
-                    Logger.e(TAG, "❌ JSON 解析失败", e)
+                    Logger.e(TAG, " JSON 解析失败", e)
                     return@withContext Result.failure(
                         Exception("JSON 解析失败: ${e.message?.take(100)}")
                     )
@@ -105,19 +105,19 @@ object JsonPluginManager {
                 val loaded = LoadedJsonPlugin(plugin, enabled = true, sourceUrl = url)
                 _plugins.value = _plugins.value.filter { it.plugin.id != plugin.id } + loaded
                 
-                Logger.d(TAG, "✅ 插件导入成功: ${plugin.name}")
+                Logger.d(TAG, " 插件导入成功: ${plugin.name}")
                 Result.success(plugin)
             } catch (e: java.net.SocketTimeoutException) {
-                Logger.e(TAG, "❌ 连接超时", e)
+                Logger.e(TAG, " 连接超时", e)
                 Result.failure(Exception("连接超时，请检查网络或 URL 是否正确"))
             } catch (e: java.net.UnknownHostException) {
-                Logger.e(TAG, "❌ 无法解析主机", e)
+                Logger.e(TAG, " 无法解析主机", e)
                 Result.failure(Exception("无法连接服务器，请检查 URL"))
             } catch (e: java.io.IOException) {
-                Logger.e(TAG, "❌ 网络错误", e)
+                Logger.e(TAG, " 网络错误", e)
                 Result.failure(Exception("网络错误: ${e.message}"))
             } catch (e: Exception) {
-                Logger.e(TAG, "❌ 导入失败", e)
+                Logger.e(TAG, " 导入失败", e)
                 Result.failure(Exception("导入失败: ${e.message?.take(100)}"))
             }
         }
@@ -131,7 +131,7 @@ object JsonPluginManager {
         if (file.exists()) file.delete()
         
         _plugins.value = _plugins.value.filter { it.plugin.id != pluginId }
-        Logger.d(TAG, "🗑️ 删除插件: $pluginId")
+        Logger.d(TAG, " 删除插件: $pluginId")
     }
     
     /**
@@ -149,7 +149,7 @@ object JsonPluginManager {
     
     // ============ 过滤方法 ============
     
-    /** 🆕 最近一次过滤掉的视频数量（用于 UI 提示） */
+    /**  最近一次过滤掉的视频数量（用于 UI 提示） */
     private val _lastFilteredCount = MutableStateFlow(0)
     val lastFilteredCount: StateFlow<Int> = _lastFilteredCount.asStateFlow()
     
@@ -168,7 +168,7 @@ object JsonPluginManager {
         val result = videos.filter { video ->
             feedPlugins.all { loaded ->
                 val show = RuleEngine.shouldShowVideo(video, loaded.plugin.rules)
-                // 🆕 记录过滤统计
+                //  记录过滤统计
                 if (!show) {
                     filteredCount++
                     val current = _filterStats.value.getOrDefault(loaded.plugin.id, 0)
@@ -179,20 +179,20 @@ object JsonPluginManager {
             }
         }
         
-        // 🆕 保存统计到持久化存储
+        //  保存统计到持久化存储
         saveFilterStats()
         
-        // 🆕 更新最近过滤数量
+        //  更新最近过滤数量
         _lastFilteredCount.value = filteredCount
         if (filteredCount > 0) {
-            Logger.d(TAG, "📊 本次过滤了 $filteredCount 个视频")
+            Logger.d(TAG, " 本次过滤了 $filteredCount 个视频")
         }
         
         return result
     }
     
     /**
-     * 🆕 更新插件规则
+     *  更新插件规则
      */
     fun updatePlugin(plugin: JsonRulePlugin) {
         // 保存到本地
@@ -208,11 +208,11 @@ object JsonPluginManager {
         // 重置该插件的统计
         _filterStats.value = _filterStats.value - plugin.id
         
-        Logger.d(TAG, "✅ 插件已更新: ${plugin.name}")
+        Logger.d(TAG, " 插件已更新: ${plugin.name}")
     }
     
     /**
-     * 🆕 重置统计（同时清除持久化数据）
+     *  重置统计（同时清除持久化数据）
      */
     fun resetStats(pluginId: String? = null) {
         if (pluginId != null) {
@@ -220,13 +220,13 @@ object JsonPluginManager {
         } else {
             _filterStats.value = emptyMap()
         }
-        // 🆕 同步持久化
+        //  同步持久化
         saveFilterStats()
-        Logger.d(TAG, "🔄 统计已重置: ${pluginId ?: "全部"}")
+        Logger.d(TAG, " 统计已重置: ${pluginId ?: "全部"}")
     }
     
     /**
-     * 🆕 测试插件规则（用于验证插件是否生效）
+     *  测试插件规则（用于验证插件是否生效）
      * 
      * @param pluginId 要测试的插件 ID
      * @param sampleVideos 测试用的视频列表（来自首页）
@@ -244,7 +244,7 @@ object JsonPluginManager {
     }
     
     /**
-     * 🆕 获取被测试过滤的视频列表（用于展示哪些视频会被过滤）
+     *  获取被测试过滤的视频列表（用于展示哪些视频会被过滤）
      */
     fun getFilteredVideosByPlugin(pluginId: String, sampleVideos: List<VideoItem>): List<VideoItem> {
         val loaded = _plugins.value.find { it.plugin.id == pluginId }
@@ -303,17 +303,17 @@ object JsonPluginManager {
                 val enabled = prefs.getBoolean("enabled_${plugin.id}", true)
                 LoadedJsonPlugin(plugin, enabled, sourceUrl = null)
             } catch (e: Exception) {
-                Logger.w(TAG, "⚠️ 加载插件失败: ${file.name}")
+                Logger.w(TAG, " 加载插件失败: ${file.name}")
                 null
             }
         } ?: emptyList()
         
         _plugins.value = loaded
-        Logger.d(TAG, "📦 加载了 ${loaded.size} 个 JSON 插件")
+        Logger.d(TAG, " 加载了 ${loaded.size} 个 JSON 插件")
     }
     
     /**
-     * 🆕 加载持久化过滤统计
+     *  加载持久化过滤统计
      */
     private fun loadFilterStats() {
         val prefs = appContext.getSharedPreferences(STATS_PREFS, Context.MODE_PRIVATE)
@@ -326,11 +326,11 @@ object JsonPluginManager {
         }
         
         _filterStats.value = statsMap
-        Logger.d(TAG, "📊 加载了 ${statsMap.size} 个插件的过滤统计")
+        Logger.d(TAG, " 加载了 ${statsMap.size} 个插件的过滤统计")
     }
     
     /**
-     * 🆕 保存过滤统计到持久化存储
+     *  保存过滤统计到持久化存储
      */
     private fun saveFilterStats() {
         val prefs = appContext.getSharedPreferences(STATS_PREFS, Context.MODE_PRIVATE)

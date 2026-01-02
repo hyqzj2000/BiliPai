@@ -20,7 +20,7 @@ import androidx.core.view.WindowCompat
 // --- 扩展颜色定义 ---
 private val LightSurfaceVariant = Color(0xFFF1F2F3)
 
-// 🔥🔥 [优化] 根据主题色索引生成配色方案
+//  [优化] 根据主题色索引生成配色方案
 private fun createDarkColorScheme(primaryColor: Color) = darkColorScheme(
     primary = primaryColor,
     onPrimary = White,
@@ -39,8 +39,8 @@ private fun createLightColorScheme(primaryColor: Color) = lightColorScheme(
     primary = primaryColor,
     onPrimary = White,
     secondary = primaryColor.copy(alpha = 0.8f),
-    background = Color(0xFFF5F5F5),  // 🔥 柔和浅灰背景
-    surface = Color(0xFFFAFAFA),     // 🔥 微灰表面，不再纯白
+    background = Color(0xFFF5F5F5),  //  柔和浅灰背景
+    surface = Color(0xFFFAFAFA),     //  微灰表面，不再纯白
     onSurface = TextPrimary,
     surfaceVariant = LightSurfaceVariant,
     onSurfaceVariant = TextSecondary
@@ -54,10 +54,10 @@ private val LightColorScheme = createLightColorScheme(iOSSystemBlue)
 fun PureBiliBiliTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
-    themeColorIndex: Int = 0, // 🔥🔥 默认 0 = iOS 蓝色
+    themeColorIndex: Int = 0, //  默认 0 = iOS 蓝色
     content: @Composable () -> Unit
 ) {
-    // 🔥 获取自定义主题色 (默认 iOS 蓝)
+    //  获取自定义主题色 (默认 iOS 蓝)
     val customPrimaryColor = ThemeColors.getOrElse(themeColorIndex) { iOSSystemBlue }
     
     val colorScheme = when {
@@ -66,12 +66,12 @@ fun PureBiliBiliTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        // 🔥🔥 [新增] 使用自定义主题色
+        //  [新增] 使用自定义主题色
         darkTheme -> createDarkColorScheme(customPrimaryColor)
         else -> createLightColorScheme(customPrimaryColor)
     }
 
-    // 🔥🔥 [新增] 动态设置状态栏图标颜色
+    //  [新增] 动态设置状态栏图标颜色
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

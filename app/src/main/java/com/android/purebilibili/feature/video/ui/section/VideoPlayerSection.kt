@@ -19,7 +19,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -64,28 +64,31 @@ fun VideoPlayerSection(
     onBack: () -> Unit,
     // 🔗 [新增] 分享功能
     bvid: String = "",
-    // 🧪 实验性功能：双击点赞
+    //  实验性功能：双击点赞
     onDoubleTapLike: () -> Unit = {},
-    // 🚀 空降助手
+    //  空降助手
     sponsorSegment: com.android.purebilibili.data.model.response.SponsorSegment? = null,
     showSponsorSkipButton: Boolean = false,
     onSponsorSkip: () -> Unit = {},
     onSponsorDismiss: () -> Unit = {},
-    // 🔥 [新增] 重载视频回调
+    //  [新增] 重载视频回调
     onReloadVideo: () -> Unit = {},
-    // 🔥 [新增] CDN 线路切换
+    //  [新增] CDN 线路切换
     currentCdnIndex: Int = 0,
     cdnCount: Int = 1,
     onSwitchCdn: () -> Unit = {},
     onSwitchCdnTo: (Int) -> Unit = {},
     
-    // 🔥 [新增] 音频模式
+    //  [新增] 音频模式
     isAudioOnly: Boolean = false,
     onAudioOnlyToggle: () -> Unit = {},
     
-    // 🔥 [新增] 定时关闭
+    //  [新增] 定时关闭
     sleepTimerMinutes: Int? = null,
-    onSleepTimerChange: (Int?) -> Unit = {}
+    onSleepTimerChange: (Int?) -> Unit = {},
+    
+    // 🖼️ [新增] 视频预览图数据
+    videoshotData: com.android.purebilibili.data.model.response.VideoshotData? = null
 ) {
     val context = LocalContext.current
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
@@ -96,7 +99,7 @@ fun VideoPlayerSection(
     // 使用 rememberUpdatedState 确保重组时获取最新值（虽然在单一 Activity 生命周期内可能需要重启生效，但简单场景够用）
     val showStats by remember { mutableStateOf(prefs.getBoolean("show_stats", false)) }
     
-    // 🔥🔥 [新增] 读取手势灵敏度设置
+    //  [新增] 读取手势灵敏度设置
     val gestureSensitivity by com.android.purebilibili.core.store.SettingsManager
         .getGestureSensitivity(context)
         .collectAsState(initial = 1.0f)
@@ -104,7 +107,7 @@ fun VideoPlayerSection(
     // --- 新增：存储真实分辨率 ---
     var realResolution by remember { mutableStateOf("") }
     
-    // 🧪 读取双击点赞设置 (从 DataStore 读取)
+    //  读取双击点赞设置 (从 DataStore 读取)
     val doubleTapLikeEnabled by com.android.purebilibili.core.store.SettingsManager
         .getDoubleTapLike(context)
         .collectAsState(initial = true)
@@ -143,10 +146,10 @@ fun VideoPlayerSection(
     var startPosition by remember { mutableLongStateOf(0L) }
     var isGestureVisible by remember { mutableStateOf(false) }
     
-    // 🔥 视频比例状态
+    //  视频比例状态
     var currentAspectRatio by remember { mutableStateOf(VideoAspectRatio.FIT) }
     
-    // 🔥 [新增] 视频翻转状态
+    //  [新增] 视频翻转状态
     var isFlippedHorizontal by remember { mutableStateOf(false) }
     var isFlippedVertical by remember { mutableStateOf(false) }
 
@@ -167,9 +170,9 @@ fun VideoPlayerSection(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clipToBounds()  // 🔥 确保所有内容（包括弹幕）不会超出边界
+            .clipToBounds()  //  确保所有内容（包括弹幕）不会超出边界
             .background(Color.Black)
-            // 🔥 先处理拖拽手势
+            //  先处理拖拽手势
             .pointerInput(isInPipMode) {
                 if (!isInPipMode) {
                     detectDragGestures(
@@ -211,7 +214,7 @@ fun VideoPlayerSection(
                             isGestureVisible = false
                             gestureMode = VideoGestureMode.None
                         },
-                        // 🔥🔥 [修复点] 使用 dragAmount 而不是 change.positionChange()
+                        //  [修复点] 使用 dragAmount 而不是 change.positionChange()
                         onDrag = { change, dragAmount ->
                             if (gestureMode == VideoGestureMode.None) {
                                 if (abs(dragAmount.x) > abs(dragAmount.y)) {
@@ -231,37 +234,37 @@ fun VideoPlayerSection(
                                 VideoGestureMode.Seek -> {
                                     totalDragDistanceX += dragAmount.x
                                     val duration = playerState.player.duration.coerceAtLeast(0L)
-                                    // 🔥 应用灵敏度
+                                    //  应用灵敏度
                                     val seekDelta = (totalDragDistanceX * 200 * gestureSensitivity).toLong()
                                     seekTargetTime = (startPosition + seekDelta).coerceIn(0L, duration)
                                 }
                                 VideoGestureMode.Brightness -> {
                                     totalDragDistanceY -= dragAmount.y
                                     val screenHeight = context.resources.displayMetrics.heightPixels
-                                    // 🔥 应用灵敏度
+                                    //  应用灵敏度
                                     val deltaPercent = totalDragDistanceY / screenHeight * gestureSensitivity
                                     val newBrightness = (startBrightness + deltaPercent).coerceIn(0f, 1f)
                                     
-                                    // 🚀 优化：仅在变化超过阈值时更新（减少 WindowManager 调用）
+                                    //  优化：仅在变化超过阈值时更新（减少 WindowManager 调用）
                                     if (kotlin.math.abs(newBrightness - gesturePercent) > 0.02f) {
                                         getActivity()?.window?.attributes = getActivity()?.window?.attributes?.apply {
                                             screenBrightness = newBrightness
                                         }
                                         gesturePercent = newBrightness
                                     }
-                                    // 🔥 亮度图标：CupertinoIcons SunMax (iOS SF Symbols 风格)
+                                    //  亮度图标：CupertinoIcons SunMax (iOS SF Symbols 风格)
                                     gestureIcon = CupertinoIcons.Default.SunMax
                                 }
                                 VideoGestureMode.Volume -> {
                                     totalDragDistanceY -= dragAmount.y
                                     val screenHeight = context.resources.displayMetrics.heightPixels
-                                    // 🔥 应用灵敏度
+                                    //  应用灵敏度
                                     val deltaPercent = totalDragDistanceY / screenHeight * gestureSensitivity
                                     val newVolPercent = ((startVolume.toFloat() / maxVolume) + deltaPercent).coerceIn(0f, 1f)
                                     val targetVol = (newVolPercent * maxVolume).toInt()
                                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVol, 0)
                                     gesturePercent = newVolPercent
-                                    // 🔥 动态音量图标：3 级
+                                    //  动态音量图标：3 级
                                     gestureIcon = when {
                                         gesturePercent < 0.01f -> CupertinoIcons.Default.SpeakerSlash
                                         gesturePercent < 0.5f -> CupertinoIcons.Default.Speaker
@@ -274,28 +277,28 @@ fun VideoPlayerSection(
                     )
                 }
             }
-            // 🔥 点击/双击手势在拖拽之后处理
+            //  点击/双击手势在拖拽之后处理
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { showControls = !showControls },
                     onDoubleTap = { offset ->
-                        // 🔥 双击暂停/播放（用户体验改进）
-                        com.android.purebilibili.core.util.Logger.d("VideoPlayerSection", "🔥 DoubleTap: toggle play/pause")
+                        //  双击暂停/播放（用户体验改进）
+                        com.android.purebilibili.core.util.Logger.d("VideoPlayerSection", " DoubleTap: toggle play/pause")
                         playerState.player.playWhenReady = !playerState.player.playWhenReady
                     }
                 )
             }
     ) {
-        // 🔥🔥 弹幕管理器 (使用单例模式，确保横竖屏切换时保持状态)
-        val scope = rememberCoroutineScope()  // 🔥 用于设置弹幕开关
+        //  弹幕管理器 (使用单例模式，确保横竖屏切换时保持状态)
+        val scope = rememberCoroutineScope()  //  用于设置弹幕开关
         val danmakuManager = rememberDanmakuManager()
         
-        // 🔥 弹幕开关设置
+        //  弹幕开关设置
         val danmakuEnabled by com.android.purebilibili.core.store.SettingsManager
             .getDanmakuEnabled(context)
             .collectAsState(initial = true)
         
-        // 🔥 弹幕设置（全局持久化）
+        //  弹幕设置（全局持久化）
         val danmakuOpacity by com.android.purebilibili.core.store.SettingsManager
             .getDanmakuOpacity(context)
             .collectAsState(initial = 0.85f)
@@ -309,14 +312,14 @@ fun VideoPlayerSection(
             .getDanmakuArea(context)
             .collectAsState(initial = 0.5f)
         
-        // 🔥 当视频加载成功时加载弹幕（不再依赖 isFullscreen，单例会保持弹幕）
+        //  当视频加载成功时加载弹幕（不再依赖 isFullscreen，单例会保持弹幕）
         val cid = (uiState as? PlayerUiState.Success)?.info?.cid ?: 0L
-        // 🔥 监听 player 状态，等待 duration 可用后加载弹幕
+        //  监听 player 状态，等待 duration 可用后加载弹幕
         LaunchedEffect(cid) {
             if (cid > 0) {
                 danmakuManager.isEnabled = danmakuEnabled
                 
-                // 🔥🔥 [修复] 等待播放器准备好并获取 duration (最多等待 5 秒)
+                //  [修复] 等待播放器准备好并获取 duration (最多等待 5 秒)
                 var durationMs = 0L
                 var retries = 0
                 while (durationMs <= 0 && retries < 50) {
@@ -328,16 +331,16 @@ fun VideoPlayerSection(
                 }
                 
                 android.util.Log.d("VideoPlayerSection", "🎯 Loading danmaku for cid=$cid, duration=${durationMs}ms (after $retries retries)")
-                danmakuManager.loadDanmaku(cid, durationMs)  // 🔥 传入时长启用 Protobuf API
+                danmakuManager.loadDanmaku(cid, durationMs)  //  传入时长启用 Protobuf API
             }
         }
         
-        // 🔥 弹幕开关变化时更新
+        //  弹幕开关变化时更新
         LaunchedEffect(danmakuEnabled) {
             danmakuManager.isEnabled = danmakuEnabled
         }
 
-        // 🔥 横竖屏/小窗切换后，若应当播放但未播放，主动恢复
+        //  横竖屏/小窗切换后，若应当播放但未播放，主动恢复
         LaunchedEffect(isFullscreen, isInPipMode) {
             val player = playerState.player
             if (player.playWhenReady && !player.isPlaying && player.playbackState == Player.STATE_READY) {
@@ -345,7 +348,7 @@ fun VideoPlayerSection(
             }
         }
         
-        // 🔥 弹幕设置变化时实时应用
+        //  弹幕设置变化时实时应用
         LaunchedEffect(danmakuOpacity, danmakuFontScale, danmakuSpeed, danmakuDisplayArea) {
             danmakuManager.updateSettings(
                 opacity = danmakuOpacity,
@@ -355,22 +358,22 @@ fun VideoPlayerSection(
             )
         }
         
-        // 🔥 绑定 Player（不在 onDispose 中释放，单例保持状态）
+        //  绑定 Player（不在 onDispose 中释放，单例保持状态）
         DisposableEffect(playerState.player) {
-            android.util.Log.d("VideoPlayerSection", "🎬 attachPlayer, isFullscreen=$isFullscreen")
+            android.util.Log.d("VideoPlayerSection", " attachPlayer, isFullscreen=$isFullscreen")
             danmakuManager.attachPlayer(playerState.player)
             onDispose {
                 // 单例模式不需要释放
             }
         }
         
-        // 🔥🔥 [修复] 使用 LifecycleOwner 监听真正的 Activity 生命周期
+        //  [修复] 使用 LifecycleOwner 监听真正的 Activity 生命周期
         // DisposableEffect(Unit) 会在横竖屏切换时触发，导致 player 引用被清除
         val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
         DisposableEffect(lifecycleOwner) {
             val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
                 if (event == androidx.lifecycle.Lifecycle.Event.ON_DESTROY) {
-                    android.util.Log.d("VideoPlayerSection", "🗑️ ON_DESTROY: Clearing danmaku references")
+                    android.util.Log.d("VideoPlayerSection", " ON_DESTROY: Clearing danmaku references")
                     danmakuManager.clearViewReference()
                 }
             }
@@ -399,7 +402,7 @@ fun VideoPlayerSection(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        // 🔥 应用翻转效果
+                        //  应用翻转效果
                         scaleX = if (isFlippedHorizontal) -1f else 1f
                         scaleY = if (isFlippedVertical) -1f else 1f
                     }
@@ -409,8 +412,8 @@ fun VideoPlayerSection(
         // 2. DanmakuView (使用 ByteDance DanmakuRenderEngine - 覆盖在 PlayerView 上方)
         android.util.Log.d("VideoPlayerSection", "🔍 DanmakuView check: isInPipMode=$isInPipMode, danmakuEnabled=$danmakuEnabled")
         if (!isInPipMode && danmakuEnabled) {
-            android.util.Log.d("VideoPlayerSection", "✅ Conditions met, creating DanmakuView...")
-            // 🔥 计算状态栏高度
+            android.util.Log.d("VideoPlayerSection", " Conditions met, creating DanmakuView...")
+            //  计算状态栏高度
             val statusBarHeightPx = remember(context) {
                 val resourceId = context.resources.getIdentifier(
                     "status_bar_height", "dimen", "android"
@@ -422,10 +425,10 @@ fun VideoPlayerSection(
                 }
             }
             
-            // 🔥 非全屏时的顶部偏移量
+            //  非全屏时的顶部偏移量
             val topOffset = if (isFullscreen) 0 else statusBarHeightPx + 20
             
-            // 🔥🔥 [修复] 移除 key(isFullscreen)，避免横竖屏切换时重建 DanmakuView 导致弹幕消失
+            //  [修复] 移除 key(isFullscreen)，避免横竖屏切换时重建 DanmakuView 导致弹幕消失
             // 使用 remember 保存 DanmakuView 引用，在 update 回调中处理尺寸变化
             Box(
                 modifier = Modifier
@@ -444,12 +447,12 @@ fun VideoPlayerSection(
                         com.bytedance.danmaku.render.engine.DanmakuView(ctx).apply {
                             setBackgroundColor(android.graphics.Color.TRANSPARENT)
                             danmakuManager.attachView(this)
-                            android.util.Log.d("VideoPlayerSection", "✅ DanmakuView (RenderEngine) created, isFullscreen=$isFullscreen")
+                            android.util.Log.d("VideoPlayerSection", " DanmakuView (RenderEngine) created, isFullscreen=$isFullscreen")
                         }
                     },
                     update = { view ->
-                        // 🔥🔥 [关键] 横竖屏切换后视图尺寸变化时，重新 attachView 确保弹幕正确显示
-                        android.util.Log.d("VideoPlayerSection", "🔄 DanmakuView update: size=${view.width}x${view.height}, isFullscreen=$isFullscreen")
+                        //  [关键] 横竖屏切换后视图尺寸变化时，重新 attachView 确保弹幕正确显示
+                        android.util.Log.d("VideoPlayerSection", " DanmakuView update: size=${view.width}x${view.height}, isFullscreen=$isFullscreen")
                         // 只有当视图有有效尺寸时才 re-attach
                         if (view.width > 0 && view.height > 0) {
                             danmakuManager.attachView(view)
@@ -527,14 +530,14 @@ fun VideoPlayerSection(
                 onBack = onBack,
                 onToggleFullscreen = onToggleFullscreen,
 
-                // 🔥🔥 [关键] 传入设置状态和真实分辨率字符串
+                //  [关键] 传入设置状态和真实分辨率字符串
                 showStats = showStats,
                 realResolution = realResolution,
-                // 🔥🔥 [新增] 传入清晰度切换状态和会员状态
+                //  [新增] 传入清晰度切换状态和会员状态
                 isQualitySwitching = uiState.isQualitySwitching,
                 isLoggedIn = uiState.isLoggedIn,
                 isVip = uiState.isVip,
-                // 🔥🔥 [新增] 弹幕开关和设置
+                //  [新增] 弹幕开关和设置
                 danmakuEnabled = danmakuEnabled,
                 onDanmakuToggle = {
                     val newState = !danmakuEnabled
@@ -570,38 +573,41 @@ fun VideoPlayerSection(
                         com.android.purebilibili.core.store.SettingsManager.setDanmakuArea(context, value)
                     }
                 },
-                // 🔥 视频比例调节
+                //  视频比例调节
                 currentAspectRatio = currentAspectRatio,
                 onAspectRatioChange = { currentAspectRatio = it },
                 // 🕺 [新增] 分享功能
                 bvid = bvid,
-                // 🔥 [新增] 视频设置面板回调
+                //  [新增] 视频设置面板回调
                 onReloadVideo = onReloadVideo,
                 isFlippedHorizontal = isFlippedHorizontal,
                 isFlippedVertical = isFlippedVertical,
                 onFlipHorizontal = { isFlippedHorizontal = !isFlippedHorizontal },
                 onFlipVertical = { isFlippedVertical = !isFlippedVertical },
-                // 🔥 [新增] 画质切换（用于设置面板）
+                //  [新增] 画质切换（用于设置面板）
                 onQualityChange = { qid, pos ->
                     onQualityChange(qid, playerState.player.currentPosition)
                 },
-                // 🔥 [新增] CDN 线路切换
+                //  [新增] CDN 线路切换
                 currentCdnIndex = currentCdnIndex,
                 cdnCount = cdnCount,
                 onSwitchCdn = onSwitchCdn,
                 onSwitchCdnTo = onSwitchCdnTo,
                 
-                // 🔥 [新增] 音频模式
+                //  [新增] 音频模式
                 isAudioOnly = isAudioOnly,
                 onAudioOnlyToggle = onAudioOnlyToggle,
                 
-                // 🔥 [新增] 定时关闭
+                //  [新增] 定时关闭
                 sleepTimerMinutes = sleepTimerMinutes,
-                onSleepTimerChange = onSleepTimerChange
+                onSleepTimerChange = onSleepTimerChange,
+                
+                // 🖼️ [新增] 视频预览图数据
+                videoshotData = videoshotData
             )
         }
         
-        // 🚀 空降助手跳过按钮
+        //  空降助手跳过按钮
         if (!isInPipMode) {
             SponsorSkipButton(
                 segment = sponsorSegment,

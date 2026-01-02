@@ -42,7 +42,7 @@ object DanmakuRepository {
             danmakuSegmentCache.clear()
             danmakuSegmentCacheBytes = 0L
         }
-        com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "🧹 Danmaku cache cleared")
+        com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Danmaku cache cleared")
     }
 
     /**
@@ -54,7 +54,7 @@ object DanmakuRepository {
         // 先检查缓存
         synchronized(danmakuCache) {
             danmakuCache[cid]?.let {
-                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "✅ Danmaku cache hit for cid=$cid, size=${it.size}")
+                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Danmaku cache hit for cid=$cid, size=${it.size}")
                 return@withContext it
             }
         }
@@ -65,7 +65,7 @@ object DanmakuRepository {
             com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "🎯 Danmaku raw bytes: ${bytes.size}, first byte: ${if (bytes.isNotEmpty()) String.format("0x%02X", bytes[0]) else "empty"}")
 
             if (bytes.isEmpty()) {
-                android.util.Log.w("DanmakuRepo", "⚠️ Danmaku response is empty!")
+                android.util.Log.w("DanmakuRepo", " Danmaku response is empty!")
                 return@withContext null
             }
 
@@ -74,11 +74,11 @@ object DanmakuRepository {
             // 检查首字节判断是否压缩
             // XML 以 '<' 开头 (0x3C)
             if (bytes[0] == 0x3C.toByte()) {
-                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "✅ Danmaku is plain XML, size=${bytes.size}")
+                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Danmaku is plain XML, size=${bytes.size}")
                 result = bytes
             } else {
                 // 尝试 Deflate 解压
-                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "🔄 Danmaku appears compressed, attempting deflate...")
+                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Danmaku appears compressed, attempting deflate...")
                 result = try {
                     val inflater = java.util.zip.Inflater(true) // nowrap=true
                     inflater.setInput(bytes)
@@ -94,10 +94,10 @@ object DanmakuRepository {
                     }
                     inflater.end()
                     val decompressed = outputStream.toByteArray()
-                    com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "✅ Danmaku decompressed: ${bytes.size} → ${decompressed.size} bytes")
+                    com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Danmaku decompressed: ${bytes.size} → ${decompressed.size} bytes")
                     decompressed
                 } catch (e: Exception) {
-                    android.util.Log.e("DanmakuRepo", "❌ Deflate failed: ${e.message}")
+                    android.util.Log.e("DanmakuRepo", " Deflate failed: ${e.message}")
                     e.printStackTrace()
                     // 解压失败，返回原始数据
                     bytes
@@ -119,23 +119,23 @@ object DanmakuRepository {
                             val eldest = iterator.next()
                             danmakuCacheBytes -= eldest.value.size.toLong()
                             iterator.remove()
-                            com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "🗑️ Danmaku cache evicted: cid=${eldest.key}")
+                            com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Danmaku cache evicted: cid=${eldest.key}")
                         }
                         danmakuCache[cid] = result
                         danmakuCacheBytes += entrySize
                         com.android.purebilibili.core.util.Logger.d(
                             "DanmakuRepo",
-                            "💾 Danmaku cached: cid=$cid, size=${result.size}, cacheSize=${danmakuCache.size}, bytes=$danmakuCacheBytes"
+                            " Danmaku cached: cid=$cid, size=${result.size}, cacheSize=${danmakuCache.size}, bytes=$danmakuCacheBytes"
                         )
                     }
                 } else {
-                    com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "⚠️ Danmaku too large to cache: size=$entrySize")
+                    com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Danmaku too large to cache: size=$entrySize")
                 }
             }
             
             result
         } catch (e: Exception) {
-            android.util.Log.e("DanmakuRepo", "❌ getDanmakuRawData failed: ${e.message}")
+            android.util.Log.e("DanmakuRepo", " getDanmakuRawData failed: ${e.message}")
             e.printStackTrace()
             null
         }
@@ -154,7 +154,7 @@ object DanmakuRepository {
         // 检查缓存
         synchronized(danmakuSegmentCache) {
             danmakuSegmentCache[cid]?.let {
-                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "✅ Protobuf danmaku cache hit: cid=$cid, segments=${it.size}")
+                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Protobuf danmaku cache hit: cid=$cid, segments=${it.size}")
                 return@withContext it
             }
         }
@@ -163,7 +163,7 @@ object DanmakuRepository {
         val segmentDurationMs = 360000L
         val segmentCount = ((durationMs + segmentDurationMs - 1) / segmentDurationMs).toInt().coerceAtLeast(1)
         
-        com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "📊 Fetching $segmentCount segments for ${durationMs}ms video")
+        com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Fetching $segmentCount segments for ${durationMs}ms video")
         
         data class SegmentResult(val index: Int, val bytes: ByteArray)
         
@@ -177,14 +177,14 @@ object DanmakuRepository {
                             val response = api.getDanmakuSeg(oid = cid, segmentIndex = index)
                             val bytes = response.bytes()
                             if (bytes.isNotEmpty()) {
-                                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "✅ Segment $index: ${bytes.size} bytes")
+                                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Segment $index: ${bytes.size} bytes")
                                 SegmentResult(index, bytes)
                             } else {
-                                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "⚠️ Segment $index is empty")
+                                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Segment $index is empty")
                                 null
                             }
                         } catch (e: Exception) {
-                            android.util.Log.w("DanmakuRepo", "❌ Segment $index failed: ${e.message}")
+                            android.util.Log.w("DanmakuRepo", " Segment $index failed: ${e.message}")
                             null
                         }
                     }
@@ -197,7 +197,7 @@ object DanmakuRepository {
             .sortedBy { it.index }
             .map { it.bytes }
         
-        com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "📊 Got ${results.size}/$segmentCount segments for cid=$cid")
+        com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Got ${results.size}/$segmentCount segments for cid=$cid")
         
         // 缓存结果（限制条目数与字节数）
         if (results.isNotEmpty()) {
@@ -222,7 +222,7 @@ object DanmakuRepository {
                     danmakuSegmentCacheBytes += entrySize
                 }
             } else {
-                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "⚠️ Segments too large to cache: size=$entrySize")
+                com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Segments too large to cache: size=$entrySize")
             }
         }
         

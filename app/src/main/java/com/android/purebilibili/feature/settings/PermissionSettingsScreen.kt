@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -37,7 +37,7 @@ import com.android.purebilibili.core.theme.iOSPurple
 import com.android.purebilibili.core.theme.iOSTeal
 
 /**
- * 🔐 权限管理页面
+ *  权限管理页面
  * 显示应用所有权限的用途说明和当前状态
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,7 +47,7 @@ fun PermissionSettingsScreen(
 ) {
     val context = LocalContext.current
     
-    // 🔥🔥 [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
+    //  [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
     val view = androidx.compose.ui.platform.LocalView.current
     androidx.compose.runtime.DisposableEffect(Unit) {
         val window = (context as? android.app.Activity)?.window
@@ -116,7 +116,7 @@ fun PermissionSettingsScreen(
                 isNormal = true,
                 alwaysGranted = true
             ),
-            // 🔐 存储权限（仅 Android 9 及以下需要）
+            //  存储权限（仅 Android 9 及以下需要）
             PermissionInfo(
                 name = "存储权限",
                 permission = Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -165,14 +165,14 @@ fun PermissionSettingsScreen(
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
-        // 🔥🔥 [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，避免底部填充
+        //  [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，避免底部填充
         contentWindowInsets = WindowInsets(0.dp)
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize(),
-            // 🔥🔥 [修复] 添加底部导航栏内边距，确保沉浸式效果
+            //  [修复] 添加底部导航栏内边距，确保沉浸式效果
             contentPadding = WindowInsets.navigationBars.asPaddingValues()
         ) {
             
@@ -247,7 +247,7 @@ fun PermissionSettingsScreen(
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "💡 BiliPai 尊重您的隐私，不会请求位置、相机、通讯录等敏感权限。",
+                    text = " BiliPai 尊重您的隐私，不会请求位置、相机、通讯录等敏感权限。",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     modifier = Modifier.padding(horizontal = 16.dp)

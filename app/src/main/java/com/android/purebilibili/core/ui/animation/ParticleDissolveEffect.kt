@@ -110,7 +110,7 @@ fun DissolvableVideoCard(
         targetValue = if (shouldCollapse) 0f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessHigh  // 🔥 更快的动画
+            stiffness = Spring.StiffnessHigh  //  更快的动画
         ),
         label = "heightCollapse",
         finishedListener = {
@@ -122,7 +122,7 @@ fun DissolvableVideoCard(
 
     var captureBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showGLView by remember { mutableStateOf(false) }
-    var isGLContentReady by remember { mutableStateOf(false) } // 🔥 New: Wait for GL to draw first frame
+    var isGLContentReady by remember { mutableStateOf(false) } //  New: Wait for GL to draw first frame
     
     // Coordinates
     var cardWindowBounds by remember { mutableStateOf<Rect?>(null) }

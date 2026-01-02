@@ -22,12 +22,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// 🍎 Cupertino Icons
+//  Cupertino Icons
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 
 /**
- * 🔥 视频设置面板 - 竖屏模式下的高级设置底部弹窗
+ *  视频设置面板 - 竖屏模式下的高级设置底部弹窗
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +59,7 @@ fun VideoSettingsPanel(
     isAudioOnly: Boolean = false,
     onAudioOnlyToggle: () -> Unit = {},
     
-    // 🔥 CDN 线路切换
+    //  CDN 线路切换
     currentCdnIndex: Int = 0,
     cdnCount: Int = 1,
     onSwitchCdn: () -> Unit = {},
@@ -92,7 +92,7 @@ fun VideoSettingsPanel(
                 .navigationBarsPadding()
                 .padding(bottom = 16.dp)
         ) {
-            // 🔥 定时关闭 - 垂直布局，选项在下一行
+            //  定时关闭 - 垂直布局，选项在下一行
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -129,7 +129,7 @@ fun VideoSettingsPanel(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
             
-            // 🔥 重载视频
+            //  重载视频
             SettingsItem(
                 icon = CupertinoIcons.Default.ArrowClockwise,
                 title = "重载视频",
@@ -145,7 +145,7 @@ fun VideoSettingsPanel(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
             
-            // 🔥 镜像翻转按钮组
+            //  镜像翻转按钮组
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -186,7 +186,7 @@ fun VideoSettingsPanel(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
             
-            // 🔥 选择画质 - 内联选择
+            //  选择画质 - 内联选择
             if (qualityLabels.isNotEmpty()) {
                 Column(
                     modifier = Modifier
@@ -262,7 +262,7 @@ fun VideoSettingsPanel(
                 )
             }
             
-            // 🔥 播放线路 (CDN) - 仅在有多个线路时显示
+            //  播放线路 (CDN) - 仅在有多个线路时显示
             if (cdnCount > 1) {
                 Column(
                     modifier = Modifier
@@ -338,7 +338,7 @@ fun VideoSettingsPanel(
                 )
             }
             
-            // 🔥 播放倍速 - 内联选择
+            //  播放倍速 - 内联选择
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

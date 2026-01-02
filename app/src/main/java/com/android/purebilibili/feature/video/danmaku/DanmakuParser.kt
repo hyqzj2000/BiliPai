@@ -23,7 +23,7 @@ object DanmakuParser {
     private const val TAG = "DanmakuParser"
     
     /**
-     * 🔥🔥 [新增] 解析 Protobuf 弹幕数据 (推荐)
+     *  [新增] 解析 Protobuf 弹幕数据 (推荐)
      * 
      * @param segments Protobuf 分段数据列表
      * @return DanmakuData 列表（TextData）
@@ -32,17 +32,17 @@ object DanmakuParser {
         val danmakuList = mutableListOf<DanmakuData>()
         
         if (segments.isEmpty()) {
-            Log.w(TAG, "⚠️ No segments to parse")
+            Log.w(TAG, " No segments to parse")
             return danmakuList
         }
         
-        Log.d(TAG, "📊 Parsing ${segments.size} Protobuf segments...")
+        Log.d(TAG, " Parsing ${segments.size} Protobuf segments...")
         
         var totalParsed = 0
         for ((index, segment) in segments.withIndex()) {
             try {
                 val elems = DanmakuProto.parse(segment)
-                Log.d(TAG, "📊 Segment ${index + 1}: parsed ${elems.size} danmakus")
+                Log.d(TAG, " Segment ${index + 1}: parsed ${elems.size} danmakus")
                 
                 for (elem in elems) {
                     val textData = createTextDataFromProto(elem)
@@ -52,11 +52,11 @@ object DanmakuParser {
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Failed to parse segment ${index + 1}: ${e.message}")
+                Log.e(TAG, " Failed to parse segment ${index + 1}: ${e.message}")
             }
         }
         
-        // 🔥🔥 [关键] 按时间排序 - DanmakuRenderEngine 需要有序数据
+        //  [关键] 按时间排序 - DanmakuRenderEngine 需要有序数据
         danmakuList.sortBy { it.showAtTime }
         
         // 统计信息
@@ -65,9 +65,9 @@ object DanmakuParser {
             val minTime = times.minOrNull() ?: 0
             val maxTime = times.maxOrNull() ?: 0
             val first10s = danmakuList.count { it.showAtTime < 10000 }
-            Log.w(TAG, "✅ Protobuf parsed $totalParsed danmakus (sorted) | Time range: ${minTime}ms ~ ${maxTime}ms | First 10s: $first10s items")
+            Log.w(TAG, " Protobuf parsed $totalParsed danmakus (sorted) | Time range: ${minTime}ms ~ ${maxTime}ms | First 10s: $first10s items")
         } else {
-            Log.w(TAG, "⚠️ No danmakus parsed from Protobuf!")
+            Log.w(TAG, " No danmakus parsed from Protobuf!")
         }
         
         return danmakuList
@@ -82,7 +82,7 @@ object DanmakuParser {
         val layerType = mapLayerType(elem.mode)
         val colorWithAlpha = elem.color or 0xFF000000.toInt()  // 添加透明度
         
-        // 🔥 调试日志：查看前几条弹幕的数据
+        //  调试日志：查看前几条弹幕的数据
         val debugCount = 5
         if (debugLogCount < debugCount) {
             Log.w(TAG, "📝 Proto #${debugLogCount + 1}: time=${elem.progress}ms, mode=${elem.mode}->layer=$layerType, color=${Integer.toHexString(colorWithAlpha)}, size=${elem.fontsize}, text='${elem.content.take(20)}'")
@@ -94,7 +94,7 @@ object DanmakuParser {
             this.showAtTime = elem.progress.toLong()  // progress 已经是毫秒
             this.layerType = layerType
             this.textColor = colorWithAlpha
-            // 🔥🔥 [修复] Bilibili 字体大小 (25) 在引擎中太小，需要放大
+            //  [修复] Bilibili 字体大小 (25) 在引擎中太小，需要放大
             this.textSize = elem.fontsize.toFloat() * 1.8f
         }
     }
@@ -128,7 +128,7 @@ object DanmakuParser {
                         if (danmaku != null) {
                             danmakuList.add(danmaku)
                             count++
-                            // 🔥 用 Log.w 确保可见
+                            //  用 Log.w 确保可见
                             if (count <= 5) {
                                 Log.w(TAG, "📝 Danmaku #$count: time=${danmaku.showAtTime}ms, layer=${danmaku.layerType}, color=${String.format("#%08X", danmaku.textColor)}, text='${danmaku.text?.take(20)}'")
                             }
@@ -138,18 +138,18 @@ object DanmakuParser {
                 eventType = parser.next()
             }
             
-            // 🔥 统计弹幕时间分布
+            //  统计弹幕时间分布
             if (danmakuList.isNotEmpty()) {
                 val times = danmakuList.map { it.showAtTime }
                 val minTime = times.minOrNull() ?: 0
                 val maxTime = times.maxOrNull() ?: 0
                 val first10s = danmakuList.count { it.showAtTime < 10000 }
-                Log.w(TAG, "✅ XML parsed $count danmakus | Time range: ${minTime}ms ~ ${maxTime}ms | First 10s: $first10s items")
+                Log.w(TAG, " XML parsed $count danmakus | Time range: ${minTime}ms ~ ${maxTime}ms | First 10s: $first10s items")
             } else {
-                Log.w(TAG, "⚠️ No danmakus parsed from XML!")
+                Log.w(TAG, " No danmakus parsed from XML!")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ XML parse error: ${e.message}", e)
+            Log.e(TAG, " XML parse error: ${e.message}", e)
         }
         
         return danmakuList
@@ -186,7 +186,7 @@ object DanmakuParser {
                 this.textSize = fontSize * 1.8f
             }
         } catch (e: Exception) {
-            Log.w(TAG, "⚠️ Failed to parse danmaku: ${e.message}")
+            Log.w(TAG, " Failed to parse danmaku: ${e.message}")
             return null
         }
     }

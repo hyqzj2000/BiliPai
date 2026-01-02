@@ -10,7 +10,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -25,7 +25,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -76,7 +79,7 @@ fun RelatedVideosHeader() {
 @Composable
 fun RelatedVideoItem(
     video: RelatedVideo, 
-    isFollowed: Boolean = false,  // 🔥 是否已关注
+    isFollowed: Boolean = false,  //  是否已关注
     onClick: () -> Unit
 ) {
     // iOS style press animation
@@ -115,7 +118,7 @@ fun RelatedVideoItem(
                 modifier = Modifier
                     .width(150.dp)
                     .height(94.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(8.dp)) // Changed to 8dp to match other rounded corners usually
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 AsyncImage(
@@ -127,55 +130,24 @@ fun RelatedVideoItem(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
-                // Duration label
-                Surface(
+                
+                // Duration label - Plain text with shadow, no background
+                Text(
+                    text = FormatUtils.formatDuration(video.duration),
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    style = TextStyle(
+                        shadow = Shadow(
+                            color = Color.Black.copy(alpha = 0.8f),
+                            blurRadius = 4f,
+                            offset = Offset(0f, 1f)
+                        )
+                    ),
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(6.dp),
-                    color = Color.Black.copy(alpha = 0.7f),
-                    shape = RoundedCornerShape(4.dp)
-                ) {
-                    Text(
-                        text = FormatUtils.formatDuration(video.duration),
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
-                
-                // Play count overlay
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(28.dp)
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f))
-                            )
-                        )
+                        .padding(6.dp)
                 )
-                
-                // Play count label
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        CupertinoIcons.Default.Play,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.9f),
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(
-                        text = FormatUtils.formatStat(video.stat.view.toLong()),
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 10.sp
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -200,49 +172,86 @@ fun RelatedVideoItem(
                     color = MaterialTheme.colorScheme.onBackground
                 )
 
-                // UP owner info row
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // UP tag
-                    Surface(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(4.dp)
+                Column {
+                    // UP owner info row
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "UP",
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = video.owner.name,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                    
-                    // 🔥 已关注标签
-                    if (isFollowed) {
-                        Spacer(modifier = Modifier.width(6.dp))
+                        // UP tag
                         Surface(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
-                                text = "已关注",
+                                text = "UP",
                                 fontSize = 9.sp,
-                                fontWeight = FontWeight.Medium,
+                                fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                             )
                         }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = video.owner.name,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF666666), // Darker gray for iOS style secondary text
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        
+                        //  已关注标签
+                        if (isFollowed) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = "已关注",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    // Play count row - Moved here
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            CupertinoIcons.Default.Play,
+                            contentDescription = null,
+                            tint = Color(0xFF999999), // iOS style icon gray
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = "${FormatUtils.formatStat(video.stat.view.toLong())}观看",
+                            color = Color(0xFF666666), // Darker gray
+                            fontSize = 12.sp
+                        )
+                        
+                        Spacer(modifier = Modifier.width(12.dp))
+                        
+                        Icon(
+                           CupertinoIcons.Default.TextBubble, // Danmaku icon
+                           contentDescription = null,
+                           tint = Color(0xFF999999), // iOS style icon gray
+                           modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = FormatUtils.formatStat(video.stat.danmaku.toLong()),
+                            color = Color(0xFF666666), // Darker gray
+                            fontSize = 12.sp
+                        )
                     }
                 }
             }

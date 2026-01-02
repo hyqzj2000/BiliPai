@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.flowOn
 import java.io.File
 
 /**
- * 🚀 缓存工具类 - 优化版
+ *  缓存工具类 - 优化版
  * 
  * 改进点:
  * 1. 使用 walkTopDown() 惰性序列替代递归遍历
@@ -47,14 +47,14 @@ object CacheUtils {
     }
 
     /**
-     * 🚀 获取总缓存大小（格式化字符串）
+     *  获取总缓存大小（格式化字符串）
      */
     suspend fun getTotalCacheSize(context: Context): String = withContext(Dispatchers.IO) {
         getCacheBreakdown(context).format()
     }
 
     /**
-     * 🚀 获取详细缓存统计
+     *  获取详细缓存统计
      */
     suspend fun getCacheBreakdown(context: Context): CacheBreakdown = withContext(Dispatchers.IO) {
         var imageCache = 0L
@@ -101,7 +101,7 @@ object CacheUtils {
     }
 
     /**
-     * 🚀 清除所有缓存（优化顺序，避免冲突）
+     *  清除所有缓存（优化顺序，避免冲突）
      */
     suspend fun clearAllCache(context: Context) = withContext(Dispatchers.IO) {
         try {
@@ -109,22 +109,22 @@ object CacheUtils {
             
             // 1.1 清除 Coil 图片内存缓存
             context.imageLoader.memoryCache?.clear()
-            Logger.d(TAG, "✅ Coil memory cache cleared")
+            Logger.d(TAG, " Coil memory cache cleared")
             
-            // 1.2 🔥 清除 PlayUrlCache（之前遗漏的）
+            // 1.2  清除 PlayUrlCache（之前遗漏的）
             com.android.purebilibili.core.cache.PlayUrlCache.clear()
-            Logger.d(TAG, "✅ PlayUrlCache cleared")
+            Logger.d(TAG, " PlayUrlCache cleared")
 
             // ===== 第 2 阶段：清除 API 管理的磁盘缓存 =====
             
             // 2.1 清除 Coil 磁盘缓存（通过 API 清除，避免文件锁冲突）
             context.imageLoader.diskCache?.clear()
-            Logger.d(TAG, "✅ Coil disk cache cleared")
+            Logger.d(TAG, " Coil disk cache cleared")
             
             // 2.2 清除 OkHttp 缓存
             try {
                 com.android.purebilibili.core.network.NetworkModule.okHttpClient.cache?.evictAll()
-                Logger.d(TAG, "✅ OkHttp cache cleared")
+                Logger.d(TAG, " OkHttp cache cleared")
             } catch (e: Exception) {
                 Logger.w(TAG, "OkHttp cache clear failed: ${e.message}")
             }
@@ -135,11 +135,11 @@ object CacheUtils {
             context.cacheDir?.let { cacheDir ->
                 clearDirContentsSelective(cacheDir, excludePatterns = listOf("image_cache", "okhttp"))
             }
-            Logger.d(TAG, "✅ Internal cache cleared")
+            Logger.d(TAG, " Internal cache cleared")
             
             // 3.2 清除外部缓存
             context.externalCacheDir?.let { clearDirContents(it) }
-            Logger.d(TAG, "✅ External cache cleared")
+            Logger.d(TAG, " External cache cleared")
 
             // ===== 第 4 阶段：清除应用级缓存 =====
             
@@ -148,15 +148,15 @@ object CacheUtils {
                 .edit()
                 .clear()
                 .apply()
-            Logger.d(TAG, "✅ Following cache cleared")
+            Logger.d(TAG, " Following cache cleared")
             
             // 4.2 清除 WBI 签名缓存（让其自动重新获取）
             com.android.purebilibili.core.network.WbiKeyManager.invalidateCache()
-            Logger.d(TAG, "✅ WBI cache invalidated")
+            Logger.d(TAG, " WBI cache invalidated")
             
-            // 4.3 🔥 清除播放冷却状态（让用户可以重新尝试）
+            // 4.3  清除播放冷却状态（让用户可以重新尝试）
             PlaybackCooldownManager.clearAll()
-            Logger.d(TAG, "✅ Playback cooldown cleared")
+            Logger.d(TAG, " Playback cooldown cleared")
                 
             Logger.d(TAG, "🎉 All cache cleared successfully")
         } catch (e: Exception) {
@@ -165,7 +165,7 @@ object CacheUtils {
     }
 
     /**
-     * 🚀 清除缓存并返回进度 Flow
+     *  清除缓存并返回进度 Flow
      */
     fun clearAllCacheWithProgress(context: Context): Flow<ClearProgress> = flow {
         emit(ClearProgress(0, "正在清除内存缓存..."))
@@ -209,7 +209,7 @@ object CacheUtils {
     )
     
     /**
-     * 🚀 清除缓存并返回进度 Flow (增强版 - 支持动画)
+     *  清除缓存并返回进度 Flow (增强版 - 支持动画)
      * 返回已清理的字节数和总字节数
      */
     data class ClearProgressV2(
@@ -285,7 +285,7 @@ object CacheUtils {
     }.flowOn(Dispatchers.IO)
 
     /**
-     * 🚀 使用 walkTopDown 惰性序列快速计算目录大小
+     *  使用 walkTopDown 惰性序列快速计算目录大小
      */
     private fun getDirSizeFast(dir: File?): Long {
         if (dir == null || !dir.exists()) return 0L
@@ -317,7 +317,7 @@ object CacheUtils {
     }
 
     /**
-     * 🚀 选择性清空目录（排除指定模式的子目录）
+     *  选择性清空目录（排除指定模式的子目录）
      */
     private fun clearDirContentsSelective(dir: File, excludePatterns: List<String>): Boolean {
         if (!dir.exists()) return false

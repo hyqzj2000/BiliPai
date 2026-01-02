@@ -27,7 +27,7 @@ object LiveRepository {
             com.android.purebilibili.core.util.Logger.d("LiveRepo", "🔴 getLiveRooms page=$page, count=${list.size}")
             Result.success(list)
         } catch (e: Exception) {
-            com.android.purebilibili.core.util.Logger.e("LiveRepo", "❌ getLiveRooms failed", e)
+            com.android.purebilibili.core.util.Logger.e("LiveRepo", " getLiveRooms failed", e)
             e.printStackTrace()
             Result.failure(e)
         }
@@ -92,7 +92,7 @@ object LiveRepository {
                 
                 if (codec != null && urlInfo != null) {
                     val url = urlInfo.host + codec.baseUrl + urlInfo.extra
-                    com.android.purebilibili.core.util.Logger.d("LiveRepo", "✅ Xlive URL: ${url.take(100)}...")
+                    com.android.purebilibili.core.util.Logger.d("LiveRepo", " Xlive URL: ${url.take(100)}...")
                     return@withContext Result.success(url)
                 }
             }
@@ -101,14 +101,14 @@ object LiveRepository {
             com.android.purebilibili.core.util.Logger.d("LiveRepo", "🔴 Trying legacy durl structure...")
             val url = resp.data?.durl?.firstOrNull()?.url
             if (url != null) {
-                com.android.purebilibili.core.util.Logger.d("LiveRepo", "✅ Legacy URL: ${url.take(100)}...")
+                com.android.purebilibili.core.util.Logger.d("LiveRepo", " Legacy URL: ${url.take(100)}...")
                 return@withContext Result.success(url)
             }
             
-            android.util.Log.e("LiveRepo", "❌ No URL found in response")
+            android.util.Log.e("LiveRepo", " No URL found in response")
             Result.failure(Exception("无法获取直播流"))
         } catch (e: Exception) {
-            android.util.Log.e("LiveRepo", "❌ getLivePlayUrl failed: ${e.message}")
+            android.util.Log.e("LiveRepo", " getLivePlayUrl failed: ${e.message}")
             e.printStackTrace()
             Result.failure(e)
         }
@@ -134,7 +134,7 @@ object LiveRepository {
             val currentQuality = legacyResp?.data?.current_quality ?: 0
             val playUrl = legacyResp?.data?.durl?.firstOrNull()?.url
             
-            com.android.purebilibili.core.util.Logger.d("LiveRepo", "✅ Legacy API: qualityList=${qualityList.map { it.desc }}, current=$currentQuality, hasUrl=${playUrl != null}")
+            com.android.purebilibili.core.util.Logger.d("LiveRepo", " Legacy API: qualityList=${qualityList.map { it.desc }}, current=$currentQuality, hasUrl=${playUrl != null}")
             
             // 如果旧版 API 成功获取到播放地址，直接使用
             if (playUrl != null && legacyResp?.data != null) {
@@ -151,13 +151,13 @@ object LiveRepository {
                     quality_description = qualityList.takeIf { it.isNotEmpty() } ?: resp.data.quality_description,
                     current_quality = if (currentQuality > 0) currentQuality else resp.data.current_quality
                 )
-                com.android.purebilibili.core.util.Logger.d("LiveRepo", "✅ Merged data: qualityList=${mergedData.quality_description?.map { it.desc }}")
+                com.android.purebilibili.core.util.Logger.d("LiveRepo", " Merged data: qualityList=${mergedData.quality_description?.map { it.desc }}")
                 Result.success(mergedData)
             } else {
                 Result.failure(Exception("获取直播流失败: ${resp.message}"))
             }
         } catch (e: Exception) {
-            android.util.Log.e("LiveRepo", "❌ getLivePlayUrlWithQuality failed: ${e.message}")
+            android.util.Log.e("LiveRepo", " getLivePlayUrlWithQuality failed: ${e.message}")
             e.printStackTrace()
             Result.failure(e)
         }

@@ -14,7 +14,7 @@ import java.io.FileOutputStream
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 🔥 视频下载管理器
+ *  视频下载管理器
  * 
  * 功能：
  * - 管理下载任务队列
@@ -197,7 +197,7 @@ object DownloadManager {
             ) 
         }
         
-        com.android.purebilibili.core.util.Logger.d("DownloadManager", "✅ Download completed: ${task.title}")
+        com.android.purebilibili.core.util.Logger.d("DownloadManager", " Download completed: ${task.title}")
     }
     
     /**
@@ -249,7 +249,7 @@ object DownloadManager {
      */
     private suspend fun mergeVideoAudio(video: File, audio: File, output: File) = withContext(Dispatchers.IO) {
         try {
-            com.android.purebilibili.core.util.Logger.d("DownloadManager", "🔥 Starting MediaMuxer merge...")
+            com.android.purebilibili.core.util.Logger.d("DownloadManager", " Starting MediaMuxer merge...")
             
             // 创建 MediaMuxer
             val muxer = android.media.MediaMuxer(
@@ -292,7 +292,7 @@ object DownloadManager {
             }
             
             if (videoTrackIndex == -1 || audioTrackIndex == -1) {
-                com.android.purebilibili.core.util.Logger.e("DownloadManager", "❌ Failed to find video or audio track")
+                com.android.purebilibili.core.util.Logger.e("DownloadManager", " Failed to find video or audio track")
                 // 降级：直接复制视频
                 video.copyTo(output, overwrite = true)
                 videoExtractor.release()
@@ -340,10 +340,10 @@ object DownloadManager {
             muxer.stop()
             muxer.release()
             
-            com.android.purebilibili.core.util.Logger.d("DownloadManager", "✅ MediaMuxer merge completed: ${output.name}")
+            com.android.purebilibili.core.util.Logger.d("DownloadManager", " MediaMuxer merge completed: ${output.name}")
             
         } catch (e: Exception) {
-            com.android.purebilibili.core.util.Logger.e("DownloadManager", "❌ MediaMuxer merge failed", e)
+            com.android.purebilibili.core.util.Logger.e("DownloadManager", " MediaMuxer merge failed", e)
             // 降级：直接复制视频
             video.copyTo(output, overwrite = true)
         }

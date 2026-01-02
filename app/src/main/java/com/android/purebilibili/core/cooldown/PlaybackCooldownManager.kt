@@ -4,7 +4,7 @@ package com.android.purebilibili.core.cooldown
 import com.android.purebilibili.core.util.Logger
 
 /**
- * 🔥 播放冷却管理器
+ *  播放冷却管理器
  * 
  * 用于防止在遇到风控时过度重试，减轻风控评分。
  * 
@@ -73,7 +73,7 @@ object PlaybackCooldownManager {
         // 检查是否触发全局冷却
         if (consecutiveFailures >= GLOBAL_FAILURE_THRESHOLD && globalCooldownStart == 0L) {
             globalCooldownStart = now
-            Logger.w(TAG, "⚠️ 触发全局冷却！连续 $consecutiveFailures 个视频失败")
+            Logger.w(TAG, " 触发全局冷却！连续 $consecutiveFailures 个视频失败")
         }
     }
     
@@ -85,7 +85,7 @@ object PlaybackCooldownManager {
     @Synchronized
     fun recordSuccess() {
         if (consecutiveFailures > 0) {
-            Logger.d(TAG, "✅ 加载成功，重置失败计数 ($consecutiveFailures -> 0)")
+            Logger.d(TAG, " 加载成功，重置失败计数 ($consecutiveFailures -> 0)")
         }
         consecutiveFailures = 0
         globalCooldownStart = 0L
@@ -123,7 +123,7 @@ object PlaybackCooldownManager {
             val elapsed = now - failedTime
             if (elapsed < SINGLE_VIDEO_COOLDOWN_MS) {
                 val remaining = SINGLE_VIDEO_COOLDOWN_MS - elapsed
-                Logger.d(TAG, "🎬 视频冷却中: bvid=$bvid, 剩余 ${remaining / 1000}s")
+                Logger.d(TAG, " 视频冷却中: bvid=$bvid, 剩余 ${remaining / 1000}s")
                 return CooldownStatus.VideoCooldown(remaining, bvid)
             } else {
                 // 冷却结束，移除记录
@@ -149,7 +149,7 @@ object PlaybackCooldownManager {
         failedVideos.clear()
         consecutiveFailures = 0
         globalCooldownStart = 0L
-        Logger.d(TAG, "🧹 已清除所有冷却状态")
+        Logger.d(TAG, " 已清除所有冷却状态")
     }
     
     /**
@@ -158,7 +158,7 @@ object PlaybackCooldownManager {
     @Synchronized
     fun clearForVideo(bvid: String) {
         failedVideos.remove(bvid)
-        Logger.d(TAG, "🧹 已清除视频冷却状态: $bvid")
+        Logger.d(TAG, " 已清除视频冷却状态: $bvid")
     }
     
     /**

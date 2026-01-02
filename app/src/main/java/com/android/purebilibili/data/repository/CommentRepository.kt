@@ -44,7 +44,7 @@ object CommentRepository {
                     
                     wbiKeysCache = Pair(imgKey, subKey)
                     wbiKeysTimestamp = System.currentTimeMillis()
-                    com.android.purebilibili.core.util.Logger.d("CommentRepo", "✅ WBI Keys obtained successfully (attempt $attempt)")
+                    com.android.purebilibili.core.util.Logger.d("CommentRepo", " WBI Keys obtained successfully (attempt $attempt)")
                     return wbiKeysCache!!
                 }
             } catch (e: Exception) {
@@ -70,7 +70,7 @@ object CommentRepository {
             
             val response = if (mode == 2) {
                 // 时间排序使用旧版 API
-                com.android.purebilibili.core.util.Logger.d("CommentRepo", "🔥 getComments (Legacy): aid=$aid, page=$page, sort=0 (时间)")
+                com.android.purebilibili.core.util.Logger.d("CommentRepo", " getComments (Legacy): aid=$aid, page=$page, sort=0 (时间)")
                 api.getReplyListLegacy(
                     oid = aid,
                     type = 1,
@@ -81,7 +81,7 @@ object CommentRepository {
             } else {
                 // 热度排序使用 WBI API
                 val (imgKey, subKey) = getWbiKeys()
-                com.android.purebilibili.core.util.Logger.d("CommentRepo", "🔥 getComments (WBI): aid=$aid, page=$page, mode=3 (热度)")
+                com.android.purebilibili.core.util.Logger.d("CommentRepo", " getComments (WBI): aid=$aid, page=$page, mode=3 (热度)")
                 
                 val params = TreeMap<String, String>()
                 params["oid"] = aid.toString()
@@ -95,7 +95,7 @@ object CommentRepository {
             }
             
             val sortLabel = if (mode == 2) "时间" else "热度"
-            com.android.purebilibili.core.util.Logger.d("CommentRepo", "🔥 getComments result: mode=$mode($sortLabel), replies=${response.data?.replies?.size ?: 0}, code=${response.code}")
+            com.android.purebilibili.core.util.Logger.d("CommentRepo", " getComments result: mode=$mode($sortLabel), replies=${response.data?.replies?.size ?: 0}, code=${response.code}")
 
             if (response.code == 0) {
                 Result.success(response.data ?: ReplyData())
@@ -110,11 +110,11 @@ object CommentRepository {
                     12009 -> "评论内容不存在"
                     else -> "加载评论失败 (${response.code})"
                 }
-                android.util.Log.e("CommentRepo", "❌ getComments failed: ${response.code} - ${response.message}")
+                android.util.Log.e("CommentRepo", " getComments failed: ${response.code} - ${response.message}")
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            android.util.Log.e("CommentRepo", "❌ getComments exception: ${e.message}", e)
+            android.util.Log.e("CommentRepo", " getComments exception: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -127,7 +127,7 @@ object CommentRepository {
             // 确保 buvid3 已初始化
             VideoRepository.ensureBuvid3()
             
-            com.android.purebilibili.core.util.Logger.d("CommentRepo", "🔥 getSubComments: aid=$aid, rootId=$rootId, page=$page")
+            com.android.purebilibili.core.util.Logger.d("CommentRepo", " getSubComments: aid=$aid, rootId=$rootId, page=$page")
             
             val response = api.getReplyReply(
                 oid = aid,
@@ -136,16 +136,16 @@ object CommentRepository {
                 ps = ps
             )
             
-            com.android.purebilibili.core.util.Logger.d("CommentRepo", "🔥 getSubComments response: code=${response.code}, replies=${response.data?.replies?.size ?: 0}")
+            com.android.purebilibili.core.util.Logger.d("CommentRepo", " getSubComments response: code=${response.code}, replies=${response.data?.replies?.size ?: 0}")
             
             if (response.code == 0) {
                 Result.success(response.data ?: ReplyData())
             } else {
-                android.util.Log.e("CommentRepo", "❌ getSubComments failed: ${response.code} - ${response.message}")
+                android.util.Log.e("CommentRepo", " getSubComments failed: ${response.code} - ${response.message}")
                 Result.failure(Exception("加载回复失败 (${response.code})"))
             }
         } catch (e: Exception) {
-            android.util.Log.e("CommentRepo", "❌ getSubComments exception: ${e.message}", e)
+            android.util.Log.e("CommentRepo", " getSubComments exception: ${e.message}", e)
             Result.failure(e)
         }
     }

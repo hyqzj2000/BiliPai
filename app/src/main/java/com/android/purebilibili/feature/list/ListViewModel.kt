@@ -53,7 +53,7 @@ class HistoryViewModel(application: Application) : BaseListViewModel(application
     private var hasMore = true
     private var isLoadingMore = false
     
-    // 🔥 暴露加载更多状态
+    //  暴露加载更多状态
     private val _isLoadingMoreState = MutableStateFlow(false)
     val isLoadingMoreState = _isLoadingMoreState.asStateFlow()
     
@@ -88,12 +88,12 @@ class HistoryViewModel(application: Application) : BaseListViewModel(application
         hasMore = historyResult.list.isNotEmpty() && historyResult.cursor != null && historyResult.cursor.max > 0
         _hasMoreState.value = hasMore
         
-        com.android.purebilibili.core.util.Logger.d("HistoryVM", "🔥 First page: ${historyResult.list.size} items, hasMore=$hasMore, nextMax=$cursorMax")
+        com.android.purebilibili.core.util.Logger.d("HistoryVM", " First page: ${historyResult.list.size} items, hasMore=$hasMore, nextMax=$cursorMax")
         
         return historyResult.list.map { it.toVideoItem() }
     }
     
-    // 🔥 加载更多
+    //  加载更多
     fun loadMore() {
         if (isLoadingMore || !hasMore) return
         
@@ -102,7 +102,7 @@ class HistoryViewModel(application: Application) : BaseListViewModel(application
             _isLoadingMoreState.value = true
             
             try {
-                com.android.purebilibili.core.util.Logger.d("HistoryVM", "🔥 loadMore: max=$cursorMax, viewAt=$cursorViewAt")
+                com.android.purebilibili.core.util.Logger.d("HistoryVM", " loadMore: max=$cursorMax, viewAt=$cursorViewAt")
                 
                 val result = com.android.purebilibili.data.repository.HistoryRepository.getHistoryList(
                     ps = 30,
@@ -128,7 +128,7 @@ class HistoryViewModel(application: Application) : BaseListViewModel(application
                 _hasMoreState.value = hasMore
                 
                 val newItems = historyResult.list.map { it.toVideoItem() }
-                com.android.purebilibili.core.util.Logger.d("HistoryVM", "🔥 Loaded ${newItems.size} more items, hasMore=$hasMore")
+                com.android.purebilibili.core.util.Logger.d("HistoryVM", " Loaded ${newItems.size} more items, hasMore=$hasMore")
                 
                 if (newItems.isNotEmpty()) {
                     // 追加到现有列表（过滤重复）
@@ -136,11 +136,11 @@ class HistoryViewModel(application: Application) : BaseListViewModel(application
                     val existingBvids = currentItems.map { it.bvid }.toSet()
                     val uniqueNewItems = newItems.filter { it.bvid !in existingBvids }
                     _uiState.value = _uiState.value.copy(items = currentItems + uniqueNewItems)
-                    com.android.purebilibili.core.util.Logger.d("HistoryVM", "🔥 Total items: ${_uiState.value.items.size}")
+                    com.android.purebilibili.core.util.Logger.d("HistoryVM", " Total items: ${_uiState.value.items.size}")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                com.android.purebilibili.core.util.Logger.e("HistoryVM", "🔥 loadMore failed", e)
+                com.android.purebilibili.core.util.Logger.e("HistoryVM", " loadMore failed", e)
             } finally {
                 isLoadingMore = false
                 _isLoadingMoreState.value = false
@@ -155,11 +155,11 @@ class FavoriteViewModel(application: Application) : BaseListViewModel(applicatio
     // 分页状态
     private var currentPage = 1
     private var hasMore = true
-    private var allFolderIds: List<Long> = emptyList()  // 🔥 所有收藏夹 ID
-    private var currentFolderIndex = 0  // 🔥 当前正在加载的收藏夹索引
+    private var allFolderIds: List<Long> = emptyList()  //  所有收藏夹 ID
+    private var currentFolderIndex = 0  //  当前正在加载的收藏夹索引
     private var isLoadingMore = false
     
-    // 🔥 暴露加载更多状态
+    //  暴露加载更多状态
     private val _isLoadingMoreState = MutableStateFlow(false)
     val isLoadingMoreState = _isLoadingMoreState.asStateFlow()
     
@@ -185,12 +185,12 @@ class FavoriteViewModel(application: Application) : BaseListViewModel(applicatio
             return emptyList()
         }
 
-        // 3. 🔥 保存所有收藏夹 ID
+        // 3.  保存所有收藏夹 ID
         allFolderIds = folders.map { it.id }
         currentFolderIndex = 0
         currentPage = 1
         
-        com.android.purebilibili.core.util.Logger.d("FavoriteVM", "🔥 Found ${allFolderIds.size} folders: ${folders.map { "${it.title}(${it.media_count})" }}")
+        com.android.purebilibili.core.util.Logger.d("FavoriteVM", " Found ${allFolderIds.size} folders: ${folders.map { "${it.title}(${it.media_count})" }}")
 
         // 4. 获取第一个收藏夹内的视频（第一页）
         val listResult = com.android.purebilibili.data.repository.FavoriteRepository.getFavoriteList(
@@ -199,7 +199,7 @@ class FavoriteViewModel(application: Application) : BaseListViewModel(applicatio
         )
         val items = listResult.getOrNull()?.map { it.toVideoItem() } ?: emptyList()
         
-        com.android.purebilibili.core.util.Logger.d("FavoriteVM", "🔥 First folder loaded ${items.size} items")
+        com.android.purebilibili.core.util.Logger.d("FavoriteVM", " First folder loaded ${items.size} items")
         
         // 判断是否还有更多（本收藏夹还有更多，或还有其他收藏夹）
         hasMore = items.size >= 20 || allFolderIds.size > 1
@@ -208,7 +208,7 @@ class FavoriteViewModel(application: Application) : BaseListViewModel(applicatio
         return items
     }
     
-    // 🔥 加载更多
+    //  加载更多
     fun loadMore() {
         if (isLoadingMore || !hasMore || allFolderIds.isEmpty()) return
         
@@ -218,7 +218,7 @@ class FavoriteViewModel(application: Application) : BaseListViewModel(applicatio
             
             try {
                 currentPage++
-                com.android.purebilibili.core.util.Logger.d("FavoriteVM", "🔥 loadMore: folder=$currentFolderIndex, page=$currentPage")
+                com.android.purebilibili.core.util.Logger.d("FavoriteVM", " loadMore: folder=$currentFolderIndex, page=$currentPage")
                 
                 val listResult = com.android.purebilibili.data.repository.FavoriteRepository.getFavoriteList(
                     mediaId = allFolderIds[currentFolderIndex], 
@@ -226,15 +226,15 @@ class FavoriteViewModel(application: Application) : BaseListViewModel(applicatio
                 )
                 var newItems = listResult.getOrNull()?.map { it.toVideoItem() } ?: emptyList()
                 
-                com.android.purebilibili.core.util.Logger.d("FavoriteVM", "🔥 Loaded ${newItems.size} items from folder $currentFolderIndex page $currentPage")
+                com.android.purebilibili.core.util.Logger.d("FavoriteVM", " Loaded ${newItems.size} items from folder $currentFolderIndex page $currentPage")
                 
-                // 🔥 如果当前收藏夹没有更多内容，尝试加载下一个收藏夹
+                //  如果当前收藏夹没有更多内容，尝试加载下一个收藏夹
                 if (newItems.isEmpty() || newItems.size < 20) {
                     currentFolderIndex++
                     if (currentFolderIndex < allFolderIds.size) {
                         // 重置页码，加载下一个收藏夹
                         currentPage = 1
-                        com.android.purebilibili.core.util.Logger.d("FavoriteVM", "🔥 Moving to next folder: $currentFolderIndex")
+                        com.android.purebilibili.core.util.Logger.d("FavoriteVM", " Moving to next folder: $currentFolderIndex")
                         
                         val nextFolderResult = com.android.purebilibili.data.repository.FavoriteRepository.getFavoriteList(
                             mediaId = allFolderIds[currentFolderIndex], 
@@ -259,11 +259,11 @@ class FavoriteViewModel(application: Application) : BaseListViewModel(applicatio
                     val existingBvids = currentItems.map { it.bvid }.toSet()
                     val uniqueNewItems = newItems.filter { it.bvid !in existingBvids }
                     _uiState.value = _uiState.value.copy(items = currentItems + uniqueNewItems)
-                    com.android.purebilibili.core.util.Logger.d("FavoriteVM", "🔥 Total items: ${_uiState.value.items.size}")
+                    com.android.purebilibili.core.util.Logger.d("FavoriteVM", " Total items: ${_uiState.value.items.size}")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                com.android.purebilibili.core.util.Logger.e("FavoriteVM", "🔥 loadMore failed", e)
+                com.android.purebilibili.core.util.Logger.e("FavoriteVM", " loadMore failed", e)
                 // 加载更多失败时回退页码
                 currentPage--
             } finally {

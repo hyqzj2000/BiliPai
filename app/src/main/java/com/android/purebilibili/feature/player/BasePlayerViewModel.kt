@@ -84,9 +84,9 @@ abstract class BasePlayerViewModel : ViewModel() {
                 val segments = SponsorBlockRepository.getSegments(bvid)
                 _sponsorSegments.value = segments
                 skippedSegmentIds.clear()
-                com.android.purebilibili.core.util.Logger.d(TAG, "🚀 SponsorBlock: loaded ${segments.size} segments for $bvid")
+                com.android.purebilibili.core.util.Logger.d(TAG, " SponsorBlock: loaded ${segments.size} segments for $bvid")
             } catch (e: Exception) {
-                com.android.purebilibili.core.util.Logger.w(TAG, "🚀 SponsorBlock: load failed: ${e.message}")
+                com.android.purebilibili.core.util.Logger.w(TAG, " SponsorBlock: load failed: ${e.message}")
             }
         }
     }
@@ -188,7 +188,7 @@ abstract class BasePlayerViewModel : ViewModel() {
         resetPlayer: Boolean = true
     ) {
         val player = exoPlayer ?: return
-        com.android.purebilibili.core.util.Logger.d(TAG, "🔥 playDashVideo: seekTo=${seekToMs}ms, reset=$resetPlayer, video=${videoUrl.take(50)}...")
+        com.android.purebilibili.core.util.Logger.d(TAG, " playDashVideo: seekTo=${seekToMs}ms, reset=$resetPlayer, video=${videoUrl.take(50)}...")
         
         player.volume = 1.0f
         
@@ -210,7 +210,7 @@ abstract class BasePlayerViewModel : ViewModel() {
             videoSource
         }
         
-        // 🔥🔥 [修复] 使用 resetPosition=false 减少切换时的闪烁
+        //  [修复] 使用 resetPosition=false 减少切换时的闪烁
         player.setMediaSource(finalSource, /* resetPosition = */ resetPlayer)
         player.prepare()
         if (seekToMs > 0) {
@@ -227,7 +227,7 @@ abstract class BasePlayerViewModel : ViewModel() {
      */
     protected fun playVideo(url: String, seekToMs: Long = 0L) {
         val player = exoPlayer ?: return
-        com.android.purebilibili.core.util.Logger.d(TAG, "🔥 playVideo: seekTo=${seekToMs}ms, url=${url.take(50)}...")
+        com.android.purebilibili.core.util.Logger.d(TAG, " playVideo: seekTo=${seekToMs}ms, url=${url.take(50)}...")
         
         player.volume = 1.0f
         

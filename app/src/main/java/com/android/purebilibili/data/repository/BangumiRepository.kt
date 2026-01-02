@@ -47,7 +47,7 @@ object BangumiRepository {
         try {
             val response = api.getBangumiIndex(
                 seasonType = seasonType,
-                st = seasonType,  // 🔥🔥 [修复] st 必须与 seasonType 相同
+                st = seasonType,  //  [修复] st 必须与 seasonType 相同
                 page = page,
                 pageSize = pageSize
             )
@@ -67,11 +67,11 @@ object BangumiRepository {
      */
     suspend fun getSeasonDetail(seasonId: Long): Result<BangumiDetail> = withContext(Dispatchers.IO) {
         try {
-            // 🔥🔥 [修复] 使用 ResponseBody 自行解析，避免大型番剧导致 OOM
+            //  [修复] 使用 ResponseBody 自行解析，避免大型番剧导致 OOM
             val responseBody = api.getSeasonDetail(seasonId)
             var jsonString = responseBody.string()
             
-            // 🔥🔥 [关键修复] 在解析前预处理 JSON，限制 episodes 数组大小
+            //  [关键修复] 在解析前预处理 JSON，限制 episodes 数组大小
             // 这是防止 OOM 的核心：在字符串级别截断，避免解析时占用大量内存
             jsonString = limitEpisodesInJson(jsonString, maxEpisodes = 200)
             
@@ -84,10 +84,10 @@ object BangumiRepository {
             val response = json.decodeFromString<BangumiDetailResponse>(jsonString)
             
             if (response.code == 0 && response.result != null) {
-                // 🔥 [调试] 打印追番状态和认证信息
+                //  [调试] 打印追番状态和认证信息
                 val userStatus = response.result.userStatus
                 android.util.Log.w("BangumiRepo", """
-                    📺 getSeasonDetail 结果:
+                     getSeasonDetail 结果:
                     - seasonId: $seasonId
                     - title: ${response.result.title}
                     - userStatus: $userStatus
@@ -99,8 +99,8 @@ object BangumiRepository {
                 Result.failure(Exception("获取番剧详情失败: ${response.message}"))
             }
         } catch (e: OutOfMemoryError) {
-            // 🔥🔥 [修复] 捕获 OOM 错误，给出更友好的提示
-            android.util.Log.e("BangumiRepo", "❌ getSeasonDetail OOM: 番剧数据过大，内存不足", e)
+            //  [修复] 捕获 OOM 错误，给出更友好的提示
+            android.util.Log.e("BangumiRepo", " getSeasonDetail OOM: 番剧数据过大，内存不足", e)
             System.gc() // 尝试触发 GC 回收内存
             Result.failure(Exception("加载失败：番剧数据过大，请稍后重试"))
         } catch (e: Exception) {
@@ -110,7 +110,7 @@ object BangumiRepository {
     }
     
     /**
-     * 🔥🔥 [修复工具] 在 JSON 字符串级别限制 episodes 数组大小
+     *  [修复工具] 在 JSON 字符串级别限制 episodes 数组大小
      * 这是防止 OOM 的关键：在解析前截断超大数组
      */
     private fun limitEpisodesInJson(json: String, maxEpisodes: Int): String {
@@ -130,7 +130,7 @@ object BangumiRepository {
                 return json // 不需要截断
             }
             
-            android.util.Log.w("BangumiRepo", "⚠️ 番剧剧集过多 (${episodes.size}集)，截取前 $maxEpisodes 集以防止内存溢出")
+            android.util.Log.w("BangumiRepo", " 番剧剧集过多 (${episodes.size}集)，截取前 $maxEpisodes 集以防止内存溢出")
             
             // 构建新的 episodes 数组 (只保留前 maxEpisodes 个)
             val limitedEpisodes = kotlinx.serialization.json.JsonArray(episodes.take(maxEpisodes))
@@ -169,7 +169,7 @@ object BangumiRepository {
                 val errorMsg = when (response.code) {
                     -10403 -> "需要大会员才能观看"
                     -404 -> "视频不存在"
-                    -101 -> "请先登录后观看"  // 🔥 新增：检测需要登录
+                    -101 -> "请先登录后观看"  //  新增：检测需要登录
                     -400 -> "请求参数错误"
                     -403 -> "访问权限不足"
                     else -> "获取播放地址失败: ${response.message} (code=${response.code})"
@@ -221,7 +221,7 @@ object BangumiRepository {
     }
     
     /**
-     * 🔥🔥 [新增] 获取番剧索引/列表（支持筛选）
+     *  [新增] 获取番剧索引/列表（支持筛选）
      */
     suspend fun getBangumiIndexWithFilter(
         seasonType: Int = 1,
@@ -254,7 +254,7 @@ object BangumiRepository {
     }
     
     /**
-     * 🔥🔥 [新增] 搜索番剧
+     *  [新增] 搜索番剧
      */
     suspend fun searchBangumi(
         keyword: String,
@@ -294,7 +294,7 @@ object BangumiRepository {
     }
     
     /**
-     * 🔥🔥 [新增] 获取我的追番列表
+     *  [新增] 获取我的追番列表
      */
     suspend fun getMyFollowBangumi(
         type: Int = 1,  // 1=追番 2=追剧

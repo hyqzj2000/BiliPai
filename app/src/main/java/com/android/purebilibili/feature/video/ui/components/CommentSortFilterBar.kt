@@ -21,9 +21,9 @@ import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 
 /**
- * 🔥🔥 评论排序筛选栏
+ *  评论排序筛选栏
  * 包含：评论数量 | 热度/时间 排序切换 | 只看UP主 切换
- * 🔥 排序和"只看UP主"互斥：激活一个时取消另一个的选中状态
+ *  排序和"只看UP主"互斥：激活一个时取消另一个的选中状态
  */
 @Composable
 fun CommentSortFilterBar(
@@ -40,7 +40,7 @@ fun CommentSortFilterBar(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 🔥 评论标题 + 数量
+        //  评论标题 + 数量
         Text(
             text = "评论",
             fontSize = 16.sp,
@@ -56,16 +56,16 @@ fun CommentSortFilterBar(
         
         Spacer(modifier = Modifier.weight(1f))
         
-        // 🔥 排序选项（热度/时间）- 当 upOnlyFilter 激活时不显示选中状态
+        //  排序选项（热度/时间）- 当 upOnlyFilter 激活时不显示选中状态
         SortChipGroup(
             currentMode = sortMode,
-            isActive = !upOnlyFilter,  // 🔥 互斥：UP筛选激活时，排序按钮不高亮
+            isActive = !upOnlyFilter,  //  互斥：UP筛选激活时，排序按钮不高亮
             onModeChange = onSortModeChange
         )
         
         Spacer(modifier = Modifier.width(12.dp))
         
-        // 🔥 只看UP主筛选
+        //  只看UP主筛选
         UpOnlyChip(
             isActive = upOnlyFilter,
             onClick = onUpOnlyToggle
@@ -74,7 +74,7 @@ fun CommentSortFilterBar(
 }
 
 /**
- * 排序 Chip 组（热度/时间）- 🔥 使用边框样式，与"只看UP主"一致
+ * 排序 Chip 组（热度/时间）-  使用边框样式，与"只看UP主"一致
  * @param isActive 当为 false 时，所有按钮显示为未选中状态（互斥效果）
  */
 @Composable
@@ -88,7 +88,7 @@ private fun SortChipGroup(
         verticalAlignment = Alignment.CenterVertically
     ) {
         CommentSortMode.entries.forEach { mode ->
-            // 🔥 只有 isActive 为 true 且当前模式匹配时才显示选中状态
+            //  只有 isActive 为 true 且当前模式匹配时才显示选中状态
             val isSelected = isActive && mode == currentMode
             val bgColor by animateColorAsState(
                 targetValue = if (isSelected) 

@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.sp
 import io.github.alexzhirkevich.cupertino.CupertinoActivityIndicator
 
 /**
- * 🍎 iOS 风格下拉刷新指示器
+ *  iOS 风格下拉刷新指示器
  * 
  * 特点：
  * - 下拉时显示"下拉刷新..."
@@ -36,13 +36,13 @@ fun iOSRefreshIndicator(
     isRefreshing: Boolean,
     modifier: Modifier = Modifier
 ) {
-    // 🔥 进度值（0.0 ~ 1.0+）
+    //  进度值（0.0 ~ 1.0+）
     val progress = state.distanceFraction
     
-    // 🔥 是否达到刷新阈值
+    //  是否达到刷新阈值
     val isOverThreshold = progress >= 1f
     
-    // 🔥 提示文字
+    //  提示文字
     val hintText = when {
         isRefreshing -> "正在刷新..."
         isOverThreshold -> "松手刷新"
@@ -50,21 +50,21 @@ fun iOSRefreshIndicator(
         else -> ""
     }
     
-    // 🔥 箭头旋转角度（下拉超过阈值时翻转）
+    //  箭头旋转角度（下拉超过阈值时翻转）
     val arrowRotation by animateFloatAsState(
         targetValue = if (isOverThreshold) 180f else 0f,
         animationSpec = spring(dampingRatio = 0.7f, stiffness = 300f),
         label = "arrow_rotation"
     )
     
-    // 🔥 透明度动画
+    //  透明度动画
     val alpha by animateFloatAsState(
         targetValue = if (progress > 0.1f || isRefreshing) 1f else 0f,
         animationSpec = spring(dampingRatio = 0.8f),
         label = "alpha"
     )
     
-    // 🔥 缩放动画
+    //  缩放动画
     val scale by animateFloatAsState(
         targetValue = (progress.coerceIn(0f, 1f) * 0.4f + 0.6f).coerceAtMost(1f),
         animationSpec = spring(dampingRatio = 0.8f),
@@ -87,13 +87,13 @@ fun iOSRefreshIndicator(
             modifier = Modifier.padding(vertical = 12.dp)
         ) {
             if (isRefreshing) {
-                // 🍎 iOS 风格转轮
+                //  iOS 风格转轮
                 CupertinoActivityIndicator(
                     modifier = Modifier.size(20.dp),
                     color = MaterialTheme.colorScheme.primary
                 )
             } else if (progress > 0.1f) {
-                // 🔥 箭头图标（旋转表示状态变化）
+                //  箭头图标（旋转表示状态变化）
                 Text(
                     text = "↓",
                     fontSize = 18.sp,

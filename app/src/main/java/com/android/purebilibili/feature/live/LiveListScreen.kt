@@ -15,7 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -228,7 +228,7 @@ class LiveListViewModel(application: Application) : AndroidViewModel(application
 }
 
 /**
- * 🔥 直播列表页面 - iOS 风格三 Tab 布局
+ *  直播列表页面 - iOS 风格三 Tab 布局
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -240,7 +240,7 @@ fun LiveListScreen(
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     
-    // 🔥 设置导航栏透明
+    //  设置导航栏透明
     val view = androidx.compose.ui.platform.LocalView.current
     androidx.compose.runtime.DisposableEffect(Unit) {
         val window = (context as? android.app.Activity)?.window
@@ -277,7 +277,7 @@ fun LiveListScreen(
                     )
                 )
                 
-                // 🍎 iOS 风格分段控件
+                //  iOS 风格分段控件
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -377,7 +377,7 @@ fun LiveListScreen(
 }
 
 /**
- * 🔥 推荐直播 Tab
+ *  推荐直播 Tab
  */
 @Composable
 private fun RecommendTab(
@@ -404,7 +404,7 @@ private fun RecommendTab(
 }
 
 /**
- * 🔥 分区 Tab - iOS 风格
+ *  分区 Tab - iOS 风格
  */
 @Composable
 private fun AreaTab(
@@ -416,7 +416,7 @@ private fun AreaTab(
     onLiveClick: (Long, String, String) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        // 🍎 分区横向滚动选择器
+        //  分区横向滚动选择器
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -481,7 +481,7 @@ private fun AreaTab(
 }
 
 /**
- * 🔥 关注直播 Tab
+ *  关注直播 Tab
  */
 @Composable
 private fun FollowTab(
@@ -508,7 +508,7 @@ private fun FollowTab(
 }
 
 /**
- * 🔥 空状态组件
+ *  空状态组件
  */
 @Composable
 private fun EmptyState(message: String) {
@@ -537,7 +537,7 @@ private fun EmptyState(message: String) {
 }
 
 /**
- * 🔥 直播间卡片 - iOS 风格
+ *  直播间卡片 - iOS 风格
  */
 @Composable
 private fun LiveRoomCard(

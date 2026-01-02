@@ -5,7 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi // 🔥 Added
+import androidx.compose.foundation.ExperimentalFoundationApi //  Added
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
@@ -28,38 +28,38 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.graphics.luminance  // 🔥 状态栏亮度计算
+import androidx.compose.ui.graphics.luminance  //  状态栏亮度计算
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.purebilibili.core.theme.BiliPink
 import com.android.purebilibili.feature.settings.GITHUB_URL
-import com.android.purebilibili.core.store.SettingsManager // 🔥 引入 SettingsManager
-// 🔥 从 components 包导入拆分后的组件
+import com.android.purebilibili.core.store.SettingsManager //  引入 SettingsManager
+//  从 components 包导入拆分后的组件
 import com.android.purebilibili.feature.home.components.BottomNavItem
 import com.android.purebilibili.feature.home.components.FluidHomeTopBar
 import com.android.purebilibili.feature.home.components.FrostedBottomBar
 import com.android.purebilibili.feature.home.components.CategoryTabRow
-import com.android.purebilibili.feature.home.components.iOSHomeHeader  // 🍎 iOS 大标题头部
-import com.android.purebilibili.feature.home.components.iOSRefreshIndicator  // 🍎 iOS 下拉刷新指示器
-// 🔥 从 cards 子包导入卡片组件
+import com.android.purebilibili.feature.home.components.iOSHomeHeader  //  iOS 大标题头部
+import com.android.purebilibili.feature.home.components.iOSRefreshIndicator  //  iOS 下拉刷新指示器
+//  从 cards 子包导入卡片组件
 import com.android.purebilibili.feature.home.components.cards.ElegantVideoCard
 import com.android.purebilibili.feature.home.components.cards.LiveRoomCard
-import com.android.purebilibili.feature.home.components.cards.StoryVideoCard   // 🎬 故事卡片
-import com.android.purebilibili.feature.home.components.cards.GlassVideoCard   // 🍎 玻璃拟态
+import com.android.purebilibili.feature.home.components.cards.StoryVideoCard   //  故事卡片
+import com.android.purebilibili.feature.home.components.cards.GlassVideoCard   //  玻璃拟态
 import com.android.purebilibili.core.ui.LoadingAnimation
 import com.android.purebilibili.core.ui.VideoCardSkeleton
 import com.android.purebilibili.core.ui.ErrorState as ModernErrorState
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import com.android.purebilibili.core.ui.shimmer
-import com.android.purebilibili.core.ui.LocalSharedTransitionScope  // 🔥 共享过渡
-import com.android.purebilibili.core.ui.animation.DissolvableVideoCard  // 🗑️ 粒子消散动画
+import com.android.purebilibili.core.ui.LocalSharedTransitionScope  //  共享过渡
+import com.android.purebilibili.core.ui.animation.DissolvableVideoCard  //  粒子消散动画
 import com.android.purebilibili.core.ui.animation.jiggleOnDissolve      // 📳 iOS 风格抖动效果
 import io.github.alexzhirkevich.cupertino.CupertinoActivityIndicator
 import coil.imageLoader
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.distinctUntilChanged  // 🚀 性能优化：防止重复触发
-import androidx.compose.animation.ExperimentalSharedTransitionApi  // 🔥 共享过渡实验API
+import kotlinx.coroutines.flow.distinctUntilChanged  //  性能优化：防止重复触发
+import androidx.compose.animation.ExperimentalSharedTransitionApi  //  共享过渡实验API
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
@@ -71,23 +71,23 @@ fun HomeScreen(
     onProfileClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onSearchClick: () -> Unit,
-    // 🔥 新增：动态页面回调
+    //  新增：动态页面回调
     onDynamicClick: () -> Unit = {},
-    // 🔥 新增：历史记录回调
+    //  新增：历史记录回调
     onHistoryClick: () -> Unit = {},
-    // 🔥 新增：分区回调
+    //  新增：分区回调
     onPartitionClick: () -> Unit = {},
-    // 🔥 新增：直播点击回调
+    //  新增：直播点击回调
     onLiveClick: (Long, String, String) -> Unit = { _, _, _ -> },  // roomId, title, uname
-    // 🔥🔥 [修复] 番剧/影视回调，接受类型参数 (1=番剧 2=电影 等)
+    //  [修复] 番剧/影视回调，接受类型参数 (1=番剧 2=电影 等)
     onBangumiClick: (Int) -> Unit = {},
-    // 🔥 新增：分类点击回调（用于游戏、知识、科技等分类，传入 tid 和 name）
+    //  新增：分类点击回调（用于游戏、知识、科技等分类，传入 tid 和 name）
     onCategoryClick: (Int, String) -> Unit = { _, _ -> },
-    // 🔥🔥 [新增] 底栏扩展项目导航回调
+    //  [新增] 底栏扩展项目导航回调
     onFavoriteClick: () -> Unit = {},  // 收藏页面
     onLiveListClick: () -> Unit = {},  // 直播列表页面
     onWatchLaterClick: () -> Unit = {},  // 稍后再看页面
-    onStoryClick: () -> Unit = {}  // 🔥🔥 [新增] 竖屏短视频
+    onStoryClick: () -> Unit = {}  //  [新增] 竖屏短视频
 ) {
     val state by viewModel.uiState.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
@@ -96,27 +96,27 @@ fun HomeScreen(
     val gridState = rememberLazyGridState()
     val staggeredGridState = rememberLazyStaggeredGridState()  // 🌊 瀑布流状态
     val hazeState = remember { HazeState() }
-    val coroutineScope = rememberCoroutineScope()  // 🍎 用于双击回顶动画
+    val coroutineScope = rememberCoroutineScope()  //  用于双击回顶动画
     
-    // 🔌 [新增] JSON 插件过滤提示
+    //  [新增] JSON 插件过滤提示
     val snackbarHostState = remember { SnackbarHostState() }
     val lastFilteredCount by com.android.purebilibili.core.plugin.json.JsonPluginManager.lastFilteredCount.collectAsState()
     
-    // 🔌 当有视频被过滤时显示提示
+    //  当有视频被过滤时显示提示
     LaunchedEffect(lastFilteredCount) {
         if (lastFilteredCount > 0) {
             snackbarHostState.showSnackbar(
-                message = "🔌 已过滤 $lastFilteredCount 个视频",
+                message = " 已过滤 $lastFilteredCount 个视频",
                 duration = SnackbarDuration.Short
             )
         }
     }
     
-    // 🥚 [彩蛋] 彩蛋开关设置
+    //  [彩蛋] 彩蛋开关设置
     val easterEggEnabled by SettingsManager.getEasterEggEnabled(context).collectAsState(initial = true)
     var showEasterEggDialog by remember { mutableStateOf(false) }
     
-    // 🥚 [彩蛋] 下拉刷新成功后显示趣味提示（仅在开关开启时）
+    //  [彩蛋] 下拉刷新成功后显示趣味提示（仅在开关开启时）
     LaunchedEffect(state.refreshKey, easterEggEnabled) {
         val message = state.refreshMessage
         if (message != null && state.refreshKey > 0 && easterEggEnabled) {
@@ -131,7 +131,7 @@ fun HomeScreen(
         }
     }
     
-    // 🥚 [彩蛋] 关闭确认对话框
+    //  [彩蛋] 关闭确认对话框
     if (showEasterEggDialog) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showEasterEggDialog = false },
@@ -166,7 +166,7 @@ fun HomeScreen(
         )
     }
     
-    // 🔥🔥 [修复] 确保首页显示时 WindowInsets 配置正确，防止从视频页返回时布局跳动
+    //  [修复] 确保首页显示时 WindowInsets 配置正确，防止从视频页返回时布局跳动
     val view = androidx.compose.ui.platform.LocalView.current
     SideEffect {
         val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
@@ -174,7 +174,7 @@ fun HomeScreen(
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 
-    // �� [性能优化] 合并首页设置为单一 Flow，减少 6 个 collectAsState → 1 个
+    //  [性能优化] 合并首页设置为单一 Flow，减少 6 个 collectAsState → 1 个
     val homeSettings by SettingsManager.getHomeSettings(context).collectAsState(
         initial = com.android.purebilibili.core.store.HomeSettings()
     )
@@ -186,10 +186,10 @@ fun HomeScreen(
     val isHeaderBlurEnabled = homeSettings.isHeaderBlurEnabled
     val isBottomBarBlurEnabled = homeSettings.isBottomBarBlurEnabled
     val crashTrackingConsentShown = homeSettings.crashTrackingConsentShown
-    val cardAnimationEnabled = homeSettings.cardAnimationEnabled      // 🔥 卡片进场动画开关
-    val cardTransitionEnabled = homeSettings.cardTransitionEnabled    // 🔥 卡片过渡动画开关
+    val cardAnimationEnabled = homeSettings.cardAnimationEnabled      //  卡片进场动画开关
+    val cardTransitionEnabled = homeSettings.cardTransitionEnabled    //  卡片过渡动画开关
     
-    // 🔥🔥 [新增] 底栏可见项目配置
+    //  [新增] 底栏可见项目配置
     val orderedVisibleTabIds by SettingsManager.getOrderedVisibleTabs(context).collectAsState(
         initial = listOf("HOME", "DYNAMIC", "HISTORY", "PROFILE")
     )
@@ -200,14 +200,14 @@ fun HomeScreen(
         }
     }
     
-    // 🔥🔥 [新增] 底栏项目颜色配置
+    //  [新增] 底栏项目颜色配置
     val bottomBarItemColors by SettingsManager.getBottomBarItemColors(context).collectAsState(initial = emptyMap())
     
-    // 🔥🔥 [修复] 根据展示模式动态设置网格列数
+    //  [修复] 根据展示模式动态设置网格列数
     // 故事卡片需要单列全宽，网格和玻璃使用双列
     val gridColumns = if (displayMode == 1) 1 else 2
 
-    // 🔥🔥 [修复] 恢复状态栏样式：确保从视频详情页返回后状态栏正确
+    //  [修复] 恢复状态栏样式：确保从视频详情页返回后状态栏正确
     // 当使用滑动动画时，Theme.kt 的 SideEffect 可能不会重新执行
     val backgroundColor = MaterialTheme.colorScheme.background
     val isLightBackground = remember(backgroundColor) { backgroundColor.luminance() > 0.5f }
@@ -216,14 +216,14 @@ fun HomeScreen(
         SideEffect {
             val window = (context as? android.app.Activity)?.window ?: return@SideEffect
             val insetsController = androidx.core.view.WindowCompat.getInsetsController(window, view)
-            // 🔥 根据背景亮度设置状态栏图标颜色
+            //  根据背景亮度设置状态栏图标颜色
             insetsController.isAppearanceLightStatusBars = isLightBackground
-            // 🔥🔥 [修复] 导航栏也需要根据背景亮度设置图标颜色
+            //  [修复] 导航栏也需要根据背景亮度设置图标颜色
             insetsController.isAppearanceLightNavigationBars = isLightBackground
-            // 🔥 确保状态栏可见且透明
+            //  确保状态栏可见且透明
             insetsController.show(androidx.core.view.WindowInsetsCompat.Type.statusBars())
             window.statusBarColor = android.graphics.Color.TRANSPARENT
-            // 🔥🔥 [修复] 导航栏也设为透明，确保底栏隐藏时手势区域沉浸
+            //  [修复] 导航栏也设为透明，确保底栏隐藏时手势区域沉浸
             window.navigationBarColor = android.graphics.Color.TRANSPARENT
         }
     }
@@ -231,7 +231,7 @@ fun HomeScreen(
     val density = LocalDensity.current
     val navBarHeight = WindowInsets.navigationBars.getBottom(density).let { with(density) { it.toDp() } }
     
-    // 🔥 动态计算底部避让高度
+    //  动态计算底部避让高度
     val bottomBarHeight = if (isBottomBarFloating) {
         84.dp + navBarHeight  // 72dp(栏高度) + 12dp(底部边距)
     } else {
@@ -240,25 +240,25 @@ fun HomeScreen(
 
     val prefs = remember { context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE) }
     
-    // 🔥 当前选中的导航项
+    //  当前选中的导航项
     var currentNavItem by remember { mutableStateOf(BottomNavItem.HOME) }
     
-    // 🔥🔥 [新增] 底栏显示模式设置
+    //  [新增] 底栏显示模式设置
     val bottomBarVisibilityMode by SettingsManager.getBottomBarVisibilityMode(context).collectAsState(
         initial = SettingsManager.BottomBarVisibilityMode.ALWAYS_VISIBLE
     )
     
-    // 🔥🔥 [新增] 底栏可见性状态（根据模式初始化）
+    //  [新增] 底栏可见性状态（根据模式初始化）
     var bottomBarVisible by remember { mutableStateOf(true) }
     
-    // 🔥🔥 [修复] 跟踪是否正在导航到/从视频页 - 必须在 LaunchedEffect 之前声明
+    //  [修复] 跟踪是否正在导航到/从视频页 - 必须在 LaunchedEffect 之前声明
     var isVideoNavigating by remember { mutableStateOf(false) }
     
-    // 🔥🔥 [新增] 滚动方向检测状态（用于上滑隐藏模式）
+    //  [新增] 滚动方向检测状态（用于上滑隐藏模式）
     var lastScrollOffset by remember { mutableIntStateOf(0) }
     var lastFirstVisibleItem by remember { mutableIntStateOf(0) }
     
-    // 🔥🔥 [新增] 滚动方向检测逻辑
+    //  [新增] 滚动方向检测逻辑
     LaunchedEffect(gridState, bottomBarVisibilityMode) {
         if (bottomBarVisibilityMode != SettingsManager.BottomBarVisibilityMode.SCROLL_HIDE) {
             // 非滚动隐藏模式时，根据设置决定底栏可见性
@@ -300,23 +300,23 @@ fun HomeScreen(
         }
     }
     
-    // 🔥🔥 [修复] 用于取消延迟协程的 Job 引用
+    //  [修复] 用于取消延迟协程的 Job 引用
     var bottomBarRestoreJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     
-    // 🔥🔥 包装 onVideoClick：点击视频时先隐藏底栏再导航
+    //  包装 onVideoClick：点击视频时先隐藏底栏再导航
     val wrappedOnVideoClick: (String, Long, String) -> Unit = remember(onVideoClick) {
         { bvid, cid, cover ->
-            // 🔥 取消之前的恢复协程，防止竞态条件
+            //  取消之前的恢复协程，防止竞态条件
             bottomBarRestoreJob?.cancel()
             bottomBarRestoreJob = null
             
-            bottomBarVisible = false  // 🔥 触发底栏下滑动画
-            isVideoNavigating = true  // 🔥 标记正在导航到视频
+            bottomBarVisible = false  //  触发底栏下滑动画
+            isVideoNavigating = true  //  标记正在导航到视频
             onVideoClick(bvid, cid, cover)
         }
     }
     
-    // 🔥🔥 [修复] 使用生命周期事件控制底栏可见性
+    //  [修复] 使用生命周期事件控制底栏可见性
     // ON_START: 恢复底栏（仅在从视频页返回时）
     // ON_STOP: 隐藏底栏（导航到其他页面时，避免影响导航栏区域）
     val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
@@ -324,9 +324,9 @@ fun HomeScreen(
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             when (event) {
                 androidx.lifecycle.Lifecycle.Event.ON_START -> {
-                    // 🔥🔥 关键修复：只在底栏当前隐藏时才恢复可见
+                    //  关键修复：只在底栏当前隐藏时才恢复可见
                     if (!bottomBarVisible && isVideoNavigating) {
-                        // 🔥🔥 [同步动画] 延迟后再显示底栏，让进入动画与卡片返回动画同步
+                        //  [同步动画] 延迟后再显示底栏，让进入动画与卡片返回动画同步
                         bottomBarRestoreJob = kotlinx.coroutines.MainScope().launch {
                             kotlinx.coroutines.delay(100)  // 等待返回动画开始
                             bottomBarVisible = true
@@ -335,12 +335,12 @@ fun HomeScreen(
                             isVideoNavigating = false
                         }
                     } else if (!bottomBarVisible && !isVideoNavigating) {
-                        // 🔥🔥 [新增] 从设置等非视频页面返回时，立即显示底栏（无延迟）
+                        //  [新增] 从设置等非视频页面返回时，立即显示底栏（无延迟）
                         bottomBarVisible = true
                     }
                 }
                 androidx.lifecycle.Lifecycle.Event.ON_STOP -> {
-                    // 🔥🔥 [新增] 导航离开首页时隐藏底栏，避免影响其他页面的导航栏区域
+                    //  [新增] 导航离开首页时隐藏底栏，避免影响其他页面的导航栏区域
                     bottomBarRestoreJob?.cancel()
                     bottomBarRestoreJob = null
                     bottomBarVisible = false
@@ -355,15 +355,15 @@ fun HomeScreen(
         }
     }
     
-    // 🔥🔥 [修复] 使用 ViewModel 中的标签页显示索引（跨导航保持）
+    //  [修复] 使用 ViewModel 中的标签页显示索引（跨导航保持）
     // 当用户滑动到特殊分类时，标签页位置更新，但内容分类保持不变
     val displayedTabIndex = state.displayedTabIndex
     
-    // 🔥🔥 [修复] 使用 rememberSaveable 记住本次会话中是否已处理过弹窗（防止导航后重新显示）
+    //  [修复] 使用 rememberSaveable 记住本次会话中是否已处理过弹窗（防止导航后重新显示）
     var consentDialogHandled by rememberSaveable { mutableStateOf(false) }
     var showConsentDialog by remember { mutableStateOf(false) }
     
-    // 🔥🔥 检查欢迎弹窗是否已显示过（确保弹窗顺序显示，不会同时出现）
+    //  检查欢迎弹窗是否已显示过（确保弹窗顺序显示，不会同时出现）
     val welcomePrefs = remember { context.getSharedPreferences("app_welcome", Context.MODE_PRIVATE) }
     val welcomeAlreadyShown = welcomePrefs.getBoolean("first_launch_shown", false)
     
@@ -384,19 +384,19 @@ fun HomeScreen(
         )
     }
     
-    // 🍎 计算滚动偏移量用于头部动画 - 🚀 优化：量化减少重组
+    //  计算滚动偏移量用于头部动画 -  优化：量化减少重组
     val scrollOffset by remember {
         derivedStateOf {
             val firstVisibleItem = gridState.firstVisibleItemIndex
             if (firstVisibleItem == 0) {
-                // 🚀 量化到 50px 单位，减少重组频率
+                //  量化到 50px 单位，减少重组频率
                 val raw = gridState.firstVisibleItemScrollOffset
                 (raw / 50) * 50f
             } else 1000f
         }
     }
     
-    // 🍎 滚动方向（简化版 - 不再需要复杂检测，因为标签页只在顶部显示）
+    //  滚动方向（简化版 - 不再需要复杂检测，因为标签页只在顶部显示）
     val isScrollingUp = true  // 保留参数兼容性
 
     val shouldLoadMore by remember {
@@ -409,7 +409,7 @@ fun HomeScreen(
     }
     LaunchedEffect(shouldLoadMore) { if (shouldLoadMore) viewModel.loadMore() }
     
-    // 🚀🚀 [性能优化] 图片预加载 - 提前加载即将显示的视频封面
+    //  [性能优化] 图片预加载 - 提前加载即将显示的视频封面
     // 📉 [省流量] 省流量模式下禁用预加载
     val isDataSaverActive = remember {
         com.android.purebilibili.core.store.SettingsManager.isDataSaverActive(context)
@@ -420,18 +420,18 @@ fun HomeScreen(
         if (isDataSaverActive) return@LaunchedEffect
         
         snapshotFlow { gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 }
-            .distinctUntilChanged()  // 🚀 只在索引变化时触发
+            .distinctUntilChanged()  //  只在索引变化时触发
             .collect { lastVisibleIndex ->
                 val videos = state.videos
                 val preloadStart = (lastVisibleIndex + 1).coerceAtMost(videos.size)
-                val preloadEnd = (lastVisibleIndex + 6).coerceAtMost(videos.size)  // 🚀 减少预加载数量
+                val preloadEnd = (lastVisibleIndex + 6).coerceAtMost(videos.size)  //  减少预加载数量
                 
                 if (preloadStart < preloadEnd) {
                     for (i in preloadStart until preloadEnd) {
                         val imageUrl = videos.getOrNull(i)?.pic ?: continue
                         val request = coil.request.ImageRequest.Builder(context)
                             .data(com.android.purebilibili.core.util.FormatUtils.fixImageUrl(imageUrl))
-                            .size(360, 225)  // 🚀 预加载也使用限制尺寸
+                            .size(360, 225)  //  预加载也使用限制尺寸
                             .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
                             .diskCachePolicy(coil.request.CachePolicy.ENABLED)
                             .build()
@@ -442,11 +442,11 @@ fun HomeScreen(
     }
 
 
-    // 🔥🔥 PullToRefreshBox 自动处理下拉刷新逻辑
+    //  PullToRefreshBox 自动处理下拉刷新逻辑
     
-    // 🔥🔥 [已移除] 特殊分类（ANIME, MOVIE等）不再在首页切换，直接导航到独立页面
+    //  [已移除] 特殊分类（ANIME, MOVIE等）不再在首页切换，直接导航到独立页面
     
-    // 🔥🔥 [修复] 如果当前在直播-关注分类且列表为空，返回时先切换到热门，再切换到推荐
+    //  [修复] 如果当前在直播-关注分类且列表为空，返回时先切换到热门，再切换到推荐
     val isEmptyLiveFollowed = state.currentCategory == HomeCategory.LIVE && 
                                state.liveSubCategory == LiveSubCategory.FOLLOWED &&
                                state.liveRooms.isEmpty() && 
@@ -456,20 +456,20 @@ fun HomeScreen(
         viewModel.switchLiveSubCategory(LiveSubCategory.POPULAR)
     }
 
-    // 🔥🔥 [修复] 如果当前在直播分类（非关注空列表情况），返回时切换到推荐
+    //  [修复] 如果当前在直播分类（非关注空列表情况），返回时切换到推荐
     val isLiveCategoryNotHome = state.currentCategory == HomeCategory.LIVE && !isEmptyLiveFollowed
     androidx.activity.compose.BackHandler(enabled = isLiveCategoryNotHome) {
         viewModel.switchCategory(HomeCategory.RECOMMEND)
     }
     
-    // 🔥 记录滑动方向用于动画 (true = 向右/上一个分类, false = 向左/下一个分类)
+    //  记录滑动方向用于动画 (true = 向右/上一个分类, false = 向左/下一个分类)
     var swipeDirection by remember { mutableStateOf(true) }
     
-    // 🎬🎬 [改进] 水平滑动过渡动画状态 - 使用动画实现平滑过渡
+    //  [改进] 水平滑动过渡动画状态 - 使用动画实现平滑过渡
     var targetDragOffset by remember { mutableFloatStateOf(0f) }  // 目标偏移量
     var isDragging by remember { mutableStateOf(false) }  // 是否正在拖拽
     
-    // 🎬 使用 spring 动画实现平滑弹回效果（可被打断）
+    //  使用 spring 动画实现平滑弹回效果（可被打断）
     val animatedDragOffset by androidx.compose.animation.core.animateFloatAsState(
         targetValue = targetDragOffset,
         animationSpec = androidx.compose.animation.core.spring(
@@ -482,7 +482,7 @@ fun HomeScreen(
     var isAnimatingTransition by remember { mutableStateOf(false) }  // 是否正在动画过渡
     var transitionDirection by remember { mutableIntStateOf(0) }  // -1=左滑进入, 1=右滑进入, 0=无
     
-    // 🔥🔥 [修复] 特殊分类列表（有独立页面，不在首页显示内容）
+    //  [修复] 特殊分类列表（有独立页面，不在首页显示内容）
     val specialCategories = listOf(
         HomeCategory.ANIME, 
         HomeCategory.MOVIE, 
@@ -491,17 +491,17 @@ fun HomeScreen(
         HomeCategory.TECH
     )
     
-    // 🔥 水平滑动切换分类的回调
+    //  水平滑动切换分类的回调
     val switchToPreviousCategory: () -> Unit = remember(displayedTabIndex) {
         {
             swipeDirection = true  // 右滑
-            // 🔥🔥 [修复] 使用 ViewModel 中的标签页索引
+            //  [修复] 使用 ViewModel 中的标签页索引
             if (displayedTabIndex > 0) {
                 val prevIndex = displayedTabIndex - 1
                 val prevCategory = HomeCategory.entries[prevIndex]
                 // 更新标签页显示位置（通过 ViewModel）
                 viewModel.updateDisplayedTabIndex(prevIndex)
-                // 🔥🔥 [修复] 对于特殊分类，只导航到独立页面；普通分类更新内容
+                //  [修复] 对于特殊分类，只导航到独立页面；普通分类更新内容
                 when (prevCategory) {
                     HomeCategory.ANIME -> onBangumiClick(1)
                     HomeCategory.MOVIE -> onBangumiClick(2)
@@ -516,13 +516,13 @@ fun HomeScreen(
     val switchToNextCategory: () -> Unit = remember(displayedTabIndex) {
         {
             swipeDirection = false  // 左滑
-            // 🔥🔥 [修复] 使用 ViewModel 中的标签页索引
+            //  [修复] 使用 ViewModel 中的标签页索引
             if (displayedTabIndex < HomeCategory.entries.size - 1) {
                 val nextIndex = displayedTabIndex + 1
                 val nextCategory = HomeCategory.entries[nextIndex]
                 // 更新标签页显示位置（通过 ViewModel）
                 viewModel.updateDisplayedTabIndex(nextIndex)
-                // 🔥🔥 [修复] 对于特殊分类，只导航到独立页面；普通分类更新内容
+                //  [修复] 对于特殊分类，只导航到独立页面；普通分类更新内容
                 when (nextCategory) {
                     HomeCategory.ANIME -> onBangumiClick(1)
                     HomeCategory.MOVIE -> onBangumiClick(2)
@@ -536,10 +536,10 @@ fun HomeScreen(
 
     Scaffold(
         bottomBar = {
-            // 🔥 尝试获取共享过渡作用域
+            //  尝试获取共享过渡作用域
             val sharedTransitionScope = LocalSharedTransitionScope.current
             
-            // 🔥🔥 [修复] 只在导航到/从视频页时使用 overlay
+            //  [修复] 只在导航到/从视频页时使用 overlay
             // isVideoNavigating 在点击视频时设为 true，动画完成后重置为 false
             val bottomBarModifier = if (sharedTransitionScope != null && isVideoNavigating) {
                 with(sharedTransitionScope) {
@@ -550,7 +550,7 @@ fun HomeScreen(
             }
             
             AnimatedVisibility(
-                visible = bottomBarVisible,  // 🔥 受状态控制
+                visible = bottomBarVisible,  //  受状态控制
                 modifier = bottomBarModifier,
                 enter = slideInVertically(
                     initialOffsetY = { it },  // 从底部滑入
@@ -580,7 +580,7 @@ fun HomeScreen(
                                     BottomNavItem.DYNAMIC -> onDynamicClick()
                                     BottomNavItem.HISTORY -> onHistoryClick()
                                     BottomNavItem.PROFILE -> onProfileClick()
-                                    // 🔥🔥 [新增] 扩展项目点击处理
+                                    //  [新增] 扩展项目点击处理
                                     BottomNavItem.FAVORITE -> onFavoriteClick()
                                     BottomNavItem.LIVE -> onLiveListClick()
                                     BottomNavItem.WATCHLATER -> onWatchLaterClick()
@@ -594,7 +594,7 @@ fun HomeScreen(
                             isFloating = true,
                             labelMode = bottomBarLabelMode,
                             visibleItems = visibleBottomBarItems,
-                            itemColorIndices = bottomBarItemColors  // 🔥🔥 [新增] 传入颜色配置
+                            itemColorIndices = bottomBarItemColors  //  [新增] 传入颜色配置
                         )
                     }
                 } else {
@@ -610,7 +610,7 @@ fun HomeScreen(
                                 BottomNavItem.DYNAMIC -> onDynamicClick()
                                 BottomNavItem.HISTORY -> onHistoryClick()
                                 BottomNavItem.PROFILE -> onProfileClick()
-                                // 🔥🔥 [新增] 扩展项目点击处理
+                                //  [新增] 扩展项目点击处理
                                 BottomNavItem.FAVORITE -> onFavoriteClick()
                                 BottomNavItem.LIVE -> onLiveListClick()
                                 BottomNavItem.WATCHLATER -> onWatchLaterClick()
@@ -624,34 +624,34 @@ fun HomeScreen(
                         isFloating = false,
                         labelMode = bottomBarLabelMode,
                         visibleItems = visibleBottomBarItems,
-                        itemColorIndices = bottomBarItemColors  // 🔥🔥 [新增] 传入颜色配置
+                        itemColorIndices = bottomBarItemColors  //  [新增] 传入颜色配置
                     )
                 }
             }
         },
-        // 🔌 [新增] JSON 插件过滤提示
+        //  [新增] JSON 插件过滤提示
         snackbarHost = {
             SnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.padding(bottom = if (isBottomBarFloating) 100.dp else 80.dp)
             )
         },
-        // 🔥🔥 [修复] 禁用 Scaffold 默认的 contentWindowInsets，防止底部出现白色填充
+        //  [修复] 禁用 Scaffold 默认的 contentWindowInsets，防止底部出现白色填充
         contentWindowInsets = WindowInsets(0),
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .haze(state = hazeState)  // 🔥 Haze 源：整个内容区域
+                .haze(state = hazeState)  //  Haze 源：整个内容区域
         ) {
             if (state.isLoading && state.videos.isEmpty() && state.liveRooms.isEmpty()) {
-                // 🔥 首次加载改为骨架屏
+                //  首次加载改为骨架屏
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(gridColumns),
                     contentPadding = PaddingValues(
                         top = 140.dp,
-                        // 🔥🔥 [修复] 动态底部 padding
+                        //  [修复] 动态底部 padding
                         bottom = when {
                             isBottomBarFloating -> 100.dp
                             bottomBarVisible -> 64.dp + navBarHeight + 20.dp
@@ -668,7 +668,7 @@ fun HomeScreen(
                         VideoCardSkeleton(index = index)
                     }
                 }
-            // 🔥🔥 [修复] 根据分类类型判断是否有内容
+            //  [修复] 根据分类类型判断是否有内容
             } else if (state.error != null && 
                 ((state.currentCategory == HomeCategory.LIVE && state.liveRooms.isEmpty()) ||
                  (state.currentCategory != HomeCategory.LIVE && state.videos.isEmpty()))) {
@@ -677,7 +677,7 @@ fun HomeScreen(
                     onRetry = { viewModel.refresh() },
                     modifier = Modifier
                         .fillMaxSize()
-                        // 🔥🔥 [修复] 动态底部 padding
+                        //  [修复] 动态底部 padding
                         .padding(bottom = when {
                             isBottomBarFloating -> 100.dp
                             bottomBarVisible -> 64.dp + navBarHeight + 20.dp
@@ -685,25 +685,25 @@ fun HomeScreen(
                         })
                 )
             } else {
-                // 🚀 [性能优化] 移除 AnimatedContent 包裹，减少分类切换时的重组开销
+                //  [性能优化] 移除 AnimatedContent 包裹，减少分类切换时的重组开销
                 // 原：AnimatedContent 对整个 Grid 做动画，成本很高
                 // 新：直接渲染，分类切换瞬间完成
                 val targetCategory = state.currentCategory
                 
-                // 🔥 使用 PullToRefreshBox 包裹内容
+                //  使用 PullToRefreshBox 包裹内容
                 PullToRefreshBox(
                     isRefreshing = isRefreshing,
                     onRefresh = { viewModel.refresh() },
                     state = pullRefreshState,
                     modifier = Modifier.fillMaxSize(),
-                    // 🍎 iOS 风格下拉刷新指示器
+                    //  iOS 风格下拉刷新指示器
                     indicator = {
                         iOSRefreshIndicator(
                             state = pullRefreshState,
                             isRefreshing = isRefreshing,
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
-                                .padding(top = 100.dp)  // 🔥 刷新提示位置
+                                .padding(top = 100.dp)  //  刷新提示位置
                         )
                     }
                 ) {
@@ -711,8 +711,8 @@ fun HomeScreen(
                     state = gridState,
                     columns = GridCells.Fixed(gridColumns),
                     contentPadding = PaddingValues(
-                        top = 140.dp,  // 🔥 Header 高度
-                        // 🔥🔥 [修复] 底栏隐藏时减少底部 padding，避免白色填充
+                        top = 140.dp,  //  Header 高度
+                        //  [修复] 底栏隐藏时减少底部 padding，避免白色填充
                         bottom = when {
                             isBottomBarFloating -> 100.dp
                             bottomBarVisible -> 64.dp + navBarHeight + 20.dp  // 底栏可见：底栏高度 + 导航栏 + 间距
@@ -725,9 +725,9 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier
                         .fillMaxSize()
-                        // 🔥🔥 [修复] 底栏隐藏时不需要额外的导航栏 padding
+                        //  [修复] 底栏隐藏时不需要额外的导航栏 padding
                         .padding(bottom = if (isBottomBarFloating || !bottomBarVisible) 0.dp else navBarHeight)
-                        // 🎬🎬 [改进] 水平滑动手势 + 平滑动画偏移
+                        //  [改进] 水平滑动手势 + 平滑动画偏移
                         .graphicsLayer {
                             // 使用动画值实现平滑过渡
                             translationX = animatedDragOffset
@@ -735,13 +735,13 @@ fun HomeScreen(
                         .pointerInput(targetCategory) {
                             detectHorizontalDragGestures(
                                 onDragStart = { 
-                                    // 🎬 开始拖拽
+                                    //  开始拖拽
                                     isDragging = true
                                     isAnimatingTransition = false
                                     transitionDirection = 0
                                 },
                                 onDragEnd = {
-                                    // 🎬 释放手指，开启动画
+                                    //  释放手指，开启动画
                                     isDragging = false
                                     val threshold = 100f
                                     val currentOffset = targetDragOffset
@@ -764,7 +764,7 @@ fun HomeScreen(
                                             transitionDirection = 0
                                         }
                                     }
-                                    // 🎬 使用动画平滑弹回原位
+                                    //  使用动画平滑弹回原位
                                     targetDragOffset = 0f
                                 },
                                 onDragCancel = { 
@@ -774,7 +774,7 @@ fun HomeScreen(
                                 },
                                 onHorizontalDrag = { change, dragAmount ->
                                     change.consume()
-                                    // 🎬 实时更新目标偏移量（带阻尼效果）
+                                    //  实时更新目标偏移量（带阻尼效果）
                                     val newOffset = targetDragOffset + dragAmount
                                     val dampedOffset = when {
                                         displayedTabIndex == 0 && newOffset > 0 -> 
@@ -819,46 +819,46 @@ fun HomeScreen(
                                 // �️ [新增] 检查是否正在消散
                                 val isDissolving = video.bvid in state.dissolvingVideos
                                 
-                                // 🗑️ 使用可消散卡片容器包装
+                                //  使用可消散卡片容器包装
                                 DissolvableVideoCard(
                                     isDissolving = isDissolving,
                                     onDissolveComplete = { viewModel.completeVideoDissolve(video.bvid) },
-                                    cardId = video.bvid,  // 🔥 用于识别卡片，触发邻近卡片抖动
+                                    cardId = video.bvid,  //  用于识别卡片，触发邻近卡片抖动
                                     modifier = Modifier
                                         .jiggleOnDissolve(video.bvid)  // 📳 iOS 风格抖动
                                 ) {
-                                    // �🔥🔥 [新增] 根据展示模式选择卡片样式
+                                    // � [新增] 根据展示模式选择卡片样式
                                     when (displayMode) {
                                         1 -> {
-                                            // 🎬 故事卡片 (Apple TV+ 风格)
+                                            //  故事卡片 (Apple TV+ 风格)
                                             StoryVideoCard(
                                                 video = video,
-                                                index = index,  // 🔥 动画索引
-                                                animationEnabled = cardAnimationEnabled,  // 🔥 动画开关
-                                                transitionEnabled = cardTransitionEnabled, // 🔥 过渡动画开关
+                                                index = index,  //  动画索引
+                                                animationEnabled = cardAnimationEnabled,  //  动画开关
+                                                transitionEnabled = cardTransitionEnabled, //  过渡动画开关
                                                 onDismiss = { viewModel.startVideoDissolve(video.bvid) },
                                                 onClick = { bvid, cid -> wrappedOnVideoClick(bvid, cid, video.pic) }
                                             )
                                         }
                                         2 -> {
-                                            // 🍎 玻璃拟态 (Vision Pro 风格)
+                                            //  玻璃拟态 (Vision Pro 风格)
                                             GlassVideoCard(
                                                 video = video,
-                                                index = index,  // 🔥 动画索引
-                                                animationEnabled = cardAnimationEnabled,  // 🔥 动画开关
-                                                transitionEnabled = cardTransitionEnabled, // 🔥 过渡动画开关
+                                                index = index,  //  动画索引
+                                                animationEnabled = cardAnimationEnabled,  //  动画开关
+                                                transitionEnabled = cardTransitionEnabled, //  过渡动画开关
                                                 onDismiss = { viewModel.startVideoDissolve(video.bvid) },
                                                 onClick = { bvid, cid -> wrappedOnVideoClick(bvid, cid, video.pic) }
                                             )
                                         }
                                         else -> {
-                                            // 🔥 默认网格卡片
+                                            //  默认网格卡片
                                             ElegantVideoCard(
                                                 video = video,
                                                 index = index,
-                                                isFollowing = video.owner.mid in state.followingMids,  // 🔥 判断是否已关注
-                                                animationEnabled = cardAnimationEnabled,    // 🔥 进场动画开关
-                                                transitionEnabled = cardTransitionEnabled,  // 🔥 过渡动画开关
+                                                isFollowing = video.owner.mid in state.followingMids,  //  判断是否已关注
+                                                animationEnabled = cardAnimationEnabled,    //  进场动画开关
+                                                transitionEnabled = cardTransitionEnabled,  //  过渡动画开关
                                                 onDismiss = { viewModel.startVideoDissolve(video.bvid) },
                                                 onClick = { bvid, cid -> wrappedOnVideoClick(bvid, cid, video.pic) }
                                             )
@@ -897,7 +897,7 @@ fun HomeScreen(
                 }
             }
 
-            // 🍎 iOS 风格 Header (带滚动隐藏/显示动画)
+            //  iOS 风格 Header (带滚动隐藏/显示动画)
             // 使用 zIndex 确保 header 始终在列表内容之上
             Box(modifier = Modifier.zIndex(1f)) {
                 iOSHomeHeader(
@@ -906,16 +906,16 @@ fun HomeScreen(
                     onAvatarClick = { if (state.user.isLogin) onProfileClick() else onAvatarClick() },
                     onSettingsClick = onSettingsClick,
                     onSearchClick = onSearchClick,
-                    categoryIndex = displayedTabIndex,  // 🔥🔥 [修复] 使用 ViewModel 中的标签页索引
+                    categoryIndex = displayedTabIndex,  //  [修复] 使用 ViewModel 中的标签页索引
                     onCategorySelected = { index ->
-                        // 🔥🔥 [修复] 通过 ViewModel 更新标签页显示位置
+                        //  [修复] 通过 ViewModel 更新标签页显示位置
                         viewModel.updateDisplayedTabIndex(index)
                         val category = HomeCategory.entries[index]
-                        // 🔥🔥 分类跳转逻辑
+                        //  分类跳转逻辑
                         when (category) {
                             HomeCategory.ANIME -> onBangumiClick(1)   // 番剧
                             HomeCategory.MOVIE -> onBangumiClick(2)   // 电影
-                            // 🔥 新增分类：跳转到分类详情页面
+                            //  新增分类：跳转到分类详情页面
                             HomeCategory.GAME,
                             HomeCategory.KNOWLEDGE,
                             HomeCategory.TECH -> onCategoryClick(category.tid, category.label)
@@ -923,16 +923,16 @@ fun HomeScreen(
                             else -> viewModel.switchCategory(category)
                         }
                     },
-                    onPartitionClick = onPartitionClick,  // 🔥 分区按钮点击
+                    onPartitionClick = onPartitionClick,  //  分区按钮点击
                     isScrollingUp = isScrollingUp,
-                    hazeState = if (isHeaderBlurEnabled) hazeState else null,  // 🔥 恢复 header 模糊
+                    hazeState = if (isHeaderBlurEnabled) hazeState else null,  //  恢复 header 模糊
                     onStatusBarDoubleTap = {
-                        // 🍎 双击状态栏，平滑滚动回顶部
+                        //  双击状态栏，平滑滚动回顶部
                         coroutineScope.launch {
                             gridState.animateScrollToItem(0)
                         }
                     },
-                    // 🍎 [新增] 下拉刷新时收起标签页
+                    //  [新增] 下拉刷新时收起标签页
                     isRefreshing = isRefreshing,
                     pullProgress = pullRefreshState.distanceFraction
                 )

@@ -54,7 +54,7 @@ object DanmakuProto {
         val result = mutableListOf<DanmakuElem>()
         
         if (data.isEmpty()) {
-            Log.w(TAG, "⚠️ Empty data received")
+            Log.w(TAG, " Empty data received")
             return result
         }
         
@@ -84,10 +84,10 @@ object DanmakuProto {
                 }
             }
             
-            Log.d(TAG, "✅ Parsed ${result.size} danmakus from protobuf")
+            Log.d(TAG, " Parsed ${result.size} danmakus from protobuf")
             
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Parse protobuf error: ${e.message}", e)
+            Log.e(TAG, " Parse protobuf error: ${e.message}", e)
         }
         
         return result
@@ -134,7 +134,7 @@ object DanmakuProto {
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "⚠️ Parse elem error: ${e.message}")
+            Log.w(TAG, " Parse elem error: ${e.message}")
             return null
         }
         

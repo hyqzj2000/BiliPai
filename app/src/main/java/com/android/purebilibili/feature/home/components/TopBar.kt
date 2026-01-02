@@ -13,7 +13,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -51,7 +51,7 @@ fun Modifier.premiumClickable(onClick: () -> Unit): Modifier = composed {
 }
 
 /**
- * 🔥 iOS 风格悬浮顶栏
+ *  iOS 风格悬浮顶栏
  * - 不贴边，有水平边距
  * - 圆角 + 毛玻璃效果
  */
@@ -67,13 +67,13 @@ fun FluidHomeTopBar(
             .fillMaxWidth()
             .statusBarsPadding()
     ) {
-        // 🔥 悬浮式导航栏容器 - 增强视觉层次
+        //  悬浮式导航栏容器 - 增强视觉层次
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,  // 🔥 使用主题色，适配深色模式
+            color = MaterialTheme.colorScheme.surface,  //  使用主题色，适配深色模式
             shadowElevation = 6.dp,  // 添加阴影增加层次感
             tonalElevation = 0.dp,
             border = androidx.compose.foundation.BorderStroke(
@@ -88,7 +88,7 @@ fun FluidHomeTopBar(
                     .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 🔥 左侧：头像
+                //  左侧：头像
                 Box(
                     modifier = Modifier
                         .size(36.dp)
@@ -116,7 +116,7 @@ fun FluidHomeTopBar(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // 🔥 中间：搜索框
+                //  中间：搜索框
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -147,7 +147,7 @@ fun FluidHomeTopBar(
 
                 Spacer(modifier = Modifier.width(8.dp))
                 
-                // 🔥 右侧：设置按钮
+                //  右侧：设置按钮
                 IconButton(
                     onClick = onSettingsClick,
                     modifier = Modifier.size(36.dp)
@@ -165,19 +165,19 @@ fun FluidHomeTopBar(
 }
 
 /**
- * 🔥 官方 Bilibili 风格分类标签栏
+ *  官方 Bilibili 风格分类标签栏
  * - 下划线指示器
  * - 选中项粉色/主题色 + 下划线
  * - 汉堡菜单图标打开分区
  */
 @Composable
 fun CategoryTabRow(
-    // 🔥🔥 [修复] 分类列表必须与 HomeCategory 枚举顺序完全匹配！
+    //  [修复] 分类列表必须与 HomeCategory 枚举顺序完全匹配！
     // HomeCategory: RECOMMEND, FOLLOW, POPULAR, LIVE, ANIME, MOVIE, GAME, KNOWLEDGE, TECH
     categories: List<String> = listOf("推荐", "关注", "热门", "直播", "追番", "影视", "游戏", "知识", "科技"),
     selectedIndex: Int = 0,
     onCategorySelected: (Int) -> Unit = {},
-    onPartitionClick: () -> Unit = {}  // 🔥 新增：分区按钮回调
+    onPartitionClick: () -> Unit = {}  //  新增：分区按钮回调
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
     val unselectedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
@@ -188,7 +188,7 @@ fun CategoryTabRow(
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 🔥 分类标签 - 横向滚动（使用 weight 让汉堡菜单固定在右侧）
+        //  分类标签 - 横向滚动（使用 weight 让汉堡菜单固定在右侧）
         androidx.compose.foundation.lazy.LazyRow(
             modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(18.dp)
@@ -196,7 +196,7 @@ fun CategoryTabRow(
             items(categories.size) { index ->
                 val isSelected = index == selectedIndex
                 
-                // 🔥 文字颜色动画
+                //  文字颜色动画
                 val textColor by animateColorAsState(
                     targetValue = if (isSelected) primaryColor else unselectedColor,
                     animationSpec = spring(
@@ -206,7 +206,7 @@ fun CategoryTabRow(
                     label = "textColor"
                 )
                 
-                // 🔥 字体大小动画
+                //  字体大小动画
                 val fontSize by animateFloatAsState(
                     targetValue = if (isSelected) 17f else 15f,
                     animationSpec = spring(
@@ -234,7 +234,7 @@ fun CategoryTabRow(
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
-                    // 🔥 下划线指示器
+                    //  下划线指示器
                     Box(
                         modifier = Modifier
                             .width(20.dp)
@@ -250,11 +250,11 @@ fun CategoryTabRow(
         
         Spacer(modifier = Modifier.width(8.dp))
         
-        // 🔥 汉堡菜单按钮 - 打开分区
+        //  汉堡菜单按钮 - 打开分区
         Box(
             modifier = Modifier
                 .size(32.dp)
-                .offset(y = (-4).dp)  // 🔥 向上偏移，与文字对齐（抵消下划线高度）
+                .offset(y = (-4).dp)  //  向上偏移，与文字对齐（抵消下划线高度）
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null

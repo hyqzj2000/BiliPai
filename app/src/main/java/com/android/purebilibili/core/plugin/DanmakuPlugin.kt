@@ -4,7 +4,7 @@ package com.android.purebilibili.core.plugin
 import androidx.compose.ui.graphics.Color
 
 /**
- * 💬 弹幕增强插件接口
+ *  弹幕增强插件接口
  * 
  * 用于实现弹幕相关的增强功能，如：
  * - 关键词屏蔽

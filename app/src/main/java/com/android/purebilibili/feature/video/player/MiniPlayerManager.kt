@@ -50,7 +50,7 @@ private const val CHANNEL_ID = "mini_player_channel"
 private const val THEME_COLOR = 0xFFFB7299.toInt()
 
 /**
- * 🔥 全局小窗管理器
+ *  全局小窗管理器
  * 
  * 负责管理跨导航的视频播放状态，支持：
  * 1. 在视频详情页和首页之间保持播放连续性
@@ -71,7 +71,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
             }
         }
         
-        // 🔥🔥 [新增] 媒体控制常量
+        //  [新增] 媒体控制常量
         const val ACTION_MEDIA_CONTROL = "com.android.purebilibili.MEDIA_CONTROL"
         const val EXTRA_CONTROL_TYPE = "control_type"
         const val ACTION_PREVIOUS = 1
@@ -82,7 +82,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
     // --- 协程作用域 ---
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     
-    // 🔥🔥 [新增] 媒体控制广播接收器
+    //  [新增] 媒体控制广播接收器
     private val mediaControlReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == ACTION_MEDIA_CONTROL) {
@@ -105,7 +105,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
     }
     
     init {
-        // 🔥 注册媒体控制广播接收器
+        //  注册媒体控制广播接收器
         val filter = android.content.IntentFilter(ACTION_MEDIA_CONTROL)
         androidx.core.content.ContextCompat.registerReceiver(
             context,
@@ -113,7 +113,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
             filter,
             androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
         )
-        Logger.d(TAG, "✅ 媒体控制广播接收器已注册")
+        Logger.d(TAG, " 媒体控制广播接收器已注册")
     }
 
     // --- 播放器状态 (可观察) ---
@@ -148,25 +148,25 @@ class MiniPlayerManager private constructor(private val context: Context) {
     var currentOwner by mutableStateOf("")
         private set
     
-    // 🔥🔥 [新增] 当前视频的 cid，用于弹幕加载
+    //  [新增] 当前视频的 cid，用于弹幕加载
     var currentCid by mutableLongStateOf(0L)
         private set
     
-    // 🔥🔥 [新增] 缓存的视频详情页 UI 状态，用于从小窗返回时恢复
+    //  [新增] 缓存的视频详情页 UI 状态，用于从小窗返回时恢复
     var cachedUiState: PlayerUiState.Success? = null
         private set
     
-    // 🔥🔥 [新增] 小窗入场方向：true=从左边进入，false=从右边进入
+    //  [新增] 小窗入场方向：true=从左边进入，false=从右边进入
     var entryFromLeft by mutableStateOf(false)
         private set
     
-    // 🔥🔥 [新增] 缓存 UI 状态
+    //  [新增] 缓存 UI 状态
     fun cacheUiState(state: PlayerUiState.Success) {
         cachedUiState = state
-        com.android.purebilibili.core.util.Logger.d(TAG, "✅ 缓存 UI 状态: ${state.info.title}")
+        com.android.purebilibili.core.util.Logger.d(TAG, " 缓存 UI 状态: ${state.info.title}")
     }
     
-    // 🔥🔥 [新增] 获取并清除缓存的 UI 状态
+    //  [新增] 获取并清除缓存的 UI 状态
     fun consumeCachedUiState(): PlayerUiState.Success? {
         val state = cachedUiState
         // 不清除缓存，允许多次复用
@@ -175,26 +175,26 @@ class MiniPlayerManager private constructor(private val context: Context) {
 
     // --- ExoPlayer 实例 ---
     private var _player: ExoPlayer? = null
-    // 🔥 外部播放器引用（来自 VideoDetailScreen 的 VideoPlayerState）
+    //  外部播放器引用（来自 VideoDetailScreen 的 VideoPlayerState）
     private var _externalPlayer: ExoPlayer? = null
-    // 🔥 优先使用外部播放器（如果存在）
+    //  优先使用外部播放器（如果存在）
     val player: ExoPlayer?
         get() = _externalPlayer ?: _player
     
-    // 🔥🔥 [修复2] 检查是否有外部播放器
+    //  [修复2] 检查是否有外部播放器
     val hasExternalPlayer: Boolean
         get() = _externalPlayer != null
     
-    // 🔥🔥 [修复2] 清除外部播放器引用（从小窗返回全屏时调用）
+    //  [修复2] 清除外部播放器引用（从小窗返回全屏时调用）
     fun resetExternalPlayer() {
-        Logger.d(TAG, "🔥 resetExternalPlayer: clearing external player reference")
+        Logger.d(TAG, " resetExternalPlayer: clearing external player reference")
         _externalPlayer = null
     }
 
     // --- MediaSession ---
     private var mediaSession: MediaSession? = null
     
-    // ========== 🔥 小窗模式判断方法 ==========
+    // ==========  小窗模式判断方法 ==========
     
     /**
      * 获取当前小窗模式设置
@@ -205,7 +205,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
     
     /**
      * 判断是否应该显示应用内小窗（返回首页时）
-     * 🔥 只有 IN_APP_ONLY 模式才显示应用内悬浮小窗
+     *  只有 IN_APP_ONLY 模式才显示应用内悬浮小窗
      * - SYSTEM_PIP: 使用系统画中画
      * - BACKGROUND: 只播放音频，不显示小窗
      * - OFF: 完全关闭
@@ -213,7 +213,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
     fun shouldShowInAppMiniPlayer(): Boolean {
         val mode = getCurrentMode()
         val result = mode == com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.IN_APP_ONLY && isActive
-        Logger.d(TAG, "🔥 shouldShowInAppMiniPlayer: mode=$mode, isActive=$isActive, result=$result")
+        Logger.d(TAG, " shouldShowInAppMiniPlayer: mode=$mode, isActive=$isActive, result=$result")
         return result
     }
     
@@ -223,7 +223,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
     fun shouldEnterPip(): Boolean {
         val mode = getCurrentMode()
         val result = mode == com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.SYSTEM_PIP && isActive
-        Logger.d(TAG, "🔥 shouldEnterPip: mode=$mode, isActive=$isActive, result=$result")
+        Logger.d(TAG, " shouldEnterPip: mode=$mode, isActive=$isActive, result=$result")
         return result
     }
     
@@ -269,7 +269,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
                 .build()
                 .apply {
                     addListener(playerListener)
-                    // 🔥🔥 [修复] 确保音量正常
+                    //  [修复] 确保音量正常
                     volume = 1.0f
                     prepare()
                 }
@@ -338,7 +338,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
             _player?.setMediaSource(videoSource)
         }
 
-        // 🔥🔥 [修复] 确保音量正常
+        //  [修复] 确保音量正常
         _player?.volume = 1.0f
         _player?.prepare()
         _player?.playWhenReady = true
@@ -352,19 +352,19 @@ class MiniPlayerManager private constructor(private val context: Context) {
      */
     fun enterMiniMode() {
         val mode = getCurrentMode()
-        Logger.d(TAG, "🔥 enterMiniMode called: isActive=$isActive, currentBvid=$currentBvid, isMiniMode=$isMiniMode, mode=$mode")
+        Logger.d(TAG, " enterMiniMode called: isActive=$isActive, currentBvid=$currentBvid, isMiniMode=$isMiniMode, mode=$mode")
         
-        // 🔥🔥 [检查] 如果小窗功能关闭，不进入小窗模式
+        //  [检查] 如果小窗功能关闭，不进入小窗模式
         if (isMiniPlayerDisabled()) {
-            Logger.d(TAG, "⚠️ Mini player is disabled by user settings (mode=OFF)")
+            Logger.d(TAG, " Mini player is disabled by user settings (mode=OFF)")
             return
         }
         
         if (!isActive) {
-            com.android.purebilibili.core.util.Logger.w(TAG, "⚠️ Cannot enter mini mode: isActive is false!")
+            com.android.purebilibili.core.util.Logger.w(TAG, " Cannot enter mini mode: isActive is false!")
             return
         }
-        Logger.d(TAG, "✅ Entering mini mode for video: $currentTitle")
+        Logger.d(TAG, " Entering mini mode for video: $currentTitle")
         isMiniMode = true
         // 继续播放
     }
@@ -383,7 +383,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
     fun dismiss() {
         Logger.d(TAG, "Dismissing mini player")
         
-        // 🔥🔥 [修复] 先停止所有播放器的声音
+        //  [修复] 先停止所有播放器的声音
         _externalPlayer?.let { 
             it.pause()
             it.stop()
@@ -397,10 +397,10 @@ class MiniPlayerManager private constructor(private val context: Context) {
         
         isMiniMode = false
         isActive = false
-        isPlaying = false  // 🔥🔥 [修复] 同步播放状态
+        isPlaying = false  //  [修复] 同步播放状态
         _externalPlayer = null
         currentBvid = null
-        cachedUiState = null  // 🔥🔥 [修复] 清除缓存的 UI 状态
+        cachedUiState = null  //  [修复] 清除缓存的 UI 状态
         
         // 清除通知
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -408,26 +408,26 @@ class MiniPlayerManager private constructor(private val context: Context) {
     }
 
     /**
-     * 🔥 设置视频信息并关联外部播放器（用于小窗模式）
+     *  设置视频信息并关联外部播放器（用于小窗模式）
      * 这个方法不创建新播放器，而是使用 VideoDetailScreen 的播放器
-     * @param fromLeft 🔥 是否从左边进入（用于小窗动画方向）
+     * @param fromLeft  是否从左边进入（用于小窗动画方向）
      */
     fun setVideoInfo(
         bvid: String,
         title: String,
         cover: String,
         owner: String,
-        cid: Long,  // 🔥🔥 [新增] cid 用于弹幕加载
+        cid: Long,  //  [新增] cid 用于弹幕加载
         externalPlayer: ExoPlayer,
-        fromLeft: Boolean = false  // 🔥🔥 [新增] 入场方向
+        fromLeft: Boolean = false  //  [新增] 入场方向
     ) {
         Logger.d(TAG, "setVideoInfo: bvid=$bvid, title=$title, cid=$cid, fromLeft=$fromLeft")
         currentBvid = bvid
         currentTitle = title
         currentCover = cover
         currentOwner = owner
-        currentCid = cid  // 🔥🔥 保存 cid
-        entryFromLeft = fromLeft  // 🔥🔥 保存入场方向
+        currentCid = cid  //  保存 cid
+        entryFromLeft = fromLeft  //  保存入场方向
         _externalPlayer = externalPlayer
         isActive = true
         isMiniMode = false
@@ -438,7 +438,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
     }
     
     /**
-     * 🔥 设置小窗入场方向
+     *  设置小窗入场方向
      */
     fun setEntryDirection(fromLeft: Boolean) {
         entryFromLeft = fromLeft
@@ -464,21 +464,21 @@ class MiniPlayerManager private constructor(private val context: Context) {
         player?.seekTo(position)
     }
     
-    // ========== 🔥🔥 [新增] 播放列表控制 ==========
+    // ==========  [新增] 播放列表控制 ==========
     
     /**
-     * 🔥 播放下一曲
+     *  播放下一曲
      */
     fun playNext(): Boolean {
         val nextItem = PlaylistManager.playNext()
         if (nextItem != null) {
             if (nextItem.isBangumi) {
                 // 番剧需要特殊处理，通过事件通知
-                Logger.d(TAG, "⏭️ 下一集是番剧，需要特殊处理")
+                Logger.d(TAG, " 下一集是番剧，需要特殊处理")
                 return false  // TODO: 实现番剧切换
             } else {
                 // 普通视频：通过回调通知 ViewModel 加载
-                Logger.d(TAG, "⏭️ 播放下一曲: ${nextItem.title}")
+                Logger.d(TAG, " 播放下一曲: ${nextItem.title}")
                 onPlayNextCallback?.invoke(nextItem)
                 return true
             }
@@ -487,7 +487,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
     }
     
     /**
-     * 🔥 播放上一曲
+     *  播放上一曲
      */
     fun playPrevious(): Boolean {
         val prevItem = PlaylistManager.playPrevious()
@@ -505,14 +505,14 @@ class MiniPlayerManager private constructor(private val context: Context) {
     }
     
     /**
-     * 🔥 切换播放模式
+     *  切换播放模式
      */
     fun togglePlayMode(): PlayMode {
         return PlaylistManager.togglePlayMode()
     }
     
     /**
-     * 🔥 获取当前播放模式
+     *  获取当前播放模式
      */
     fun getPlayMode(): PlayMode = PlaylistManager.playMode.value
     
@@ -618,7 +618,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
 
         val style = androidx.media.app.NotificationCompat.MediaStyle()
             .setMediaSession(mediaSession?.sessionCompatToken)
-            .setShowActionsInCompactView(0, 1, 2)  // 🔥 显示前三个按钮
+            .setShowActionsInCompactView(0, 1, 2)  //  显示前三个按钮
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
@@ -633,7 +633,7 @@ class MiniPlayerManager private constructor(private val context: Context) {
             .setOnlyAlertOnce(true)
             .setContentIntent(mediaSession?.sessionActivity)
         
-        // 🔥🔥 [新增] 添加控制按钮
+        //  [新增] 添加控制按钮
         // 上一曲按钮
         val prevIntent = android.app.PendingIntent.getBroadcast(
             context, ACTION_PREVIOUS,

@@ -11,7 +11,7 @@ import android.content.Intent
  */
 object ShareUtils {
     
-    // 🔥 B站常见的跟踪参数列表
+    //  B站常见的跟踪参数列表
     private val TRACKING_PARAMS = setOf(
         "spm_id_from",      // 来源追踪
         "from_spmid",       // 来源追踪

@@ -12,7 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -34,7 +34,7 @@ import coil.ImageLoader
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import android.os.Build
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.data.model.response.ReplyItem
 import com.android.purebilibili.data.model.response.ReplyPicture
@@ -42,7 +42,7 @@ import androidx.compose.ui.layout.ContentScale
 import java.text.SimpleDateFormat
 import java.util.*
 
-// 🔥 优化后的颜色常量 (使用 MaterialTheme 替代硬编码)
+//  优化后的颜色常量 (使用 MaterialTheme 替代硬编码)
 // private val SubReplyBgColor = Color(0xFFF7F8FA)  // OLD
 // private val TextSecondaryColor = Color(0xFF9499A0)  // OLD
 // private val TextTertiaryColor = Color(0xFFB2B7BF)   // OLD
@@ -73,13 +73,13 @@ fun ReplyHeader(count: Int) {
 @Composable
 fun ReplyItemView(
     item: ReplyItem,
-    upMid: Long = 0,  // 🔥 UP主的 mid，用于显示 UP 标签
-    isPinned: Boolean = false,  // 🔥 是否置顶评论
+    upMid: Long = 0,  //  UP主的 mid，用于显示 UP 标签
+    isPinned: Boolean = false,  //  是否置顶评论
     emoteMap: Map<String, String> = emptyMap(),
     onClick: () -> Unit,
     onSubClick: (ReplyItem) -> Unit,
     onTimestampClick: ((Long) -> Unit)? = null,
-    onImagePreview: ((List<String>, Int, Rect?) -> Unit)? = null  // 🔥 图片预览回调
+    onImagePreview: ((List<String>, Int, Rect?) -> Unit)? = null  //  图片预览回调
 ) {
     // 判断是否是 UP 主的评论
     val isUpComment = upMid > 0 && item.mid == upMid
@@ -112,7 +112,7 @@ fun ReplyItemView(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                // 🔥 用户名 + 等级 + UP标签 + 置顶标签
+                //  用户名 + 等级 + UP标签 + 置顶标签
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // 置顶标签
                     if (isPinned) {
@@ -123,12 +123,12 @@ fun ReplyItemView(
                         text = item.member.uname,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
-                        // 🔥 VIP 用户使用粉色，普通用户使用次要色适配深色模式
+                        //  VIP 用户使用粉色，普通用户使用次要色适配深色模式
                         color = if (item.member.vip?.vipStatus == 1) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    // 🔥 优化后的等级标签
+                    //  优化后的等级标签
                     LevelTag(level = item.member.levelInfo.currentLevel)
                     // UP标签
                     if (isUpComment) {
@@ -139,7 +139,7 @@ fun ReplyItemView(
                 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // 🔥🔥 正文 - 使用增强版 RichCommentText 支持时间戳点击
+                //  正文 - 使用增强版 RichCommentText 支持时间戳点击
                 RichCommentText(
                     text = item.content.message,
                     fontSize = 15.sp,
@@ -148,7 +148,7 @@ fun ReplyItemView(
                     onTimestampClick = onTimestampClick
                 )
 
-                // 🔥 评论图片
+                //  评论图片
                 if (!item.content.pictures.isNullOrEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     CommentPictures(
@@ -161,7 +161,7 @@ fun ReplyItemView(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // 🔥 时间 + 点赞 + 回复 - 统一使用浅灰色
+                //  时间 + 点赞 + 回复 - 统一使用浅灰色
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = formatTime(item.ctime),
@@ -197,14 +197,14 @@ fun ReplyItemView(
                     )
                 }
 
-                // 🔥 楼中楼预览 - 使用更浅的背景色
+                //  楼中楼预览 - 使用更浅的背景色
                 if (!item.replies.isNullOrEmpty() || item.rcount > 0) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), // 🔥 适配深色
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), //  适配深色
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .clip(RoundedCornerShape(8.dp))
@@ -212,7 +212,7 @@ fun ReplyItemView(
                             .padding(12.dp)
                     ) {
                         item.replies?.take(3)?.forEach { subReply ->
-                            // 🔥🔥 [修复] 子评论也使用自己的表情映射
+                            //  [修复] 子评论也使用自己的表情映射
                             val subEmoteMap = remember(subReply.content.emote, emoteMap) {
                                 val map = emoteMap.toMutableMap()
                                 subReply.content.emote?.forEach { (key, value) -> map[key] = value.url }
@@ -220,7 +220,7 @@ fun ReplyItemView(
                             }
                             
                             Row(modifier = Modifier.padding(vertical = 2.dp)) {
-                                // 🔥 子评论用户名 - 使用统一的次要色
+                                //  子评论用户名 - 使用统一的次要色
                                 Text(
                                     text = subReply.member.uname,
                                     fontSize = 13.sp,
@@ -232,7 +232,7 @@ fun ReplyItemView(
                                     fontSize = 13.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                // 🔥🔥 [修复] 子评论内容也使用 RichCommentText 显示表情
+                                //  [修复] 子评论内容也使用 RichCommentText 显示表情
                                 RichCommentText(
                                     text = subReply.content.message,
                                     fontSize = 13.sp,
@@ -258,7 +258,7 @@ fun ReplyItemView(
         }
     }
     
-    // 🔥 分割线 - 更细更浅
+    //  分割线 - 更细更浅
     HorizontalDivider(
         thickness = 0.5.dp,
         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
@@ -267,7 +267,7 @@ fun ReplyItemView(
 }
 
 /**
- * 🔥🔥 [新增] 富文本评论组件
+ *  [新增] 富文本评论组件
  * 支持：表情渲染、时间戳点击跳转
  */
 @Composable
@@ -281,7 +281,7 @@ fun RichCommentText(
 ) {
     val timestampColor = MaterialTheme.colorScheme.primary
     
-    // 🔥 时间戳正则: 支持 "1:23", "12:34", "1:23:45" 格式
+    //  时间戳正则: 支持 "1:23", "12:34", "1:23:45" 格式
     val timestampPattern = """(?<!\d)(\d{1,2}):(\d{2})(?::(\d{2}))?(?!\d)""".toRegex()
     
     val annotatedString = buildAnnotatedString {
@@ -299,7 +299,7 @@ fun RichCommentText(
         val remainingText = text.substring(startIndex)
         val emotePattern = """\[(.*?)\]""".toRegex()
         
-        // 🔥 收集所有匹配（表情 + 时间戳）并按位置排序
+        //  收集所有匹配（表情 + 时间戳）并按位置排序
         data class MatchInfo(val range: IntRange, val type: String, val value: String, val seconds: Long = 0)
         val allMatches = mutableListOf<MatchInfo>()
         
@@ -342,7 +342,7 @@ fun RichCommentText(
                     }
                 }
                 "timestamp" -> {
-                    // 🔥 时间戳使用特殊样式并添加点击注解
+                    //  时间戳使用特殊样式并添加点击注解
                     val annotationStart = length
                     pushStringAnnotation(tag = "TIMESTAMP", annotation = matchInfo.seconds.toString())
                     withStyle(SpanStyle(color = timestampColor, fontWeight = FontWeight.Medium)) {
@@ -376,7 +376,7 @@ fun RichCommentText(
         }
     }
 
-    // 🔥 使用 Text + pointerInput 实现带表情的可点击文本
+    //  使用 Text + pointerInput 实现带表情的可点击文本
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     
     Text(
@@ -387,14 +387,14 @@ fun RichCommentText(
         lineHeight = (fontSize.value * 1.5).sp,
         maxLines = maxLines,
         onTextLayout = { textLayoutResult = it },
-        // 🔥🔥 [修复] 添加 padding 确保点击区域足够大
+        //  [修复] 添加 padding 确保点击区域足够大
         modifier = Modifier.then(
             if (onTimestampClick != null) {
                 Modifier.pointerInput(annotatedString) {
                     detectTapGestures { offset ->
                         textLayoutResult?.let { layoutResult ->
                             val position = layoutResult.getOffsetForPosition(offset)
-                            // 🔥🔥 [修复] 扩大搜索范围，允许一定的点击容差
+                            //  [修复] 扩大搜索范围，允许一定的点击容差
                             val searchStart = maxOf(0, position - 1)
                             val searchEnd = minOf(annotatedString.length, position + 1)
                             annotatedString.getStringAnnotations(
@@ -415,7 +415,7 @@ fun RichCommentText(
 }
 
 /**
- * 🔥 [兼容] 旧版 EmojiText (保持向后兼容)
+ *  [兼容] 旧版 EmojiText (保持向后兼容)
  */
 @Composable
 fun EmojiText(
@@ -433,10 +433,10 @@ fun EmojiText(
     )
 }
 
-// 🔥🔥 [重构] 精简等级标签 - 纯文字显示，无背景边框
+//  [重构] 精简等级标签 - 纯文字显示，无背景边框
 @Composable
 fun LevelTag(level: Int) {
-    // 🎨 B站官方配色方案 - 纯颜色文字
+    //  B站官方配色方案 - 纯颜色文字
     val textColor = when {
         level >= 6 -> Color(0xFFFF6699)  // 粉色 (硬核用户)
         level >= 5 -> Color(0xFFFF9500)  // 橙色
@@ -460,7 +460,7 @@ fun formatTime(timestamp: Long): String {
     return sdf.format(date)
 }
 
-// 🔥🔥 UP 标签组件
+//  UP 标签组件
 @Composable
 fun UpTag() {
     Box(
@@ -480,7 +480,7 @@ fun UpTag() {
     }
 }
 
-// 🔥🔥 置顶标签组件
+//  置顶标签组件
 @Composable
 fun PinnedTag() {
     Box(
@@ -500,13 +500,13 @@ fun PinnedTag() {
     }
 }
 
-// 🔥🔥 评论图片网格组件 - 支持 GIF 动画
+//  评论图片网格组件 - 支持 GIF 动画
 @Composable
 fun CommentPictures(
     pictures: List<ReplyPicture>,
     onImageClick: (List<String>, Int, Rect?) -> Unit
 ) {
-    // 🔥 获取高质量图片URL（移除分辨率限制参数）
+    //  获取高质量图片URL（移除分辨率限制参数）
     val imageUrls = remember(pictures) {
         pictures.map { pic ->
             var url = pic.imgSrc
@@ -516,7 +516,7 @@ fun CommentPictures(
             } else if (url.startsWith("http://")) {
                 url = url.replace("http://", "https://")
             }
-            // 🔥 移除尺寸参数以获取原图（避免模糊）
+            //  移除尺寸参数以获取原图（避免模糊）
             if (url.contains("@")) {
                 url = url.substringBefore("@")
             }
@@ -525,7 +525,7 @@ fun CommentPictures(
     }
     val context = LocalContext.current
     
-    // 🔥 GIF 图片加载器
+    //  GIF 图片加载器
     val gifImageLoader = remember {
         ImageLoader.Builder(context)
             .components {
@@ -552,12 +552,12 @@ fun CommentPictures(
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(imageUrls[0])
-                    .size(coil.size.Size.ORIGINAL)  // 🔥 强制加载原图，避免模糊
-                    .addHeader("Referer", "https://www.bilibili.com/")  // 🔥 必需
+                    .size(coil.size.Size.ORIGINAL)  //  强制加载原图，避免模糊
+                    .addHeader("Referer", "https://www.bilibili.com/")  //  必需
                     .crossfade(true)
                     .build(),
                 contentDescription = null,
-                imageLoader = gifImageLoader,  // 🔥 支持 GIF 和其他格式
+                imageLoader = gifImageLoader,  //  支持 GIF 和其他格式
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .widthIn(max = 200.dp)
@@ -586,12 +586,12 @@ fun CommentPictures(
                                 AsyncImage(
                                     model = ImageRequest.Builder(context)
                                         .data(imageUrls[index])
-                                        .size(coil.size.Size.ORIGINAL)  // 🔥 强制加载原图，避免模糊
-                                        .addHeader("Referer", "https://www.bilibili.com/")  // 🔥 必需
+                                        .size(coil.size.Size.ORIGINAL)  //  强制加载原图，避免模糊
+                                        .addHeader("Referer", "https://www.bilibili.com/")  //  必需
                                         .crossfade(true)
                                         .build(),
                                     contentDescription = null,
-                                    imageLoader = gifImageLoader,  // 🔥 支持 GIF
+                                    imageLoader = gifImageLoader,  //  支持 GIF
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .size(80.dp)

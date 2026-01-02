@@ -35,14 +35,14 @@ import com.android.purebilibili.core.util.iOSCardTapEffect
 import com.android.purebilibili.core.util.HapticType
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
-// 🔥 共享元素过渡
+//  共享元素过渡
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.core.spring
 import com.android.purebilibili.core.ui.LocalSharedTransitionScope
 import com.android.purebilibili.core.ui.LocalAnimatedVisibilityScope
 
 /**
- * 🔥 官方 B 站风格视频卡片
+ *  官方 B 站风格视频卡片
  * 采用与 Bilibili 官方 App 一致的设计：
  * - 封面 16:10 比例
  * - 左下角：播放量 + 弹幕数
@@ -56,46 +56,46 @@ fun ElegantVideoCard(
     video: VideoItem,
     index: Int,
     refreshKey: Long = 0L,
-    isFollowing: Boolean = false,  // 🔥 是否已关注该 UP 主
-    animationEnabled: Boolean = true,   // 🔥 卡片进场动画开关
-    transitionEnabled: Boolean = false, // 🔥 卡片过渡动画开关
-    showPublishTime: Boolean = false,   // 🔥 是否显示发布时间（搜索结果用）
-    onDismiss: (() -> Unit)? = null,    // 🗑️ [新增] 删除/过滤回调（长按触发）
+    isFollowing: Boolean = false,  //  是否已关注该 UP 主
+    animationEnabled: Boolean = true,   //  卡片进场动画开关
+    transitionEnabled: Boolean = false, //  卡片过渡动画开关
+    showPublishTime: Boolean = false,   //  是否显示发布时间（搜索结果用）
+    onDismiss: (() -> Unit)? = null,    //  [新增] 删除/过滤回调（长按触发）
     onClick: (String, Long) -> Unit
 ) {
     val haptic = rememberHapticFeedback()
     
-    // 🗑️ [新增] 长按删除菜单状态
+    //  [新增] 长按删除菜单状态
     var showDismissMenu by remember { mutableStateOf(false) }
     
     val coverUrl = remember(video.bvid) {
         FormatUtils.fixImageUrl(if (video.pic.startsWith("//")) "https:${video.pic}" else video.pic)
     }
     
-    // 🔥 判断是否为竖屏视频（通过封面图 URL 中的尺寸信息或默认不显示）
+    //  判断是否为竖屏视频（通过封面图 URL 中的尺寸信息或默认不显示）
     // B站封面 URL 通常包含尺寸信息，如 width=X&height=Y
     // 简单方案：暂不显示竖屏标签（因推荐API不提供视频尺寸信息）
 
-    // 🔥 获取屏幕尺寸用于计算归一化坐标
+    //  获取屏幕尺寸用于计算归一化坐标
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
-    val densityValue = density.density  // 🔥🔥 [新增] 屏幕密度值
+    val densityValue = density.density  //  [新增] 屏幕密度值
     
-    // 🔥 记录卡片位置
+    //  记录卡片位置
     var cardBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            // 🔥🔥 [新增] 进场动画 - 交错缩放+滑入，支持开关控制
+            //  [新增] 进场动画 - 交错缩放+滑入，支持开关控制
             .animateEnter(index = index, key = video.bvid, animationEnabled = animationEnabled)
-            // 🔥🔥 [新增] 记录卡片位置
+            //  [新增] 记录卡片位置
             .onGloballyPositioned { coordinates ->
                 cardBounds = coordinates.boundsInRoot()
             }
-            // 🗑️ [新增] 长按手势检测
+            //  [新增] 长按手势检测
             .pointerInput(onDismiss) {
                 if (onDismiss != null) {
                     detectTapGestures(
@@ -128,18 +128,18 @@ fun ElegantVideoCard(
             )
             .padding(bottom = 12.dp)
     ) {
-        // 🔥 尝试获取共享元素作用域
+        //  尝试获取共享元素作用域
         val sharedTransitionScope = LocalSharedTransitionScope.current
         val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
         
-        // 🔥 封面容器 - 官方 B 站风格，支持共享元素过渡（受开关控制）
+        //  封面容器 - 官方 B 站风格，支持共享元素过渡（受开关控制）
         val coverModifier = if (transitionEnabled && sharedTransitionScope != null && animatedVisibilityScope != null) {
             with(sharedTransitionScope) {
                 Modifier
                     .sharedBounds(
                         sharedContentState = rememberSharedContentState(key = "video_cover_${video.bvid}"),
                         animatedVisibilityScope = animatedVisibilityScope,
-                        // 🔥 添加回弹效果的 spring 动画
+                        //  添加回弹效果的 spring 动画
                         boundsTransform = { _, _ ->
                             spring(
                                 dampingRatio = 0.7f,   // 轻微回弹
@@ -147,7 +147,7 @@ fun ElegantVideoCard(
                             )
                         },
                         clipInOverlayDuringTransition = OverlayClip(
-                            RoundedCornerShape(8.dp)  // 🔥 过渡时保持圆角
+                            RoundedCornerShape(8.dp)  //  过渡时保持圆角
                         )
                     )
             }
@@ -168,7 +168,7 @@ fun ElegantVideoCard(
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            // 🔥📉 [省流量] 根据省流量模式动态调整图片尺寸
+            // 📉 [省流量] 根据省流量模式动态调整图片尺寸
             val context = LocalContext.current
             val isDataSaverActive = remember {
                 com.android.purebilibili.core.store.SettingsManager.isDataSaverActive(context)
@@ -176,12 +176,12 @@ fun ElegantVideoCard(
             val imageWidth = if (isDataSaverActive) 240 else 360
             val imageHeight = if (isDataSaverActive) 150 else 225
             
-            // 封面图 - 🚀 [性能优化] 降低图片尺寸
+            // 封面图 -  [性能优化] 降低图片尺寸
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(coverUrl)
                     .size(imageWidth, imageHeight)  // � 省流量时使用更小尺寸
-                    .crossfade(100)  // 🚀 缩短淡入时间
+                    .crossfade(100)  //  缩短淡入时间
                     .memoryCacheKey("cover_${video.bvid}_${if (isDataSaverActive) "s" else "n"}")
                     .diskCacheKey("cover_${video.bvid}_${if (isDataSaverActive) "s" else "n"}")
                     .build(),
@@ -190,7 +190,7 @@ fun ElegantVideoCard(
                 contentScale = ContentScale.Crop
             )
             
-            // 🔥 底部渐变遮罩
+            //  底部渐变遮罩
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -206,7 +206,7 @@ fun ElegantVideoCard(
                     )
             )
             
-            // 🔥 时长标签 - 右下角 (官方风格)
+            //  时长标签 - 右下角 (官方风格)
             Surface(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -223,7 +223,7 @@ fun ElegantVideoCard(
                 )
             }
             
-            // 🔥 播放量和弹幕数 - 左下角 (官方风格)
+            //  播放量和弹幕数 - 左下角 (官方风格)
             Row(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -254,7 +254,7 @@ fun ElegantVideoCard(
                 if (video.stat.view > 0 && video.stat.danmaku > 0) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "💬",
+                            text = "",
                             fontSize = 9.sp
                         )
                         Spacer(modifier = Modifier.width(2.dp))
@@ -272,7 +272,7 @@ fun ElegantVideoCard(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // 🔥 标题 - 2行，官方风格
+        //  标题 - 2行，官方风格
         Text(
             text = video.title,
             maxLines = 2,
@@ -288,12 +288,12 @@ fun ElegantVideoCard(
         
         Spacer(modifier = Modifier.height(6.dp))
         
-        // 🔥 底部信息行 - 官方 B 站风格
+        //  底部信息行 - 官方 B 站风格
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // 🔥 已关注标签（红色文字，官方风格）
+            //  已关注标签（红色文字，官方风格）
             if (isFollowing) {
                 Text(
                     text = "已关注",
@@ -303,7 +303,7 @@ fun ElegantVideoCard(
                 )
             }
             
-            // 🔥 UP主头像（小圆形，官方风格）
+            //  UP主头像（小圆形，官方风格）
             if (video.owner.face.isNotEmpty()) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -321,7 +321,7 @@ fun ElegantVideoCard(
                 )
             }
             
-            // 🔥 UP主名称
+            //  UP主名称
             Text(
                 text = video.owner.name,
                 fontSize = 11.sp,
@@ -332,7 +332,7 @@ fun ElegantVideoCard(
                 modifier = Modifier.weight(1f, fill = false)
             )
             
-            // 🔥 发布时间（搜索结果显示）
+            //  发布时间（搜索结果显示）
             if (showPublishTime && video.pubdate > 0) {
                 Text(
                     text = " · ${FormatUtils.formatPublishTime(video.pubdate)}",
@@ -343,7 +343,7 @@ fun ElegantVideoCard(
         }
     }
     
-    // 🗑️ [新增] 长按删除菜单
+    //  [新增] 长按删除菜单
     DropdownMenu(
         expanded = showDismissMenu,
         onDismissRequest = { showDismissMenu = false }

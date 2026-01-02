@@ -3,7 +3,7 @@ package com.android.purebilibili.data.model.response
 import kotlinx.serialization.Serializable
 
 /**
- * 🔥 在线观看人数响应
+ *  在线观看人数响应
  * 
  * API: GET https://api.bilibili.com/x/player/online/total
  */

@@ -7,7 +7,7 @@ val BiliPink = Color(0xFFFA7298)
 val BiliPinkDim = Color(0xFFE6688C) // 按压态
 val BiliPinkLight = Color(0xFFFFEBF0) // 浅粉色背景 (用于高亮区域)
 
-// 🍎 iOS 系统蓝 (默认主题色)
+//  iOS 系统蓝 (默认主题色)
 val iOSSystemBlue = Color(0xFF007AFF)
 
 // --- 背景色 ---
@@ -40,7 +40,7 @@ val ActionFavoriteDark = Color(0xFFFFD54F) // 收藏 - 亮黄
 val ActionShareDark = Color(0xFF64B5F6)    // 分享 - 亮蓝
 val ActionCommentDark = Color(0xFF4DD0E1)  // 评论 - 亮青
 
-// 🍎 --- iOS 风格色板 ---
+//  --- iOS 风格色板 ---
 val iOSPink = Color(0xFFFF2D55)      // iOS 系统粉色 (点赞)
 val iOSYellow = Color(0xFFFFD60A)    // iOS 系统黄色 (投币)
 val iOSOrange = Color(0xFFFF9500)    // iOS 系统橙色 (收藏)
@@ -52,7 +52,7 @@ val iOSRed = Color(0xFFFF3B30)       // iOS 系统红色
 val iOSCoral = Color(0xFFFF6B6B)     // 珊瑚红 (直播)
 val iOSLightBlue = Color(0xFF64D2FF) // 浅蓝色 (稍后看)
 
-// 🍎 --- iOS 18 系统灰度色阶 ---
+//  --- iOS 18 系统灰度色阶 ---
 val iOSSystemGray = Color(0xFF8E8E93)   // 中灰 (次要文字、图标)
 val iOSSystemGray2 = Color(0xFFAEAEB2)  // 浅中灰
 val iOSSystemGray3 = Color(0xFFC7C7CC)  // 浅灰 (边框、分隔线)
@@ -60,7 +60,7 @@ val iOSSystemGray4 = Color(0xFFD1D1D6)  // 更浅灰
 val iOSSystemGray5 = Color(0xFFE5E5EA)  // 浅背景
 val iOSSystemGray6 = Color(0xFFF2F2F7)  // 最浅背景 (搜索框等)
 
-// 🍎 深色模式灰度
+//  深色模式灰度
 val iOSSystemGrayDark = Color(0xFF8E8E93)
 val iOSSystemGray2Dark = Color(0xFF636366)
 val iOSSystemGray3Dark = Color(0xFF48484A)
@@ -68,7 +68,7 @@ val iOSSystemGray4Dark = Color(0xFF3A3A3C)
 val iOSSystemGray5Dark = Color(0xFF2C2C2E)
 val iOSSystemGray6Dark = Color(0xFF1C1C1E)
 
-// 🔥🔥 [更新] --- 预设主题色 (用于自定义主题，iOS蓝为默认) ---
+//  [更新] --- 预设主题色 (用于自定义主题，iOS蓝为默认) ---
 val ThemeColors = listOf(
     Color(0xFF007AFF),  // 0: iOS 蓝色 (默认)
     Color(0xFFFA7298),  // 1: B站粉色 (BiliPink)
@@ -82,7 +82,7 @@ val ThemeColors = listOf(
     Color(0xFF00BFA5),  // 9: 薄荷绿 (Mint)
 )
 
-// 🔥 主题颜色名称
+//  主题颜色名称
 val ThemeColorNames = listOf(
     "经典蓝",
     "樱花粉",
@@ -96,7 +96,7 @@ val ThemeColorNames = listOf(
     "薄荷绿"
 )
 
-// 🔥🔥 --- 底栏项目可选颜色调色板 ---
+//  --- 底栏项目可选颜色调色板 ---
 /**
  * 底栏项目可选的颜色调色板
  * 用户可以为每个底栏项目选择其中一种颜色

@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -36,7 +36,7 @@ import kotlinx.serialization.decodeFromString
 private const val TAG = "SponsorBlockPlugin"
 
 /**
- * 🚀 空降助手插件
+ *  空降助手插件
  * 
  * 基于 SponsorBlock 数据库自动跳过视频中的广告、赞助、片头片尾等片段。
  */
@@ -59,7 +59,7 @@ class SponsorBlockPlugin : PlayerPlugin {
     private var config: SponsorBlockConfig = SponsorBlockConfig()
     
     override suspend fun onEnable() {
-        Logger.d(TAG, "✅ 空降助手已启用")
+        Logger.d(TAG, " 空降助手已启用")
     }
     
     override suspend fun onDisable() {
@@ -73,15 +73,15 @@ class SponsorBlockPlugin : PlayerPlugin {
         segments = emptyList()
         skippedIds.clear()
         
-        // 🔥🔥 [修复] 加载配置
+        //  [修复] 加载配置
         loadConfigSuspend()
         
         // 加载片段数据
         try {
             segments = SponsorBlockRepository.getSegments(bvid)
-            Logger.d(TAG, "📦 加载了 ${segments.size} 个片段 for $bvid, autoSkip=${config.autoSkip}")
+            Logger.d(TAG, " 加载了 ${segments.size} 个片段 for $bvid, autoSkip=${config.autoSkip}")
         } catch (e: Exception) {
-            Logger.w(TAG, "⚠️ 加载片段失败: ${e.message}")
+            Logger.w(TAG, " 加载片段失败: ${e.message}")
         }
     }
     
@@ -91,7 +91,7 @@ class SponsorBlockPlugin : PlayerPlugin {
     override suspend fun onPositionUpdate(positionMs: Long): SkipAction? {
         if (segments.isEmpty()) return SkipAction.None
         
-        // 🔥🔥 [修复] 检测用户回拉进度条，如果回拉到片段之前则清除该片段的已跳过记录
+        //  [修复] 检测用户回拉进度条，如果回拉到片段之前则清除该片段的已跳过记录
         if (positionMs < lastPositionMs - 2000) {  // 回拉超过2秒
             // 检查是否回拉到了某些已跳过片段之前
             val segmentsToReset = segments.filter { seg ->
@@ -99,12 +99,12 @@ class SponsorBlockPlugin : PlayerPlugin {
             }
             segmentsToReset.forEach { seg ->
                 skippedIds.remove(seg.UUID)
-                Logger.d(TAG, "🔄 回拉检测: 重置片段 ${seg.categoryName} 的跳过状态")
+                Logger.d(TAG, " 回拉检测: 重置片段 ${seg.categoryName} 的跳过状态")
             }
         }
         lastPositionMs = positionMs
         
-        // 🔥 调试日志（每5秒一次）
+        //  调试日志（每5秒一次）
         val firstSeg = segments.firstOrNull()
         if (firstSeg != null && positionMs % 5000 < 600) {
             Logger.d(TAG, "📍 当前位置: ${positionMs}ms, 片段范围: ${firstSeg.startTimeMs}ms - ${firstSeg.endTimeMs}ms, autoSkip=${config.autoSkip}")
@@ -120,14 +120,14 @@ class SponsorBlockPlugin : PlayerPlugin {
         // 如果配置为自动跳过
         if (config.autoSkip) {
             skippedIds.add(segment.UUID)
-            Logger.d(TAG, "⏭️ 自动跳过: ${segment.categoryName}")
+            Logger.d(TAG, " 自动跳过: ${segment.categoryName}")
             return SkipAction.SkipTo(
                 positionMs = segment.endTimeMs,
                 reason = "已跳过: ${segment.categoryName}"
             )
         }
         
-        // 🔥🔥 [修复] 非自动跳过模式：返回 ShowButton 让 UI 显示跳过按钮
+        //  [修复] 非自动跳过模式：返回 ShowButton 让 UI 显示跳过按钮
         Logger.d(TAG, "🔘 显示跳过按钮: ${segment.categoryName}")
         return SkipAction.ShowButton(
             skipToMs = segment.endTimeMs,
@@ -139,7 +139,7 @@ class SponsorBlockPlugin : PlayerPlugin {
     /** 手动跳过时调用，标记片段已跳过 */
     fun markAsSkipped(segmentId: String) {
         skippedIds.add(segmentId)
-        Logger.d(TAG, "✅ 手动跳过完成: $segmentId")
+        Logger.d(TAG, " 手动跳过完成: $segmentId")
     }
     
     override fun onVideoEnd() {
@@ -148,7 +148,7 @@ class SponsorBlockPlugin : PlayerPlugin {
         lastPositionMs = 0
     }
 
-    /** 🔥 suspend版本的配置加载 */
+    /**  suspend版本的配置加载 */
     private suspend fun loadConfigSuspend() {
         try {
             val context = PluginManager.getContext()
@@ -156,7 +156,7 @@ class SponsorBlockPlugin : PlayerPlugin {
             if (jsonStr != null) {
                 config = Json.decodeFromString<SponsorBlockConfig>(jsonStr)
             } else {
-                // 🔥🔥 没有保存的配置时，使用默认值（autoSkip=true）
+                //  没有保存的配置时，使用默认值（autoSkip=true）
                 config = SponsorBlockConfig(autoSkip = true)
             }
             Logger.d(TAG, "📖 配置已加载: autoSkip=${config.autoSkip}")

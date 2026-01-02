@@ -97,7 +97,7 @@ class VideoPlaybackUseCase(
         onProgress: (String) -> Unit = {}
     ): VideoLoadResult {
         try {
-            // 🔥🔥 [风控冷却] 检查是否处于冷却期
+            //  [风控冷却] 检查是否处于冷却期
             when (val cooldownStatus = PlaybackCooldownManager.getCooldownStatus(bvid)) {
                 is CooldownStatus.GlobalCooldown -> {
                     Logger.w("VideoPlaybackUseCase", "⏳ 全局冷却中，跳过请求: ${cooldownStatus.remainingMinutes}分${cooldownStatus.remainingSeconds}秒")
@@ -123,14 +123,14 @@ class VideoPlaybackUseCase(
             
             onProgress("Loading video info...")
             
-            // 🔥🔥 [关键修复] 将用户画质设置传递给 Repository
+            //  [关键修复] 将用户画质设置传递给 Repository
             val detailResult = VideoRepository.getVideoDetails(bvid, defaultQuality)
             val relatedVideos = VideoRepository.getRelatedVideos(bvid)
             val emoteMap = com.android.purebilibili.data.repository.CommentRepository.getEmoteMap()
             
             return detailResult.fold(
                 onSuccess = { (info, playData) ->
-                    // 🔥🔥 [网络感知] 使用 API 返回的画质或传入的默认画质
+                    //  [网络感知] 使用 API 返回的画质或传入的默认画质
                     val targetQn = playData.quality.takeIf { it > 0 } ?: defaultQuality
                     
                     val dashVideo = playData.dash?.getBestVideo(targetQn)
@@ -140,7 +140,7 @@ class VideoPlaybackUseCase(
                     val audioUrl = dashAudio?.getValidUrl()?.takeIf { it.isNotEmpty() }
                     
                     if (videoUrl.isEmpty()) {
-                        // 🔥🔥 [风控冷却] 播放地址为空，记录失败
+                        //  [风控冷却] 播放地址为空，记录失败
                         PlaybackCooldownManager.recordFailure(bvid, "播放地址为空")
                         return@fold VideoLoadResult.Error(
                             error = VideoLoadError.PlayUrlEmpty,
@@ -148,12 +148,12 @@ class VideoPlaybackUseCase(
                         )
                     }
                     
-                    // 🔥🔥 [风控冷却] 加载成功，重置失败计数
+                    //  [风控冷却] 加载成功，重置失败计数
                     PlaybackCooldownManager.recordSuccess()
                     
                     val isLogin = !com.android.purebilibili.core.store.TokenManager.sessDataCache.isNullOrEmpty()
                     
-                    // 🔥🔥 [修复] 主动获取最新VIP状态，避免缓存过期导致高画质不可用
+                    //  [修复] 主动获取最新VIP状态，避免缓存过期导致高画质不可用
                     var isVip = com.android.purebilibili.core.store.TokenManager.isVipCache
                     if (isLogin && !isVip) {
                         // 用户已登录但VIP状态为false时，主动刷新一次
@@ -162,32 +162,32 @@ class VideoPlaybackUseCase(
                             navResult.onSuccess { navData ->
                                 isVip = navData.vip.status == 1
                                 com.android.purebilibili.core.store.TokenManager.isVipCache = isVip
-                                Logger.d("VideoPlaybackUseCase", "🔥 Refreshed VIP status: $isVip")
+                                Logger.d("VideoPlaybackUseCase", " Refreshed VIP status: $isVip")
                             }
                         } catch (e: Exception) {
-                            Logger.d("VideoPlaybackUseCase", "⚠️ Failed to refresh VIP status: ${e.message}")
+                            Logger.d("VideoPlaybackUseCase", " Failed to refresh VIP status: ${e.message}")
                         }
                     }
                     
-                    // 🔥🔥 [修复] 合成完整画质列表：API 返回的 accept_quality + DASH 视频流中的实际画质
+                    //  [修复] 合成完整画质列表：API 返回的 accept_quality + DASH 视频流中的实际画质
                     val apiQualities = playData.accept_quality ?: emptyList()
                     val dashVideoIds = playData.dash?.video?.map { it.id }?.distinct() ?: emptyList()
                     
-                    // 🔥🔥 [新增] 确保包含所有标准画质选项，用户可以切换到低画质以省流量
+                    //  [新增] 确保包含所有标准画质选项，用户可以切换到低画质以省流量
                     // 即使 DASH 流中没有这些画质，也可以通过 API 请求获取
                     val standardLowQualities = listOf(32, 16) // 480P, 360P
                     val mergedQualityIds = (apiQualities + dashVideoIds + standardLowQualities)
                         .distinct()
                         .sortedDescending()
                     
-                    // 🔥🔥 [修复] 生成对应的画质标签 - 使用更短的名称确保竖屏显示完整
+                    //  [修复] 生成对应的画质标签 - 使用更短的名称确保竖屏显示完整
                     val qualityLabelMap = mapOf(
                         127 to "8K",
                         126 to "杜比",
                         125 to "HDR",
                         120 to "4K",
-                        116 to "60帧",   // 🔥 "1080P60" 改为 "60帧"
-                        112 to "高码",   // 🔥 "1080P+" 改为 "高码"
+                        116 to "60帧",   //  "1080P60" 改为 "60帧"
+                        112 to "高码",   //  "1080P+" 改为 "高码"
                         80 to "1080P",
                         74 to "720P60",
                         64 to "720P",
@@ -198,7 +198,7 @@ class VideoPlaybackUseCase(
                         qualityLabelMap[qn] ?: "${qn}P"
                     }
                     
-                    Logger.d("VideoPlaybackUseCase", "🔥 Quality merge: api=$apiQualities, dash=$dashVideoIds, merged=$mergedQualityIds")
+                    Logger.d("VideoPlaybackUseCase", " Quality merge: api=$apiQualities, dash=$dashVideoIds, merged=$mergedQualityIds")
                     
                     // Check user interaction status
                     val isFollowing = if (isLogin) ActionRepository.checkFollowStatus(info.owner.mid) else false
@@ -226,7 +226,7 @@ class VideoPlaybackUseCase(
                     )
                 },
                 onFailure = { e ->
-                    // 🔥🔥 [风控冷却] 加载失败，记录失败
+                    //  [风控冷却] 加载失败，记录失败
                     PlaybackCooldownManager.recordFailure(bvid, e.message ?: "unknown")
                     VideoLoadResult.Error(
                         error = VideoLoadError.fromException(e),
@@ -235,7 +235,7 @@ class VideoPlaybackUseCase(
                 }
             )
         } catch (e: Exception) {
-            // 🔥🔥 [风控冷却] 异常失败，记录
+            //  [风控冷却] 异常失败，记录
             PlaybackCooldownManager.recordFailure(bvid, e.message ?: "exception")
             return VideoLoadResult.Error(
                 error = VideoLoadError.fromException(e),
@@ -321,18 +321,18 @@ class VideoPlaybackUseCase(
         currentPos: Long
     ): QualitySwitchResult? {
         if (cachedVideos.isEmpty()) {
-            Logger.d("VideoPlaybackUseCase", "🔥 changeQualityFromCache: cache is EMPTY, returning null")
+            Logger.d("VideoPlaybackUseCase", " changeQualityFromCache: cache is EMPTY, returning null")
             return null
         }
         
-        // 🔥🔥 [调试] 输出缓存中的所有画质
+        //  [调试] 输出缓存中的所有画质
         val availableIds = cachedVideos.map { it.id }.distinct().sortedDescending()
-        Logger.d("VideoPlaybackUseCase", "🔥 changeQualityFromCache: target=$qualityId, available=$availableIds")
+        Logger.d("VideoPlaybackUseCase", " changeQualityFromCache: target=$qualityId, available=$availableIds")
         
-        // 🔥🔥 [优先精确匹配] 先找精确匹配
+        //  [优先精确匹配] 先找精确匹配
         val exactMatch = cachedVideos.find { it.id == qualityId }
         if (exactMatch != null) {
-            Logger.d("VideoPlaybackUseCase", "✅ Exact match found: ${exactMatch.id}")
+            Logger.d("VideoPlaybackUseCase", " Exact match found: ${exactMatch.id}")
             val videoUrl = exactMatch.getValidUrl()
             val dashAudio = cachedAudios.firstOrNull()
             val audioUrl = dashAudio?.getValidUrl()
@@ -349,8 +349,8 @@ class VideoPlaybackUseCase(
             }
         }
         
-        // 🔥🔥 [降级逻辑] 缓存中没有目标画质，需要返回 null 让调用者请求 API
-        Logger.d("VideoPlaybackUseCase", "⚠️ Target quality $qualityId not in cache, returning null to trigger API request")
+        //  [降级逻辑] 缓存中没有目标画质，需要返回 null 让调用者请求 API
+        Logger.d("VideoPlaybackUseCase", " Target quality $qualityId not in cache, returning null to trigger API request")
         return null
     }
     
@@ -363,30 +363,30 @@ class VideoPlaybackUseCase(
         qualityId: Int,
         currentPos: Long
     ): QualitySwitchResult? {
-        Logger.d("VideoPlaybackUseCase", "🔥 changeQualityFromApi: bvid=$bvid, cid=$cid, target=$qualityId")
+        Logger.d("VideoPlaybackUseCase", " changeQualityFromApi: bvid=$bvid, cid=$cid, target=$qualityId")
         
         val playUrlData = VideoRepository.getPlayUrlData(bvid, cid, qualityId) ?: run {
-            Logger.d("VideoPlaybackUseCase", "❌ getPlayUrlData returned null")
+            Logger.d("VideoPlaybackUseCase", " getPlayUrlData returned null")
             return null
         }
         
-        // 🔥🔥 [调试] 输出 API 返回的画质信息
+        //  [调试] 输出 API 返回的画质信息
         val returnedQuality = playUrlData.quality
         val acceptQualities = playUrlData.accept_quality
         val dashVideoIds = playUrlData.dash?.video?.map { it.id }?.distinct()?.sortedDescending()
-        Logger.d("VideoPlaybackUseCase", "🔥 API returned: quality=$returnedQuality, accept_quality=$acceptQualities")
-        Logger.d("VideoPlaybackUseCase", "🔥 DASH videos available: $dashVideoIds")
+        Logger.d("VideoPlaybackUseCase", " API returned: quality=$returnedQuality, accept_quality=$acceptQualities")
+        Logger.d("VideoPlaybackUseCase", " DASH videos available: $dashVideoIds")
         
         val dashVideo = playUrlData.dash?.getBestVideo(qualityId)
         val dashAudio = playUrlData.dash?.getBestAudio()
         
-        Logger.d("VideoPlaybackUseCase", "🔥 getBestVideo selected: ${dashVideo?.id}")
+        Logger.d("VideoPlaybackUseCase", " getBestVideo selected: ${dashVideo?.id}")
         
         val videoUrl = getValidVideoUrl(dashVideo, playUrlData)
         val audioUrl = dashAudio?.getValidUrl()
         
         if (videoUrl.isEmpty()) {
-            Logger.d("VideoPlaybackUseCase", "❌ Video URL is empty")
+            Logger.d("VideoPlaybackUseCase", " Video URL is empty")
             return null
         }
         
@@ -397,7 +397,7 @@ class VideoPlaybackUseCase(
         }
         
         val actualQuality = dashVideo?.id ?: playUrlData.quality ?: qualityId
-        Logger.d("VideoPlaybackUseCase", "✅ Quality switch result: target=$qualityId, actual=$actualQuality")
+        Logger.d("VideoPlaybackUseCase", " Quality switch result: target=$qualityId, actual=$actualQuality")
         
         return QualitySwitchResult(
             videoUrl = videoUrl,

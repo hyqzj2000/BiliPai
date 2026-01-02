@@ -23,24 +23,24 @@ data class SearchUiState(
     val query: String = "",
     val isSearching: Boolean = false,
     val showResults: Boolean = false,
-    // 🔥 搜索类型
+    //  搜索类型
     val searchType: SearchType = SearchType.VIDEO,
     // 视频结果
     val searchResults: List<VideoItem> = emptyList(),
-    // 🔥 UP主 结果
+    //  UP主 结果
     val upResults: List<SearchUpItem> = emptyList(),
     val hotList: List<HotItem> = emptyList(),
     val historyList: List<SearchHistory> = emptyList(),
-    // 🔥 搜索建议
+    //  搜索建议
     val suggestions: List<String> = emptyList(),
-    // 🔥 搜索发现 / 猜你想搜
+    //  搜索发现 / 猜你想搜
     val discoverList: List<String> = listOf("黑神话悟空", "原神", "初音未来", "JOJO", "罗翔说刑法", "何同学", "毕业季", "猫咪", "我的世界", "战鹰"),
     val discoverTitle: String = "搜索发现",
     val error: String? = null,
-    // 🔥 搜索过滤条件
+    //  搜索过滤条件
     val searchOrder: SearchOrder = SearchOrder.TOTALRANK,
     val searchDuration: SearchDuration = SearchDuration.ALL,
-    // 🥚 搜索彩蛋消息
+    //  搜索彩蛋消息
     val easterEggMessage: String? = null
 )
 
@@ -50,7 +50,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
     private val searchDao = AppDatabase.getDatabase(application).searchHistoryDao()
     
-    // 🔥 防抖任务
+    //  防抖任务
     private var suggestJob: Job? = null
 
     init {
@@ -63,12 +63,12 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         if (newQuery.isEmpty()) {
             _uiState.update { it.copy(showResults = false, suggestions = emptyList(), error = null) }
         } else {
-            // 🔥 触发搜索建议（防抖 300ms）
+            //  触发搜索建议（防抖 300ms）
             loadSuggestions(newQuery)
         }
     }
     
-    // 🔥 防抖加载搜索建议
+    //  防抖加载搜索建议
     private fun loadSuggestions(keyword: String) {
         suggestJob?.cancel()
         suggestJob = viewModelScope.launch {
@@ -80,7 +80,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    // 🔥 切换搜索类型
+    //  切换搜索类型
     fun setSearchType(type: SearchType) {
         _uiState.update { it.copy(searchType = type) }
         // 如果有查询内容，重新搜索
@@ -89,7 +89,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    // 🔥 设置搜索排序
+    //  设置搜索排序
     fun setSearchOrder(order: SearchOrder) {
         _uiState.update { it.copy(searchOrder = order) }
         if (_uiState.value.query.isNotBlank() && _uiState.value.showResults) {
@@ -97,7 +97,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    // 🔥 设置时长筛选
+    //  设置时长筛选
     fun setSearchDuration(duration: SearchDuration) {
         _uiState.update { it.copy(searchDuration = duration) }
         if (_uiState.value.query.isNotBlank() && _uiState.value.showResults) {
@@ -108,14 +108,14 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     fun search(keyword: String) {
         if (keyword.isBlank()) return
 
-        // 🥚 检查搜索彩蛋关键词
+        //  检查搜索彩蛋关键词
         val context = getApplication<android.app.Application>()
         val easterEggEnabled = com.android.purebilibili.core.store.SettingsManager.isEasterEggEnabledSync(context)
         val easterEggMessage = if (easterEggEnabled) {
             com.android.purebilibili.core.util.EasterEggs.checkSearchEasterEgg(keyword)
         } else null
 
-        // 🔥 清空建议列表，设置彩蛋消息
+        //  清空建议列表，设置彩蛋消息
         _uiState.update { 
             it.copy(
                 query = keyword, 
@@ -128,7 +128,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         }
         saveHistory(keyword)
         
-        // 📊 记录搜索事件
+        //  记录搜索事件
         com.android.purebilibili.core.util.AnalyticsHelper.logSearch(keyword)
 
         viewModelScope.launch {
@@ -140,7 +140,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                     val duration = _uiState.value.searchDuration
                     val result = SearchRepository.search(keyword, order, duration)
                     result.onSuccess { videos ->
-                        // 🔥🔥 [修复] 应用插件过滤（UP主拉黑、关键词屏蔽等）
+                        //  [修复] 应用插件过滤（UP主拉黑、关键词屏蔽等）
                         val filteredVideos = com.android.purebilibili.core.plugin.PluginManager
                             .filterFeedItems(videos)
                         _uiState.update { it.copy(isSearching = false, searchResults = filteredVideos, upResults = emptyList()) }
@@ -177,13 +177,13 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             searchDao.getAll().collect { history ->
                 _uiState.update { it.copy(historyList = history) }
-                // 🔥 更新搜索发现
+                //  更新搜索发现
                 updateDiscover(history)
             }
         }
     }
 
-    // 🔥 生成个性化发现内容
+    //  生成个性化发现内容
     private fun updateDiscover(history: List<SearchHistory>) {
         viewModelScope.launch {
             val historyKeywords = history.map { it.keyword }
@@ -203,14 +203,14 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun saveHistory(keyword: String) {
         viewModelScope.launch {
-            // 🔒 隐私无痕模式检查：如果启用则跳过保存搜索历史
+            //  隐私无痕模式检查：如果启用则跳过保存搜索历史
             val context = getApplication<android.app.Application>()
             if (com.android.purebilibili.core.store.SettingsManager.isPrivacyModeEnabledSync(context)) {
-                com.android.purebilibili.core.util.Logger.d("SearchVM", "🔒 Privacy mode enabled, skipping search history save")
+                com.android.purebilibili.core.util.Logger.d("SearchVM", " Privacy mode enabled, skipping search history save")
                 return@launch
             }
             
-            // 🔥 使用 keyword 主键，重复搜索自动更新时间戳
+            //  使用 keyword 主键，重复搜索自动更新时间戳
             searchDao.insert(SearchHistory(keyword = keyword, timestamp = System.currentTimeMillis()))
         }
     }

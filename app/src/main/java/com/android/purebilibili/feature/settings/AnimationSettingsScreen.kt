@@ -21,7 +21,7 @@ import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import kotlinx.coroutines.launch
 
 /**
- * 🎬 动画与效果设置二级页面
+ *  动画与效果设置二级页面
  * 管理卡片动画、过渡效果、磨砂效果等
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,7 +36,7 @@ fun AnimationSettingsScreen(
     val blurLevel = when (state.blurIntensity) {
         BlurIntensity.THIN -> 0.5f
         BlurIntensity.THICK -> 0.8f
-        BlurIntensity.APPLE_DOCK -> 1.0f  // 🔥 玻璃拟态风格
+        BlurIntensity.APPLE_DOCK -> 1.0f  //  玻璃拟态风格
     }
     val animationInteractionLevel = (
         0.2f +
@@ -71,7 +71,7 @@ fun AnimationSettingsScreen(
             contentPadding = WindowInsets.navigationBars.asPaddingValues()
         ) {
             
-            // 🎬 卡片动画
+            //  卡片动画
             item { SettingsSectionTitle("卡片动画") }
             item {
                 SettingsGroup {
@@ -134,7 +134,7 @@ fun AnimationSettingsScreen(
                 }
             }
             
-            // 💡 提示
+            //  提示
             item {
                 Surface(
                     modifier = Modifier

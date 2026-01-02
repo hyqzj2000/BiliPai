@@ -11,7 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -28,7 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.theme.iOSYellow
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.data.model.response.FollowBangumiItem
@@ -78,7 +78,7 @@ fun MyBangumiContent(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            "📺",
+                            "",
                             fontSize = 48.sp
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -153,7 +153,7 @@ private fun MyFollowGrid(
                 start = 12.dp,
                 top = 8.dp,
                 end = 12.dp,
-                bottom = 12.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()  // 🔥 添加导航栏内边距
+                bottom = 12.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()  //  添加导航栏内边距
             ),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),

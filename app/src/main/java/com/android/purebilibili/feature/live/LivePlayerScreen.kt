@@ -15,7 +15,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -48,7 +48,7 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "LivePlayerScreen"
 
-// 🔥 辅助函数：格式化在线人数
+//  辅助函数：格式化在线人数
 private fun formatOnline(num: Int): String {
     return when {
         num >= 10000 -> String.format("%.1f万", num / 10000f)
@@ -56,7 +56,7 @@ private fun formatOnline(num: Int): String {
     }
 }
 
-// 🔥 辅助函数：格式化粉丝数
+//  辅助函数：格式化粉丝数
 private fun formatFollowers(num: Long): String {
     return when {
         num >= 10000 -> String.format("%.1f万", num / 10000f)
@@ -79,13 +79,13 @@ fun LivePlayerScreen(
     
     val uiState by viewModel.uiState.collectAsState()
     
-    // 🔥 画质菜单状态
+    //  画质菜单状态
     var showQualityMenu by remember { mutableStateOf(false) }
     
-    // 🔥 横屏状态
+    //  横屏状态
     var isFullscreen by remember { mutableStateOf(false) }
     
-    // 🔥 切换横竖屏
+    //  切换横竖屏
     fun toggleFullscreen() {
         isFullscreen = !isFullscreen
         activity?.requestedOrientation = if (isFullscreen) {
@@ -95,7 +95,7 @@ fun LivePlayerScreen(
         }
     }
     
-    // 🔥 返回处理 - 横屏时先退出横屏
+    //  返回处理 - 横屏时先退出横屏
     BackHandler {
         if (isFullscreen) {
             toggleFullscreen()
@@ -103,9 +103,9 @@ fun LivePlayerScreen(
             onBack()
         }
     }    
-    // 🔥🔥 [修复] 创建带 Cookie 认证的数据源 - 解决 403 错误
+    //  [修复] 创建带 Cookie 认证的数据源 - 解决 403 错误
     val dataSourceFactory = remember(roomId) {
-        // 🔥 从 TokenManager 获取 Cookie 信息，构建完整的 Cookie 字符串
+        //  从 TokenManager 获取 Cookie 信息，构建完整的 Cookie 字符串
         val sessData = com.android.purebilibili.core.store.TokenManager.sessDataCache ?: ""
         val buvid3 = com.android.purebilibili.core.store.TokenManager.buvid3Cache ?: ""
         val cookies = buildString {
@@ -116,16 +116,16 @@ fun LivePlayerScreen(
         
         DefaultHttpDataSource.Factory()
             .setDefaultRequestProperties(mapOf(
-                "Referer" to "https://live.bilibili.com/$roomId",  // 🔥 使用完整直播间 URL
+                "Referer" to "https://live.bilibili.com/$roomId",  //  使用完整直播间 URL
                 "User-Agent" to "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
-                "Cookie" to cookies,  // 🔥🔥 关键：添加 Cookie 认证
+                "Cookie" to cookies,  //  关键：添加 Cookie 认证
                 "Origin" to "https://live.bilibili.com"
             ))
             .setConnectTimeoutMs(15000)
             .setReadTimeoutMs(15000)
     }
     
-    // 🔥 ExoPlayer 实例 - 使用自定义数据源（依赖 dataSourceFactory 重建）
+    //  ExoPlayer 实例 - 使用自定义数据源（依赖 dataSourceFactory 重建）
     val exoPlayer = remember(dataSourceFactory) {
         Logger.d(TAG, "🔴 Creating new ExoPlayer instance")
         ExoPlayer.Builder(context)
@@ -135,7 +135,7 @@ fun LivePlayerScreen(
             }
     }
     
-    // 🔥 播放直播流
+    //  播放直播流
     fun playLiveStream(url: String) {
         Logger.d(TAG, "🔴 === playLiveStream called ===")
         Logger.d(TAG, "🔴 URL: $url")
@@ -144,7 +144,7 @@ fun LivePlayerScreen(
         Logger.d(TAG, "🔴 URL contains hls: ${url.contains("hls")}")
         
         try {
-            // 🔥 根据 URL 后缀判断格式并创建合适的 MediaSource
+            //  根据 URL 后缀判断格式并创建合适的 MediaSource
             val mediaSource = if (url.contains(".m3u8") || url.contains("hls")) {
                 Logger.d(TAG, "🔴 Creating HLS MediaSource")
                 // HLS 格式
@@ -156,7 +156,7 @@ fun LivePlayerScreen(
                 DefaultMediaSourceFactory(dataSourceFactory)
                     .createMediaSource(MediaItem.Builder()
                         .setUri(url)
-                        .setMimeType("video/x-flv")  // 🔥 明确指定 FLV MIME 类型
+                        .setMimeType("video/x-flv")  //  明确指定 FLV MIME 类型
                         .build())
             }
             
@@ -164,25 +164,25 @@ fun LivePlayerScreen(
             exoPlayer.setMediaSource(mediaSource)
             Logger.d(TAG, "🔴 Calling prepare()...")
             exoPlayer.prepare()
-            Logger.d(TAG, "✅ Player prepared successfully")
+            Logger.d(TAG, " Player prepared successfully")
         } catch (e: Exception) {
-            Logger.e(TAG, "❌ Error in playLiveStream: ${e.message}", e)
+            Logger.e(TAG, " Error in playLiveStream: ${e.message}", e)
         }
     }
     
-    // 🔥🔥 [改进] ExoPlayer 错误监听器 - 403 错误时自动切换 CDN
+    //  [改进] ExoPlayer 错误监听器 - 403 错误时自动切换 CDN
     DisposableEffect(exoPlayer) {
         val listener = object : androidx.media3.common.Player.Listener {
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-                Logger.e(TAG, "❌ ExoPlayer Error: ${error.message}")
-                Logger.e(TAG, "❌ Error code: ${error.errorCode}")
-                Logger.e(TAG, "❌ Error cause: ${error.cause?.message}")
+                Logger.e(TAG, " ExoPlayer Error: ${error.message}")
+                Logger.e(TAG, " Error code: ${error.errorCode}")
+                Logger.e(TAG, " Error cause: ${error.cause?.message}")
                 
-                // 🔥🔥 [关键修复] 403 错误时自动尝试下一个 CDN
+                //  [关键修复] 403 错误时自动尝试下一个 CDN
                 val cause = error.cause
                 if (cause is androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException) {
                     if (cause.responseCode == 403) {
-                        Logger.d(TAG, "🔄 Got 403, trying next CDN...")
+                        Logger.d(TAG, " Got 403, trying next CDN...")
                         viewModel.tryNextUrl()
                     }
                 }
@@ -209,13 +209,13 @@ fun LivePlayerScreen(
         }
     }
     
-    // 🔥 加载直播流 - 使用 ViewModel
+    //  加载直播流 - 使用 ViewModel
     LaunchedEffect(roomId) {
         Logger.d(TAG, "🔴 LaunchedEffect: Loading live stream for roomId=$roomId")
         viewModel.loadLiveStream(roomId)
     }
     
-    // 🔥 监听 ViewModel 状态变化，播放新 URL
+    //  监听 ViewModel 状态变化，播放新 URL
     LaunchedEffect(uiState) {
         val state = uiState
         Logger.d(TAG, "🔴 uiState changed: ${state::class.simpleName}")
@@ -225,11 +225,11 @@ fun LivePlayerScreen(
             Logger.d(TAG, "🔴 Quality list count: ${state.qualityList.size}")
             playLiveStream(state.playUrl)
         } else if (state is LivePlayerState.Error) {
-            Logger.e(TAG, "❌ Error state: ${state.message}")
+            Logger.e(TAG, " Error state: ${state.message}")
         }
     }
     
-    // 🔥🔥 [性能优化] 生命周期感知：进入后台时暂停播放，返回前台时继续
+    //  [性能优化] 生命周期感知：进入后台时暂停播放，返回前台时继续
     val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
@@ -251,20 +251,20 @@ fun LivePlayerScreen(
         }
     }
     
-    // 🔥 清理播放器 + 屏幕常亮管理
+    //  清理播放器 + 屏幕常亮管理
     DisposableEffect(Unit) {
         val window = (context as? Activity)?.window
         
-        // 🔥🔥 [修复] 进入直播间时保持屏幕常亮，防止自动熄屏
+        //  [修复] 进入直播间时保持屏幕常亮，防止自动熄屏
         window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         
         onDispose {
             exoPlayer.release()
-            // 🔥 恢复默认方向，避免离开直播后卡在横屏
+            //  恢复默认方向，避免离开直播后卡在横屏
             (context as? Activity)?.requestedOrientation = 
                 ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             
-            // 🔥🔥 [修复] 离开直播间时取消屏幕常亮
+            //  [修复] 离开直播间时取消屏幕常亮
             window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
@@ -274,13 +274,13 @@ fun LivePlayerScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // 播放器 - 🔥 禁用默认控制器，使用自定义覆盖层
+        // 播放器 -  禁用默认控制器，使用自定义覆盖层
         AndroidView(
             factory = { ctx ->
                 PlayerView(ctx).apply {
                     player = exoPlayer
-                    useController = false  // 🔥 隐藏默认控制器（包含进度条）
-                    keepScreenOn = true  // 🔥 确保屏幕常亮
+                    useController = false  //  隐藏默认控制器（包含进度条）
+                    keepScreenOn = true  //  确保屏幕常亮
                     layoutParams = FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
@@ -290,7 +290,7 @@ fun LivePlayerScreen(
             modifier = Modifier.fillMaxSize()
         )
         
-        // 🔥 中心播放/暂停按钮 - 点击切换
+        //  中心播放/暂停按钮 - 点击切换
         var isPlaying by remember { mutableStateOf(true) }
         
         Box(
@@ -307,7 +307,7 @@ fun LivePlayerScreen(
                 },
             contentAlignment = Alignment.Center
         ) {
-            // 🔥 只有暂停时显示播放按钮
+            //  只有暂停时显示播放按钮
             if (!isPlaying) {
                 Surface(
                     shape = CircleShape,
@@ -325,7 +325,7 @@ fun LivePlayerScreen(
             }
         }
         
-        // 🔥 顶部信息
+        //  顶部信息
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -357,7 +357,7 @@ fun LivePlayerScreen(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
-                // 🔥 显示主播名和在线人数
+                //  显示主播名和在线人数
                 val successState = uiState as? LivePlayerState.Success
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (uname.isNotEmpty()) {
@@ -367,7 +367,7 @@ fun LivePlayerScreen(
                             fontSize = 12.sp
                         )
                     }
-                    // 🔥 在线人数
+                    //  在线人数
                     if (successState != null && successState.roomInfo.online > 0) {
                         Spacer(Modifier.width(8.dp))
                         Icon(
@@ -386,7 +386,7 @@ fun LivePlayerScreen(
                 }
             }
             
-            // 🔥 画质选择按钮
+            //  画质选择按钮
             val successStateForQuality = uiState as? LivePlayerState.Success
             if (successStateForQuality != null && successStateForQuality.qualityList.isNotEmpty()) {
                 val currentQualityLabel = successStateForQuality.qualityList.find { 
@@ -409,7 +409,7 @@ fun LivePlayerScreen(
                 }
             }
             
-            // 🔥 横屏/全屏按钮
+            //  横屏/全屏按钮
             Surface(
                 shape = CircleShape,
                 color = Color.Black.copy(alpha = 0.5f),
@@ -442,7 +442,7 @@ fun LivePlayerScreen(
             }
         }
         
-        // 🔥🔥 [新增] 底部主播信息卡片 (竖屏模式)
+        //  [新增] 底部主播信息卡片 (竖屏模式)
         if (!isFullscreen) {
             val successState = uiState as? LivePlayerState.Success
             if (successState != null && successState.anchorInfo.uname.isNotEmpty()) {
@@ -489,7 +489,7 @@ fun LivePlayerScreen(
                             )
                         }
                         
-                        // 🔥 关注按钮
+                        //  关注按钮
                         Surface(
                             onClick = { viewModel.toggleFollow() },
                             shape = RoundedCornerShape(18.dp),
@@ -524,7 +524,7 @@ fun LivePlayerScreen(
             }
         }
         
-        // 🔥 加载中状态
+        //  加载中状态
         if (uiState is LivePlayerState.Loading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -534,7 +534,7 @@ fun LivePlayerScreen(
             }
         }
         
-        // 🔥 错误状态
+        //  错误状态
         if (uiState is LivePlayerState.Error) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -560,7 +560,7 @@ fun LivePlayerScreen(
             }
         }
         
-        // 🔥 画质选择菜单
+        //  画质选择菜单
         if (showQualityMenu) {
             val successState = uiState as? LivePlayerState.Success
             if (successState != null) {
@@ -579,7 +579,7 @@ fun LivePlayerScreen(
 }
 
 /**
- * 🔥 直播画质选择菜单
+ *  直播画质选择菜单
  */
 @Composable
 private fun LiveQualityMenu(

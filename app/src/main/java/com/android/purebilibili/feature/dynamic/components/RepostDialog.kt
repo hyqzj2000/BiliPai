@@ -15,7 +15,7 @@ import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 
 /**
- * 🔥 动态转发对话框
+ *  动态转发对话框
  */
 @Composable
 fun RepostDialog(

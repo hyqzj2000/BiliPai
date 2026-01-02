@@ -57,19 +57,19 @@ object RetryStrategy {
         repeat(config.maxAttempts) { attempt ->
             // 通知 UI 当前尝试次数
             onAttempt(attempt + 1, config.maxAttempts)
-            com.android.purebilibili.core.util.Logger.d(TAG, "🔄 Attempt ${attempt + 1}/${config.maxAttempts}")
+            com.android.purebilibili.core.util.Logger.d(TAG, " Attempt ${attempt + 1}/${config.maxAttempts}")
             
             try {
                 val result = block()
                 if (result != null) {
-                    com.android.purebilibili.core.util.Logger.d(TAG, "✅ Success on attempt ${attempt + 1}")
+                    com.android.purebilibili.core.util.Logger.d(TAG, " Success on attempt ${attempt + 1}")
                     return RetryResult.Success(result)
                 }
                 // 结果为 null，视为失败
                 lastError = VideoLoadError.UnknownError(Exception("Result was null"))
                 
             } catch (e: Exception) {
-                android.util.Log.w(TAG, "❌ Attempt ${attempt + 1} failed: ${e.message}")
+                android.util.Log.w(TAG, " Attempt ${attempt + 1} failed: ${e.message}")
                 lastError = VideoLoadError.fromException(e)
                 
                 // 检查是否应该重试
@@ -89,7 +89,7 @@ object RetryStrategy {
             }
         }
         
-        android.util.Log.e(TAG, "❌ All ${config.maxAttempts} attempts failed")
+        android.util.Log.e(TAG, " All ${config.maxAttempts} attempts failed")
         return RetryResult.Failure(lastError, config.maxAttempts)
     }
     

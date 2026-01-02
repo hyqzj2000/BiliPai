@@ -13,7 +13,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.media3.ui.PlayerView
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -45,7 +45,7 @@ private const val TAG = "MiniPlayerOverlay"
 private const val AUTO_HIDE_DELAY_MS = 3000L
 
 /**
- * 🔥 小窗播放器覆盖层
+ *  小窗播放器覆盖层
  * 
  * 交互说明：
  * - 拖动顶部标题栏区域 → 移动小窗位置
@@ -63,12 +63,12 @@ fun MiniPlayerOverlay(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     
-    // 🔥🔥 [调试] 打印当前模式状态
+    //  [调试] 打印当前模式状态
     val currentMode = miniPlayerManager.getCurrentMode()
     com.android.purebilibili.core.util.Logger.d("MiniPlayerOverlay", 
-        "🎬 Overlay: mode=$currentMode, isMiniMode=${miniPlayerManager.isMiniMode}, isActive=${miniPlayerManager.isActive}")
+        " Overlay: mode=$currentMode, isMiniMode=${miniPlayerManager.isMiniMode}, isActive=${miniPlayerManager.isActive}")
     
-    // 🔥🔥 [重构] 使用新的模式判断方法，替代原来的 bgPlay 检查
+    //  [重构] 使用新的模式判断方法，替代原来的 bgPlay 检查
     // 小窗模式为 OFF 时不渲染
     if (miniPlayerManager.isMiniPlayerDisabled()) {
         return
@@ -89,10 +89,10 @@ fun MiniPlayerOverlay(
     val miniPlayerHeightPx = with(density) { miniPlayerHeight.toPx() }
     val paddingPx = with(density) { padding.toPx() }
 
-    // 🔥 获取入场方向（在计算初始位置前获取）
+    //  获取入场方向（在计算初始位置前获取）
     val entryFromLeft = miniPlayerManager.entryFromLeft
     
-    // 🔥🔥 [修复] 位置状态 - 根据卡片位置决定初始位置
+    //  [修复] 位置状态 - 根据卡片位置决定初始位置
     // 左边视频 → 小窗在左侧，右边视频 → 小窗在右侧
     var offsetX by remember(entryFromLeft) { 
         mutableFloatStateOf(
@@ -120,7 +120,7 @@ fun MiniPlayerOverlay(
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
     
-    // 持续监听播放器状态 (🔥 优化：降低轮询频率)
+    // 持续监听播放器状态 ( 优化：降低轮询频率)
     LaunchedEffect(player) {
         while (true) {
             player?.let {
@@ -131,7 +131,7 @@ fun MiniPlayerOverlay(
                     currentProgress = (currentPosition.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
                 }
             }
-            delay(300) // 🔥 从 200ms 改为 300ms，减少 CPU 消耗
+            delay(300) //  从 200ms 改为 300ms，减少 CPU 消耗
         }
     }
     
@@ -160,7 +160,7 @@ fun MiniPlayerOverlay(
 
     AnimatedVisibility(
         visible = miniPlayerManager.isMiniMode && miniPlayerManager.isActive,
-        // 🔥🔥 根据入场方向决定动画方向
+        //  根据入场方向决定动画方向
         enter = slideInHorizontally(
             initialOffsetX = { if (entryFromLeft) -it else it }  // 左边视频从左入，右边视频从右入
         ) + fadeIn(),
@@ -194,7 +194,7 @@ fun MiniPlayerOverlay(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(RoundedCornerShape(16.dp))
-                            // 🔥 视频区域：左右滑动调节进度
+                            //  视频区域：左右滑动调节进度
                             .pointerInput(Unit) {
                                 detectHorizontalDragGestures(
                                     onDragStart = { 
@@ -240,7 +240,7 @@ fun MiniPlayerOverlay(
                     )
                 }
 
-                // 🔥 顶部拖动区域 - 用于移动小窗位置
+                //  顶部拖动区域 - 用于移动小窗位置
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -298,7 +298,7 @@ fun MiniPlayerOverlay(
                             .padding(start = 8.dp, end = 60.dp)
                     )
                     
-                    // 🔥 右上角按钮组
+                    //  右上角按钮组
                     Row(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)

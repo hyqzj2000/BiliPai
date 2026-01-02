@@ -10,7 +10,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -34,7 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import com.android.purebilibili.core.util.FormatUtils
 
 /**
- * 🔥 横屏右侧操作栏
+ *  横屏右侧操作栏
  * 
  * 仿官方 B 站设计，竖向排列的操作按钮：
  * - 分享
@@ -52,7 +52,7 @@ fun LandscapeRightSidebar(
     isLiked: Boolean = false,
     isFavorited: Boolean = false,
     hasCoin: Boolean = false,
-    // 🔥🔥🔥 [官方适配] 倍速和比例参数
+    //  [官方适配] 倍速和比例参数
     currentSpeed: Float = 1.0f,
     currentRatio: String = "适应",
     onLikeClick: () -> Unit = {},
@@ -86,14 +86,14 @@ fun LandscapeRightSidebar(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // 🔥🔥🔥 [官方适配] 倍速按钮（放在顶部）
+            //  [官方适配] 倍速按钮（放在顶部）
             SidebarTextButton(
                 text = if (currentSpeed == 1.0f) "倍速" else "${currentSpeed}x",
                 isHighlighted = currentSpeed != 1.0f,
                 onClick = onSpeedClick
             )
             
-            // 🔥🔥🔥 [官方适配] 比例按钮
+            //  [官方适配] 比例按钮
             SidebarTextButton(
                 text = currentRatio,
                 isHighlighted = currentRatio != "适应",
@@ -147,7 +147,7 @@ fun LandscapeRightSidebar(
 }
 
 /**
- * 🔥🔥🔥 [官方适配] 侧边栏文字按钮（倍速/比例）
+ *  [官方适配] 侧边栏文字按钮（倍速/比例）
  */
 @Composable
 private fun SidebarTextButton(
@@ -171,14 +171,14 @@ private fun SidebarTextButton(
 }
 
 /**
- * 🔥 单个侧边栏按钮
+ *  单个侧边栏按钮
  */
 @Composable
 private fun SidebarActionButton(
     icon: ImageVector,
     label: String,
     isActive: Boolean = false,
-    activeColor: Color = Color.Unspecified,  // 🔥 默认用主题色
+    activeColor: Color = Color.Unspecified,  //  默认用主题色
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }

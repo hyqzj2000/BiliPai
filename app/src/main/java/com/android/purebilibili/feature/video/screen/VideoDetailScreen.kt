@@ -45,7 +45,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 
 import com.android.purebilibili.data.model.response.RelatedVideo
 import com.android.purebilibili.data.model.response.ReplyItem
@@ -74,20 +74,20 @@ import com.android.purebilibili.feature.video.ui.section.VideoPlayerSection
 import com.android.purebilibili.feature.video.ui.components.SubReplySheet
 import com.android.purebilibili.feature.video.ui.components.ReplyHeader
 import com.android.purebilibili.feature.video.ui.components.ReplyItemView
-import com.android.purebilibili.feature.video.ui.components.CommentSortFilterBar  // 🔥 新增
-import com.android.purebilibili.feature.video.viewmodel.CommentSortMode  // 🔥 新增
+import com.android.purebilibili.feature.video.ui.components.CommentSortFilterBar  //  新增
+import com.android.purebilibili.feature.video.viewmodel.CommentSortMode  //  新增
 import com.android.purebilibili.feature.video.ui.components.ReplyItemView
 import com.android.purebilibili.feature.video.ui.components.LikeBurstAnimation
 import com.android.purebilibili.feature.video.ui.components.TripleSuccessAnimation
 import com.android.purebilibili.feature.video.ui.components.VideoDetailSkeleton
-import com.android.purebilibili.feature.dynamic.components.ImagePreviewDialog  // 🔥 评论图片预览
+import com.android.purebilibili.feature.dynamic.components.ImagePreviewDialog  //  评论图片预览
 import io.github.alexzhirkevich.cupertino.CupertinoActivityIndicator
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-// 🔥 共享元素过渡
+//  共享元素过渡
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -102,26 +102,26 @@ fun VideoDetailScreen(
     bvid: String,
     coverUrl: String,
     onBack: () -> Unit,
-    onUpClick: (Long) -> Unit = {},  // 🔥 点击 UP 主头像
-    onNavigateToAudioMode: () -> Unit = {}, // 🔥🔥 [新增] 导航到音频模式
+    onUpClick: (Long) -> Unit = {},  //  点击 UP 主头像
+    onNavigateToAudioMode: () -> Unit = {}, //  [新增] 导航到音频模式
     miniPlayerManager: MiniPlayerManager? = null,
     isInPipMode: Boolean = false,
     isVisible: Boolean = true,
-    startInFullscreen: Boolean = false,  // 🔥 从小窗展开时自动进入全屏
-    transitionEnabled: Boolean = false,  // 🔥 卡片过渡动画开关
+    startInFullscreen: Boolean = false,  //  从小窗展开时自动进入全屏
+    transitionEnabled: Boolean = false,  //  卡片过渡动画开关
     viewModel: PlayerViewModel = viewModel(),
-    commentViewModel: VideoCommentViewModel = viewModel() // 🔥
+    commentViewModel: VideoCommentViewModel = viewModel() // 
 ) {
     val context = LocalContext.current
     val view = LocalView.current
     val configuration = LocalConfiguration.current
     val uiState by viewModel.uiState.collectAsState()
     
-    // 🔥 监听评论状态
+    //  监听评论状态
     val commentState by commentViewModel.commentState.collectAsState()
     val subReplyState by commentViewModel.subReplyState.collectAsState()
     
-    // 🚀 空降助手 - 已由插件系统自动处理
+    //  空降助手 - 已由插件系统自动处理
     // val sponsorSegment by viewModel.currentSponsorSegment.collectAsState()
     // val showSponsorSkipButton by viewModel.showSkipButton.collectAsState()
     // val sponsorBlockEnabled by com.android.purebilibili.core.store.SettingsManager
@@ -133,13 +133,13 @@ fun VideoDetailScreen(
     var isPipMode by remember { mutableStateOf(isInPipMode) }
     LaunchedEffect(isInPipMode) { isPipMode = isInPipMode }
     
-    // 🔥🔥 [新增] 监听定时关闭状态
+    //  [新增] 监听定时关闭状态
     val sleepTimerMinutes by viewModel.sleepTimerMinutes.collectAsState()
     
-    // 🔥🔥 [PiP修复] 记录视频播放器在屏幕上的位置，用于PiP窗口只显示视频区域
+    //  [PiP修复] 记录视频播放器在屏幕上的位置，用于PiP窗口只显示视频区域
     var videoPlayerBounds by remember { mutableStateOf<android.graphics.Rect?>(null) }
     
-    // 🔥 从小窗展开时自动进入横屏全屏
+    //  从小窗展开时自动进入横屏全屏
     LaunchedEffect(startInFullscreen) {
         if (startInFullscreen && !isLandscape) {
             context.findActivity()?.let { activity ->
@@ -148,10 +148,10 @@ fun VideoDetailScreen(
         }
     }
 
-    // 🔥🔥 用于跟踪组件是否正在退出，防止 SideEffect 覆盖恢复操作
+    //  用于跟踪组件是否正在退出，防止 SideEffect 覆盖恢复操作
     var isScreenActive by remember { mutableStateOf(true) }
     
-    // 🔥🔥 [关键] 保存进入前的状态栏配置（在 DisposableEffect 外部定义以便复用）
+    //  [关键] 保存进入前的状态栏配置（在 DisposableEffect 外部定义以便复用）
     val activity = remember { context.findActivity() }
     val window = remember { activity?.window }
     val insetsController = remember {
@@ -162,7 +162,7 @@ fun VideoDetailScreen(
     val originalStatusBarColor = remember { window?.statusBarColor ?: android.graphics.Color.TRANSPARENT }
     val originalLightStatusBars = remember { insetsController?.isAppearanceLightStatusBars ?: true }
     
-    // 🔥🔥 [新增] 恢复状态栏的函数（可复用）
+    //  [新增] 恢复状态栏的函数（可复用）
     val restoreStatusBar = remember {
         {
             if (window != null && insetsController != null) {
@@ -172,42 +172,42 @@ fun VideoDetailScreen(
         }
     }
     
-    // 🔥🔥 [新增] 包装的 onBack，在导航之前立即恢复状态栏
+    //  [新增] 包装的 onBack，在导航之前立即恢复状态栏
     val handleBack = remember(onBack) {
         {
             isScreenActive = false  // 标记页面正在退出
-            restoreStatusBar()      // 🔥 立即恢复状态栏（动画开始前）
+            restoreStatusBar()      //  立即恢复状态栏（动画开始前）
             onBack()                // 执行实际的返回导航
         }
     }
     
-    // 退出重置亮度 + 🔥 屏幕常亮管理 + 状态栏恢复（作为安全网）
+    // 退出重置亮度 +  屏幕常亮管理 + 状态栏恢复（作为安全网）
     DisposableEffect(Unit) {
-        // 🔥🔥 [沉浸式] 启用边到边显示，让内容延伸到状态栏下方
+        //  [沉浸式] 启用边到边显示，让内容延伸到状态栏下方
         if (window != null) {
             WindowCompat.setDecorFitsSystemWindows(window, false)
         }
         
-        // 🔥🔥 [修复] 进入视频页时保持屏幕常亮，防止自动熄屏
+        //  [修复] 进入视频页时保持屏幕常亮，防止自动熄屏
         window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         
         onDispose {
-            // 🔥🔥 [关键] 标记页面正在退出，防止 SideEffect 覆盖
+            //  [关键] 标记页面正在退出，防止 SideEffect 覆盖
             isScreenActive = false
             
             val layoutParams = window?.attributes
             layoutParams?.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
             window?.attributes = layoutParams
             
-            // 🔥🔥 [修复] 离开视频页时取消屏幕常亮
+            //  [修复] 离开视频页时取消屏幕常亮
             window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             
-            // 🔥🔥 [安全网] 确保状态栏被恢复（以防 handleBack 未被调用，如系统返回）
+            //  [安全网] 确保状态栏被恢复（以防 handleBack 未被调用，如系统返回）
             restoreStatusBar()
         }
     }
     
-    // 🔥🔥 新增：监听消息事件（关注/收藏反馈）- 使用居中弹窗
+    //  新增：监听消息事件（关注/收藏反馈）- 使用居中弹窗
     var popupMessage by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
         viewModel.toastEvent.collect { message ->
@@ -218,13 +218,13 @@ fun VideoDetailScreen(
         }
     }
     
-    // 🔥 初始化进度持久化存储
+    //  初始化进度持久化存储
     LaunchedEffect(Unit) {
         viewModel.initWithContext(context)
     }
     
-    // 🔥🔥 [PiP修复] 当视频播放器位置更新时，同步更新PiP参数
-    // 🔥🔥 [修复] 只有 SYSTEM_PIP 模式才启用自动进入PiP
+    //  [PiP修复] 当视频播放器位置更新时，同步更新PiP参数
+    //  [修复] 只有 SYSTEM_PIP 模式才启用自动进入PiP
     val pipModeEnabled = remember { 
         com.android.purebilibili.core.store.SettingsManager.getMiniPlayerModeSync(context) == 
             com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.SYSTEM_PIP
@@ -236,20 +236,20 @@ fun VideoDetailScreen(
                 val pipParamsBuilder = android.app.PictureInPictureParams.Builder()
                     .setAspectRatio(android.util.Rational(16, 9))
                 
-                // 🔥 设置源矩形区域 - PiP只显示视频播放器区域
+                //  设置源矩形区域 - PiP只显示视频播放器区域
                 videoPlayerBounds?.let { bounds ->
                     pipParamsBuilder.setSourceRectHint(bounds)
                 }
                 
-                // Android 12+ 支持手势自动进入 PiP - 🔥 只有 SYSTEM_PIP 模式才启用
+                // Android 12+ 支持手势自动进入 PiP -  只有 SYSTEM_PIP 模式才启用
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                    pipParamsBuilder.setAutoEnterEnabled(pipModeEnabled)  // 🔥 受设置控制
+                    pipParamsBuilder.setAutoEnterEnabled(pipModeEnabled)  //  受设置控制
                     pipParamsBuilder.setSeamlessResizeEnabled(pipModeEnabled)
                 }
                 
                 act.setPictureInPictureParams(pipParamsBuilder.build())
                 com.android.purebilibili.core.util.Logger.d("VideoDetailScreen", 
-                    "🔥 PiP参数更新: autoEnterEnabled=$pipModeEnabled")
+                    " PiP参数更新: autoEnterEnabled=$pipModeEnabled")
             }
         }
     }
@@ -261,12 +261,12 @@ fun VideoDetailScreen(
         bvid = bvid
     )
     
-    // 🔥🔥 [性能优化] 生命周期感知：进入后台时暂停播放，返回前台时继续
-    // 🔥🔥 [修复] 此处逻辑已移至 VideoPlayerState.kt 统一处理
+    //  [性能优化] 生命周期感知：进入后台时暂停播放，返回前台时继续
+    //  [修复] 此处逻辑已移至 VideoPlayerState.kt 统一处理
     // 删除冗余的暂停逻辑，避免与 VideoPlayerState 中的生命周期处理冲突
     // VideoPlayerState 会检查 PiP/小窗模式来决定是否暂停
 
-    // 🔥🔥🔥 核心修改：初始化评论 & 媒体中心信息
+    //  核心修改：初始化评论 & 媒体中心信息
     LaunchedEffect(uiState) {
         if (uiState is PlayerUiState.Success) {
             val info = (uiState as PlayerUiState.Success).info
@@ -281,24 +281,24 @@ fun VideoDetailScreen(
                 coverUrl = info.pic
             )
             
-            // 🔥 同步视频信息到小窗管理器（为小窗模式做准备）
-            com.android.purebilibili.core.util.Logger.d("VideoDetailScreen", "🔥 miniPlayerManager=${if (miniPlayerManager != null) "存在" else "null"}, bvid=$bvid")
+            //  同步视频信息到小窗管理器（为小窗模式做准备）
+            com.android.purebilibili.core.util.Logger.d("VideoDetailScreen", " miniPlayerManager=${if (miniPlayerManager != null) "存在" else "null"}, bvid=$bvid")
             if (miniPlayerManager != null) {
-                com.android.purebilibili.core.util.Logger.d("VideoDetailScreen", "🔥 调用 setVideoInfo: title=${info.title}")
+                com.android.purebilibili.core.util.Logger.d("VideoDetailScreen", " 调用 setVideoInfo: title=${info.title}")
                 miniPlayerManager.setVideoInfo(
                     bvid = bvid,
                     title = info.title,
                     cover = info.pic,
                     owner = info.owner.name,
-                    cid = info.cid,  // 🔥🔥 传递 cid 用于弹幕加载
+                    cid = info.cid,  //  传递 cid 用于弹幕加载
                     externalPlayer = playerState.player,
-                    fromLeft = com.android.purebilibili.core.util.CardPositionManager.isCardOnLeft  // 🔥🔥 传递入场方向
+                    fromLeft = com.android.purebilibili.core.util.CardPositionManager.isCardOnLeft  //  传递入场方向
                 )
-                // 🔥🔥 [新增] 缓存完整 UI 状态，用于从小窗返回时恢复
+                //  [新增] 缓存完整 UI 状态，用于从小窗返回时恢复
                 miniPlayerManager.cacheUiState(success)
-                com.android.purebilibili.core.util.Logger.d("VideoDetailScreen", "✅ setVideoInfo + cacheUiState 调用完成")
+                com.android.purebilibili.core.util.Logger.d("VideoDetailScreen", " setVideoInfo + cacheUiState 调用完成")
             } else {
-                android.util.Log.w("VideoDetailScreen", "⚠️ miniPlayerManager 是 null!")
+                android.util.Log.w("VideoDetailScreen", " miniPlayerManager 是 null!")
             }
         } else if (uiState is PlayerUiState.Loading) {
             playerState.updateMediaMetadata(
@@ -309,7 +309,7 @@ fun VideoDetailScreen(
         }
     }
     
-    // 🔥🔥🔥 弹幕加载逻辑已移至 VideoPlayerState 内部处理
+    //  弹幕加载逻辑已移至 VideoPlayerState 内部处理
     // 避免在此处重复消耗 InputStream
 
     // 辅助函数：切换屏幕方向
@@ -322,7 +322,7 @@ fun VideoDetailScreen(
         }
     }
 
-    // 🔥 拦截系统返回键：如果是全屏模式，则先退出全屏
+    //  拦截系统返回键：如果是全屏模式，则先退出全屏
     BackHandler(enabled = isLandscape) {
         toggleOrientation()
     }
@@ -331,8 +331,8 @@ fun VideoDetailScreen(
     val backgroundColor = MaterialTheme.colorScheme.background
     val isLightBackground = remember(backgroundColor) { backgroundColor.luminance() > 0.5f }
 
-    // 🔥🔥 iOS风格：竖屏时状态栏黑色背景（与播放器融为一体）
-    // 🔥🔥 只在页面活跃时修改状态栏，避免退出时覆盖恢复操作
+    //  iOS风格：竖屏时状态栏黑色背景（与播放器融为一体）
+    //  只在页面活跃时修改状态栏，避免退出时覆盖恢复操作
     if (!view.isInEditMode && isScreenActive) {
         SideEffect {
             val window = (view.context.findActivity())?.window ?: return@SideEffect
@@ -345,7 +345,7 @@ fun VideoDetailScreen(
                 window.statusBarColor = Color.Black.toArgb()
                 window.navigationBarColor = Color.Black.toArgb()
             } else {
-                // 🔥🔥 [沉浸式] 竖屏时状态栏透明，让视频延伸到状态栏下方
+                //  [沉浸式] 竖屏时状态栏透明，让视频延伸到状态栏下方
                 insetsController.show(WindowInsetsCompat.Type.systemBars())
                 insetsController.isAppearanceLightStatusBars = false  // 白色图标（视频区域是深色的）
                 window.statusBarColor = Color.Transparent.toArgb()  // 透明状态栏
@@ -359,7 +359,7 @@ fun VideoDetailScreen(
             .fillMaxSize()
             .background(if (isLandscape) Color.Black else MaterialTheme.colorScheme.background)
     ) {
-        // 🔥 横竖屏过渡动画
+        //  横竖屏过渡动画
         AnimatedContent(
             targetState = isLandscape,
             transitionSpec = {
@@ -383,39 +383,42 @@ fun VideoDetailScreen(
                     onBack = { toggleOrientation() },
                     // 🔗 [新增] 分享功能
                     bvid = bvid,
-                    // 🧪 实验性功能：双击点赞
+                    //  实验性功能：双击点赞
                     onDoubleTapLike = { viewModel.toggleLike() },
-                    // 🔥 [新增] 重载视频
+                    //  [新增] 重载视频
                     onReloadVideo = { viewModel.reloadVideo() },
-                    // 🔥 [新增] CDN 线路切换
+                    //  [新增] CDN 线路切换
                     cdnCount = (uiState as? PlayerUiState.Success)?.cdnCount ?: 1,
                     onSwitchCdn = { viewModel.switchCdn() },
                     onSwitchCdnTo = { viewModel.switchCdnTo(it) },
                     
-                    // 🔥 [新增] 音频模式
+                    //  [新增] 音频模式
                     isAudioOnly = false, // 全屏模式只有视频
                     onAudioOnlyToggle = { 
                         viewModel.setAudioMode(true)
                         onNavigateToAudioMode()
                     },
                     
-                    // 🔥 [新增] 定时关闭
+                    //  [新增] 定时关闭
                     sleepTimerMinutes = sleepTimerMinutes,
-                    onSleepTimerChange = { viewModel.setSleepTimer(it) }
+                    onSleepTimerChange = { viewModel.setSleepTimer(it) },
+                    
+                    // 🖼️ [新增] 视频预览图数据
+                    videoshotData = (uiState as? PlayerUiState.Success)?.videoshotData
                 )
             } else {
-                // 🔥🔥 沉浸式布局：视频延伸到状态栏 + 内容区域
+                //  沉浸式布局：视频延伸到状态栏 + 内容区域
                 Column(modifier = Modifier.fillMaxSize()) {
-                    // 🔥🔥 [沉浸式] 获取状态栏高度
+                    //  [沉浸式] 获取状态栏高度
                     val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
                     val screenWidthDp = configuration.screenWidthDp.dp
                     val videoHeight = screenWidthDp * 9f / 16f  // 16:9 比例
                     
-                    // 🔥 读取上滑隐藏播放器设置
+                    //  读取上滑隐藏播放器设置
                     val swipeHidePlayerEnabled by com.android.purebilibili.core.store.SettingsManager
                         .getSwipeHidePlayerEnabled(context).collectAsState(initial = false)
                     
-                    // 🔥 播放器隐藏状态（用于动画）
+                    //  播放器隐藏状态（用于动画）
                     var isPlayerHidden by remember { mutableStateOf(false) }
                     val animatedPlayerHeight by androidx.compose.animation.core.animateDpAsState(
                         targetValue = if (isPlayerHidden && swipeHidePlayerEnabled) 0.dp else videoHeight + statusBarHeight,
@@ -426,22 +429,22 @@ fun VideoDetailScreen(
                         label = "playerHeight"
                     )
                     
-                    // 🔥🔥 注意：移除了状态栏黑色 Spacer
+                    //  注意：移除了状态栏黑色 Spacer
                     // 播放器将延伸到状态栏下方，共享元素过渡更流畅
                     
-                    // ✅ 视频播放器区域 - 包含状态栏高度
-                    // 🔥 尝试获取共享元素作用域
+                    //  视频播放器区域 - 包含状态栏高度
+                    //  尝试获取共享元素作用域
                     val sharedTransitionScope = LocalSharedTransitionScope.current
                     val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
                     
-                    // 🔥 为播放器容器添加共享元素标记（受开关控制）
+                    //  为播放器容器添加共享元素标记（受开关控制）
                     val playerContainerModifier = if (transitionEnabled && sharedTransitionScope != null && animatedVisibilityScope != null) {
                         with(sharedTransitionScope) {
                             Modifier
                                 .sharedBounds(
                                     sharedContentState = rememberSharedContentState(key = "video_cover_$bvid"),
                                     animatedVisibilityScope = animatedVisibilityScope,
-                                    // 🔥 添加回弹效果的 spring 动画
+                                    //  添加回弹效果的 spring 动画
                                     boundsTransform = { _, _ ->
                                         spring(
                                             dampingRatio = 0.7f,   // 轻微回弹
@@ -449,7 +452,7 @@ fun VideoDetailScreen(
                                         )
                                     },
                                     clipInOverlayDuringTransition = OverlayClip(
-                                        RoundedCornerShape(0.dp)  // 🔥 播放器无圆角
+                                        RoundedCornerShape(0.dp)  //  播放器无圆角
                                     )
                                 )
                         }
@@ -457,15 +460,15 @@ fun VideoDetailScreen(
                         Modifier
                     }
                     
-                    // 🔥🔥 播放器容器包含状态栏高度，让视频延伸到顶部
-                    // 🔥🔥 [修复] 始终保持播放器在 Composition 中，避免隐藏时重新创建导致重载
+                    //  播放器容器包含状态栏高度，让视频延伸到顶部
+                    //  [修复] 始终保持播放器在 Composition 中，避免隐藏时重新创建导致重载
                     Box(
                         modifier = playerContainerModifier
                             .fillMaxWidth()
-                            .height(animatedPlayerHeight)  // 🔥 使用动画高度（包含0高度）
+                            .height(animatedPlayerHeight)  //  使用动画高度（包含0高度）
                             .background(Color.Black)  // 黑色背景
                             .clipToBounds()
-                            // 🔥🔥 [PiP修复] 捕获视频播放器在屏幕上的位置
+                            //  [PiP修复] 捕获视频播放器在屏幕上的位置
                             .onGloballyPositioned { layoutCoordinates ->
                                 val position = layoutCoordinates.positionInWindow()
                                 val size = layoutCoordinates.size
@@ -477,14 +480,14 @@ fun VideoDetailScreen(
                                 )
                             }
                     ) {
-                        // 🔥 播放器内部使用 padding 避开状态栏
-                        // 🔥🔥 [关键] 即使高度为0也保持播放器渲染，避免重载
-                        // 🔥🔥 [修复] 高度需要包含statusBarHeight，扣除padding后视频内容才是完整的16:9
+                        //  播放器内部使用 padding 避开状态栏
+                        //  [关键] 即使高度为0也保持播放器渲染，避免重载
+                        //  [修复] 高度需要包含statusBarHeight，扣除padding后视频内容才是完整的16:9
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(videoHeight + statusBarHeight)  // 🔥 修复：包含状态栏高度
-                                .padding(top = statusBarHeight)  // 🔥 顶部 padding 避开状态栏
+                                .height(videoHeight + statusBarHeight)  //  修复：包含状态栏高度
+                                .padding(top = statusBarHeight)  //  顶部 padding 避开状态栏
                         ) {
                             VideoPlayerSection(
                                 playerState = playerState,
@@ -497,25 +500,28 @@ fun VideoDetailScreen(
                                 // 🔗 [新增] 分享功能
                                 bvid = bvid,
                                 onDoubleTapLike = { viewModel.toggleLike() },
-                                // 🔥 [新增] 重载视频
+                                //  [新增] 重载视频
                                 onReloadVideo = { viewModel.reloadVideo() },
-                                // 🔥 [新增] CDN 线路切换
+                                //  [新增] CDN 线路切换
                                 currentCdnIndex = (uiState as? PlayerUiState.Success)?.currentCdnIndex ?: 0,
                                 cdnCount = (uiState as? PlayerUiState.Success)?.cdnCount ?: 1,
                                 onSwitchCdn = { viewModel.switchCdn() },
                                 onSwitchCdnTo = { viewModel.switchCdnTo(it) },
                                 
-                                // 🔥 [新增] 音频模式
+                                //  [新增] 音频模式
                                 isAudioOnly = false,
                                 onAudioOnlyToggle = { 
                                     viewModel.setAudioMode(true)
                                     onNavigateToAudioMode()
                                 },
                                 
-                                // 🔥 [新增] 定时关闭
+                                //  [新增] 定时关闭
                                 sleepTimerMinutes = sleepTimerMinutes,
-                                onSleepTimerChange = { viewModel.setSleepTimer(it) }
-                                // 🚀 空降助手 - 已由插件系统自动处理
+                                onSleepTimerChange = { viewModel.setSleepTimer(it) },
+                                
+                                // 🖼️ [新增] 视频预览图数据
+                                videoshotData = (uiState as? PlayerUiState.Success)?.videoshotData
+                                //  空降助手 - 已由插件系统自动处理
                                 // sponsorSegment = sponsorSegment,
                                 // showSponsorSkipButton = showSponsorSkipButton,
                                 // onSponsorSkip = { viewModel.skipCurrentSponsorSegment() },
@@ -524,7 +530,7 @@ fun VideoDetailScreen(
                         }
                     }
                     
-                    // 🔥 播放器隐藏/恢复切换栏 - 仅在播放器被隐藏时显示（避免播放器显示时多出一块区域）
+                    //  播放器隐藏/恢复切换栏 - 仅在播放器被隐藏时显示（避免播放器显示时多出一块区域）
                     if (swipeHidePlayerEnabled && isPlayerHidden) {
                         Surface(
                             modifier = Modifier
@@ -555,8 +561,8 @@ fun VideoDetailScreen(
                         }
                     }
 
-                    // ✅ 第3层：内容区域
-                    // 🔥 创建嵌套滚动连接用于监听内容滑动
+                    //  第3层：内容区域
+                    //  创建嵌套滚动连接用于监听内容滑动
                     val nestedScrollConnection = remember {
                         object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
                             override fun onPreScroll(
@@ -588,14 +594,14 @@ fun VideoDetailScreen(
                         when (uiState) {
                             is PlayerUiState.Loading -> {
                                 val loadingState = uiState as PlayerUiState.Loading
-                                // 🔥 显示重试进度
+                                //  显示重试进度
                                 if (loadingState.retryAttempt > 0) {
                                     Box(
                                         modifier = Modifier.fillMaxSize(),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            // 🍎 iOS 风格加载
+                                            //  iOS 风格加载
                                             CupertinoActivityIndicator()
                                             Spacer(Modifier.height(16.dp))
                                             Text(
@@ -612,10 +618,10 @@ fun VideoDetailScreen(
 
                             is PlayerUiState.Success -> {
                                 val success = uiState as PlayerUiState.Success
-                                // 🔥 计算当前分P索引
+                                //  计算当前分P索引
                                 val currentPageIndex = success.info.pages.indexOfFirst { it.cid == success.info.cid }.coerceAtLeast(0)
                                 
-                                // 🔥 下载进度
+                                //  下载进度
                                 val downloadProgress by viewModel.downloadProgress.collectAsState()
                                 
                                 VideoContentSection(
@@ -634,7 +640,7 @@ fun VideoDetailScreen(
                                     isInWatchLater = success.isInWatchLater,
                                     followingMids = success.followingMids,
                                     videoTags = success.videoTags,
-                                    // 🔥🔥 [新增] 评论排序/筛选参数
+                                    //  [新增] 评论排序/筛选参数
                                     sortMode = commentState.sortMode,
                                     upOnlyFilter = commentState.upOnlyFilter,
                                     onSortModeChange = { commentViewModel.setSortMode(it) },
@@ -651,7 +657,7 @@ fun VideoDetailScreen(
                                     onLoadMoreReplies = { commentViewModel.loadComments() },
                                     onDownloadClick = { viewModel.openDownloadDialog() },
                                     onWatchLaterClick = { viewModel.toggleWatchLater() },
-                                    // 🔥🔥 [新增] 时间戳点击跳转
+                                    //  [新增] 时间戳点击跳转
                                     onTimestampClick = { positionMs ->
                                         playerState.player.seekTo(positionMs)
                                         playerState.player.play()
@@ -669,16 +675,16 @@ fun VideoDetailScreen(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         modifier = Modifier.padding(32.dp)
                                     ) {
-                                        // 🔥 根据错误类型显示不同图标
+                                        //  根据错误类型显示不同图标
                                         Text(
                                             text = when (errorState.error) {
                                                 is com.android.purebilibili.data.model.VideoLoadError.NetworkError -> "📡"
                                                 is com.android.purebilibili.data.model.VideoLoadError.VideoNotFound -> "🔍"
                                                 is com.android.purebilibili.data.model.VideoLoadError.RegionRestricted -> "🌐"
                                                 is com.android.purebilibili.data.model.VideoLoadError.RateLimited -> "⏳"
-                                                is com.android.purebilibili.data.model.VideoLoadError.GlobalCooldown -> "🔒"
+                                                is com.android.purebilibili.data.model.VideoLoadError.GlobalCooldown -> ""
                                                 is com.android.purebilibili.data.model.VideoLoadError.PlayUrlEmpty -> "⚡"
-                                                else -> "⚠️"
+                                                else -> ""
                                             },
                                             fontSize = 48.sp
                                         )
@@ -690,13 +696,13 @@ fun VideoDetailScreen(
                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                         )
                                         
-                                        // 🔥 针对风控错误显示额外建议
+                                        //  针对风控错误显示额外建议
                                         when (errorState.error) {
                                             is com.android.purebilibili.data.model.VideoLoadError.GlobalCooldown,
                                             is com.android.purebilibili.data.model.VideoLoadError.PlayUrlEmpty -> {
                                                 Spacer(Modifier.height(8.dp))
                                                 Text(
-                                                    text = "💡 建议：切换 WiFi/移动数据 或 清除缓存后重试",
+                                                    text = " 建议：切换 WiFi/移动数据 或 清除缓存后重试",
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     fontSize = 13.sp,
                                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -705,7 +711,7 @@ fun VideoDetailScreen(
                                             is com.android.purebilibili.data.model.VideoLoadError.RateLimited -> {
                                                 Spacer(Modifier.height(8.dp))
                                                 Text(
-                                                    text = "💡 该视频可能暂时不可用，请尝试其他视频",
+                                                    text = " 该视频可能暂时不可用，请尝试其他视频",
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     fontSize = 13.sp,
                                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -714,7 +720,7 @@ fun VideoDetailScreen(
                                             else -> {}
                                         }
                                         
-                                        // 🔥 只有可重试的错误才显示重试按钮（或者风控错误允许强制重试）
+                                        //  只有可重试的错误才显示重试按钮（或者风控错误允许强制重试）
                                         val showRetryButton = errorState.canRetry || 
                                             errorState.error is com.android.purebilibili.data.model.VideoLoadError.RateLimited ||
                                             errorState.error is com.android.purebilibili.data.model.VideoLoadError.PlayUrlEmpty
@@ -744,7 +750,7 @@ fun VideoDetailScreen(
             }
         }
         
-        // 🔥🔥 [新增] 投币对话框
+        //  [新增] 投币对话框
         val coinDialogVisible by viewModel.coinDialogVisible.collectAsState()
         val currentCoinCount = (uiState as? PlayerUiState.Success)?.coinCount ?: 0
         CoinDialog(
@@ -754,15 +760,15 @@ fun VideoDetailScreen(
             onConfirm = { count, alsoLike -> viewModel.doCoin(count, alsoLike) }
         )
         
-        // 🔥🔥 [新增] 下载画质选择对话框
+        //  [新增] 下载画质选择对话框
         val showDownloadDialog by viewModel.showDownloadDialog.collectAsState()
         val successForDownload = uiState as? PlayerUiState.Success
         if (showDownloadDialog && successForDownload != null) {
-            // 🔥 按画质从高到低排序（qualityId 越大画质越高）
+            //  按画质从高到低排序（qualityId 越大画质越高）
             val sortedQualityOptions = successForDownload.qualityIds
                 .zip(successForDownload.qualityLabels)
                 .sortedByDescending { it.first }
-            // 🔥 默认选中最高画质
+            //  默认选中最高画质
             val highestQuality = sortedQualityOptions.firstOrNull()?.first ?: successForDownload.currentQuality
             
             com.android.purebilibili.feature.download.DownloadQualityDialog(
@@ -774,7 +780,7 @@ fun VideoDetailScreen(
             )
         }
         
-        // 🔥 评论二级弹窗
+        //  评论二级弹窗
         if (subReplyState.visible) {
             BackHandler {
                 commentViewModel.closeSubReply()
@@ -785,7 +791,7 @@ fun VideoDetailScreen(
                 emoteMap = successState?.emoteMap ?: emptyMap(),
                 onDismiss = { commentViewModel.closeSubReply() },
                 onLoadMore = { commentViewModel.loadMoreSubReplies() },
-                // 🔥🔥 [新增] 时间戳点击跳转
+                //  [新增] 时间戳点击跳转
                 onTimestampClick = { positionMs ->
                     playerState.player.seekTo(positionMs)
                     playerState.player.play()
@@ -822,7 +828,7 @@ fun VideoDetailScreen(
             }
         }
         
-        // 🔥🔥 居中弹窗提示（关注/收藏反馈）
+        //  居中弹窗提示（关注/收藏反馈）
         androidx.compose.animation.AnimatedVisibility(
             visible = popupMessage != null,
             enter = fadeIn() + scaleIn(initialScale = 0.8f),

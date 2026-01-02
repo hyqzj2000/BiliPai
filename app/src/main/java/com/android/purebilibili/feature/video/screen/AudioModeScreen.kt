@@ -59,18 +59,18 @@ import kotlin.math.abs
 fun AudioModeScreen(
     viewModel: PlayerViewModel,
     onBack: () -> Unit,
-    onVideoModeClick: (String) -> Unit  // 🔥 传递当前视频的 bvid
+    onVideoModeClick: (String) -> Unit  //  传递当前视频的 bvid
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
-    // 🔥 通过共享的 ViewModel 获取播放器实例，实现无缝音频播放
+    //  通过共享的 ViewModel 获取播放器实例，实现无缝音频播放
     val player = viewModel.currentPlayer
     
-    // 🔥 投币对话框状态
+    //  投币对话框状态
     val coinDialogVisible by viewModel.coinDialogVisible.collectAsState()
     val currentCoinCount = (uiState as? PlayerUiState.Success)?.coinCount ?: 0
     
-    // 🔥 缓存最后一次成功的状态，在加载时继续显示
+    //  缓存最后一次成功的状态，在加载时继续显示
     var cachedSuccessState by remember { mutableStateOf<PlayerUiState.Success?>(null) }
     
     // 更新缓存
@@ -87,12 +87,12 @@ fun AudioModeScreen(
         else -> null
     }
 
-    // 🔥 封面显示模式状态
+    //  封面显示模式状态
     var isFullScreenCover by remember { mutableStateOf(false) }
     
     Scaffold(
         containerColor = Color.Black,
-        // 🔥 沉浸式导航栏 - 移除系统窗口内边距
+        //  沉浸式导航栏 - 移除系统窗口内边距
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             // 在具体布局中根据需要放置 TopBar
@@ -434,7 +434,7 @@ fun AudioModeScreen(
         }
     }
     
-    // 🔥 投币对话框
+    //  投币对话框
     CoinDialog(
         visible = coinDialogVisible,
         currentCoinCount = currentCoinCount,
@@ -448,7 +448,7 @@ private fun AudioModeTopBar(onBack: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .statusBarsPadding()  // 🔥 添加状态栏内边距以实现沉浸效果
+            .statusBarsPadding()  //  添加状态栏内边距以实现沉浸效果
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -517,7 +517,7 @@ private fun PlayerControls(
     }
     
     Column(modifier = Modifier.fillMaxWidth()) {
-        // 🔥 更细的进度条 - 使用自定义样式
+        //  更细的进度条 - 使用自定义样式
         Slider(
             value = if (isDragging) draggingProgress else (if (duration > 0) currentPos.toFloat() / duration else 0f),
             onValueChange = { 
@@ -536,7 +536,7 @@ private fun PlayerControls(
                 inactiveTrackColor = Color.White.copy(alpha = 0.2f)
             ),
             thumb = {
-                // 🔥 更小的圆形滑块
+                //  更小的圆形滑块
                 Box(
                     modifier = Modifier
                         .size(12.dp)
@@ -544,7 +544,7 @@ private fun PlayerControls(
                 )
             },
             track = { sliderState ->
-                // 🔥 更细的轨道
+                //  更细的轨道
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -588,7 +588,7 @@ private fun PlayerControls(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 🔥 上一个推荐视频
+            //  上一个推荐视频
             IconButton(onClick = onPrevious) {
                 Icon(
                     CupertinoIcons.Outlined.BackwardEnd,
@@ -613,7 +613,7 @@ private fun PlayerControls(
                 )
             }
             
-            // 🔥 下一个推荐视频
+            //  下一个推荐视频
             IconButton(onClick = onNext) {
                 Icon(
                     CupertinoIcons.Outlined.ForwardEnd,

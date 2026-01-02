@@ -22,7 +22,7 @@ import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronForward
 import io.github.alexzhirkevich.cupertino.icons.outlined.Folder
 
 /**
- * 🎬 视频合集展示行
+ *  视频合集展示行
  * 显示合集名称、当前集数/总集数
  */
 @Composable
@@ -50,7 +50,7 @@ fun CollectionRow(
                 .padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 🔥 合集图标
+            //  合集图标
             Box(
                 modifier = Modifier
                     .size(32.dp)
@@ -68,7 +68,7 @@ fun CollectionRow(
             
             Spacer(modifier = Modifier.width(12.dp))
             
-            // 🔥 合集信息
+            //  合集信息
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -91,7 +91,7 @@ fun CollectionRow(
             
             Spacer(modifier = Modifier.width(8.dp))
             
-            // 🔥 进度显示 (当前/总集数)
+            //  进度显示 (当前/总集数)
             if (currentPosition > 0 && totalCount > 0) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -114,7 +114,7 @@ fun CollectionRow(
             
             Spacer(modifier = Modifier.width(6.dp))
             
-            // 🔥 右侧箭头
+            //  右侧箭头
             Icon(
                 CupertinoIcons.Default.ChevronForward,
                 contentDescription = "查看合集",

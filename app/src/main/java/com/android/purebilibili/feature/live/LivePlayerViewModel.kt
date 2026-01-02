@@ -46,8 +46,8 @@ sealed class LivePlayerState {
     
     data class Success(
         val playUrl: String,
-        val allPlayUrls: List<String> = emptyList(),  // 🔥🔥 [新增] 所有可用的 CDN URL（用于故障转移）
-        val currentUrlIndex: Int = 0,  // 🔥🔥 [新增] 当前使用的 URL 索引
+        val allPlayUrls: List<String> = emptyList(),  //  [新增] 所有可用的 CDN URL（用于故障转移）
+        val currentUrlIndex: Int = 0,  //  [新增] 当前使用的 URL 索引
         val currentQuality: Int,
         val qualityList: List<LiveQuality>,
         val roomInfo: RoomInfo = RoomInfo(),
@@ -89,14 +89,14 @@ class LivePlayerViewModel : ViewModel() {
                 android.util.Log.d("LivePlayer", "🔴 quality_description: ${data.quality_description}")
                 android.util.Log.d("LivePlayer", "🔴 current_quality: ${data.current_quality}")
                 
-                // 🔥🔥 [修复] 收集所有可用的 CDN URL
+                //  [修复] 收集所有可用的 CDN URL
                 val allUrls = data.durl?.mapNotNull { it.url } ?: emptyList()
                 android.util.Log.d("LivePlayer", "🔴 All available URLs: ${allUrls.size}")
                 allUrls.forEachIndexed { index, u ->
                     android.util.Log.d("LivePlayer", "🔴 URL[$index]: ${u.take(60)}...")
                 }
                 
-                // 🔥🔥 [关键修复] 优先使用第二个 CDN（索引1），因为第一个 CDN 经常返回 403
+                //  [关键修复] 优先使用第二个 CDN（索引1），因为第一个 CDN 经常返回 403
                 // 如果只有一个 URL，则使用第一个
                 val preferredIndex = if (allUrls.size > 1) 1 else 0
                 val url = allUrls.getOrNull(preferredIndex) ?: extractPlayUrl(data)
@@ -112,20 +112,20 @@ class LivePlayerViewModel : ViewModel() {
                     
                     _uiState.value = LivePlayerState.Success(
                         playUrl = url,
-                        allPlayUrls = allUrls,  // 🔥 保存所有 URL
+                        allPlayUrls = allUrls,  //  保存所有 URL
                         currentUrlIndex = preferredIndex,
-                        currentQuality = qn,  // 🔥🔥 [修复] 使用请求的 qn 值，而不是 API 返回的 current_quality
+                        currentQuality = qn,  //  [修复] 使用请求的 qn 值，而不是 API 返回的 current_quality
                         qualityList = qualityList
                     )
                     
                     // 异步加载直播间详情
                     loadRoomDetail(roomId)
                 } else {
-                    android.util.Log.e("LivePlayer", "❌ No playable URL found!")
+                    android.util.Log.e("LivePlayer", " No playable URL found!")
                     _uiState.value = LivePlayerState.Error("无法获取直播流地址")
                 }
             }.onFailure { e ->
-                android.util.Log.e("LivePlayer", "❌ API call failed: ${e.message}", e)
+                android.util.Log.e("LivePlayer", " API call failed: ${e.message}", e)
                 _uiState.value = LivePlayerState.Error(e.message ?: "加载失败")
             }
         }
@@ -245,7 +245,7 @@ class LivePlayerViewModel : ViewModel() {
             result.onSuccess { data ->
                 android.util.Log.d("LivePlayer", "🔴 changeQuality success, durl count: ${data.durl?.size}")
                 
-                // 🔥🔥 [修复] 收集所有 URL 并优先使用备用 CDN
+                //  [修复] 收集所有 URL 并优先使用备用 CDN
                 val allUrls = data.durl?.mapNotNull { it.url } ?: emptyList()
                 val preferredIndex = if (allUrls.size > 1) 1 else 0
                 val url = allUrls.getOrNull(preferredIndex) ?: extractPlayUrl(data)
@@ -261,20 +261,20 @@ class LivePlayerViewModel : ViewModel() {
                         playUrl = url,
                         allPlayUrls = allUrls,
                         currentUrlIndex = preferredIndex,
-                        currentQuality = qn,  // 🔥🔥 [修复] 使用用户请求的 qn 值
+                        currentQuality = qn,  //  [修复] 使用用户请求的 qn 值
                         qualityList = newQualityList
                     )
                 } else {
-                    android.util.Log.e("LivePlayer", "❌ changeQuality: No URL found")
+                    android.util.Log.e("LivePlayer", " changeQuality: No URL found")
                 }
             }.onFailure { e ->
-                android.util.Log.e("LivePlayer", "❌ changeQuality failed: ${e.message}")
+                android.util.Log.e("LivePlayer", " changeQuality failed: ${e.message}")
             }
         }
     }
     
     /**
-     * 🔥🔥 [新增] 尝试下一个 CDN URL（播放失败时调用）
+     *  [新增] 尝试下一个 CDN URL（播放失败时调用）
      */
     fun tryNextUrl() {
         val currentState = _uiState.value as? LivePlayerState.Success ?: return
@@ -282,14 +282,14 @@ class LivePlayerViewModel : ViewModel() {
         val nextIndex = currentState.currentUrlIndex + 1
         if (nextIndex < currentState.allPlayUrls.size) {
             val nextUrl = currentState.allPlayUrls[nextIndex]
-            android.util.Log.d("LivePlayer", "🔄 Trying next CDN URL (index=$nextIndex): ${nextUrl.take(80)}...")
+            android.util.Log.d("LivePlayer", " Trying next CDN URL (index=$nextIndex): ${nextUrl.take(80)}...")
             
             _uiState.value = currentState.copy(
                 playUrl = nextUrl,
                 currentUrlIndex = nextIndex
             )
         } else {
-            android.util.Log.e("LivePlayer", "❌ No more CDN URLs to try (tried all ${currentState.allPlayUrls.size})")
+            android.util.Log.e("LivePlayer", " No more CDN URLs to try (tried all ${currentState.allPlayUrls.size})")
             // 所有 URL 都失败了，显示错误
             _uiState.value = LivePlayerState.Error("所有 CDN 均无法连接，请稍后重试")
         }
@@ -325,7 +325,7 @@ class LivePlayerViewModel : ViewModel() {
             
             if (codec != null && urlInfo != null) {
                 val url = urlInfo.host + codec.baseUrl + urlInfo.extra
-                android.util.Log.d("LivePlayer", "✅ Built URL from xlive API: ${url.take(100)}...")
+                android.util.Log.d("LivePlayer", " Built URL from xlive API: ${url.take(100)}...")
                 return url
             }
         }
@@ -334,11 +334,11 @@ class LivePlayerViewModel : ViewModel() {
         android.util.Log.d("LivePlayer", "🔴 Trying durl fallback...")
         val durlUrl = data.durl?.firstOrNull()?.url
         if (durlUrl != null) {
-            android.util.Log.d("LivePlayer", "✅ Using durl URL: ${durlUrl.take(100)}...")
+            android.util.Log.d("LivePlayer", " Using durl URL: ${durlUrl.take(100)}...")
             return durlUrl
         }
         
-        android.util.Log.e("LivePlayer", "❌ No URL found in any structure!")
+        android.util.Log.e("LivePlayer", " No URL found in any structure!")
         return null
     }
     

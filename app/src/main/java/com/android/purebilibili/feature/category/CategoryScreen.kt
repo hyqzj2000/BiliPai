@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -31,7 +31,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * 🔥 分类视频 ViewModel
+ *  分类视频 ViewModel
  */
 class CategoryViewModel : ViewModel() {
     private val _videos = MutableStateFlow<List<VideoItem>>(emptyList())
@@ -86,7 +86,7 @@ class CategoryViewModel : ViewModel() {
 }
 
 /**
- * 🔥 分类详情页面
+ *  分类详情页面
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,7 +103,7 @@ fun CategoryScreen(
     val gridState = rememberLazyGridState()
     val context = LocalContext.current
     
-    // 🔥🔥 [修复] 读取首页设置，保持显示模式一致
+    //  [修复] 读取首页设置，保持显示模式一致
     val homeSettings by SettingsManager.getHomeSettings(context).collectAsState(
         initial = HomeSettings()
     )
@@ -174,26 +174,26 @@ fun CategoryScreen(
                         items = videos,
                         key = { _, video -> video.bvid }
                     ) { index, video ->
-                        // 🔥🔥 [修复] 根据首页设置选择卡片样式（与 HomeScreen 一致）
+                        //  [修复] 根据首页设置选择卡片样式（与 HomeScreen 一致）
                         when (displayMode) {
                             1 -> {
-                                // 🎬 故事卡片 (Apple TV+ 风格)
+                                //  故事卡片 (Apple TV+ 风格)
                                 StoryVideoCard(
                                     video = video,
-                                    index = index,  // 🔥 动画索引
+                                    index = index,  //  动画索引
                                     onClick = { bvid, _ -> onVideoClick(bvid, video.id, video.pic) }
                                 )
                             }
                             2 -> {
-                                // 🍎 玻璃拟态 (Vision Pro 风格)
+                                //  玻璃拟态 (Vision Pro 风格)
                                 GlassVideoCard(
                                     video = video,
-                                    index = index,  // 🔥 动画索引
+                                    index = index,  //  动画索引
                                     onClick = { bvid, _ -> onVideoClick(bvid, video.id, video.pic) }
                                 )
                             }
                             else -> {
-                                // 🔥 默认网格卡片
+                                //  默认网格卡片
                                 ElegantVideoCard(
                                     video = video,
                                     index = index,

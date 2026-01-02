@@ -22,7 +22,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
-                    // 🔥 数据库迁移：Schema 变更时清空旧数据
+                    //  数据库迁移：Schema 变更时清空旧数据
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

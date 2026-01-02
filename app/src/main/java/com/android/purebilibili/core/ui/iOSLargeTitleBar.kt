@@ -24,10 +24,10 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeChild
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
-import com.android.purebilibili.core.ui.blur.unifiedBlur  // 🔥 统一模糊API
+import com.android.purebilibili.core.ui.blur.unifiedBlur  //  统一模糊API
 
 /**
- * 🍎 iOS 风格大标题导航栏
+ *  iOS 风格大标题导航栏
  * 
  * 特性：
  * - 大标题模式：标题 34sp，粗体，左对齐
@@ -60,7 +60,7 @@ fun iOSLargeTitleBar(
     // 是否处于收缩状态
     val isCollapsed = collapseProgress > 0.7f
     
-    // 🍎 动画值
+    //  动画值
     val largeTitleAlpha by animateFloatAsState(
         targetValue = if (isCollapsed) 0f else 1f,
         animationSpec = spring(stiffness = 300f),
@@ -90,14 +90,14 @@ fun iOSLargeTitleBar(
             .fillMaxWidth()
             .statusBarsPadding()
     ) {
-        // 🍎 磨砂背景层 (收缩时显示)
+        //  磨砂背景层 (收缩时显示)
         if (hazeState != null && blurAlpha > 0.01f) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .alpha(blurAlpha)
-                    .unifiedBlur(hazeState)  // 🔥 版本自适应模糊
+                    .unifiedBlur(hazeState)  //  版本自适应模糊
                     .background(
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.85f * blurAlpha)
                     )
@@ -113,7 +113,7 @@ fun iOSLargeTitleBar(
             )
         }
         
-        // 🍎 导航栏内容
+        //  导航栏内容
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -173,7 +173,7 @@ fun iOSLargeTitleBar(
             }
         }
         
-        // 🍎 底部分隔线 (收缩时显示)
+        //  底部分隔线 (收缩时显示)
         if (isCollapsed) {
             Box(
                 modifier = Modifier
@@ -188,7 +188,7 @@ fun iOSLargeTitleBar(
 }
 
 /**
- * 🍎 简化版大标题栏 (无磨砂效果)
+ *  简化版大标题栏 (无磨砂效果)
  */
 @Composable
 fun iOSLargeTitleBarSimple(

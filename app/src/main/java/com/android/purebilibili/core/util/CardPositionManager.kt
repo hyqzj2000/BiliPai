@@ -4,7 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 
 /**
- * 🔥 卡片位置管理器
+ *  卡片位置管理器
  * 
  * 用于记录点击卡片的位置，以便在返回动画时
  * 将缩放动画指向正确的卡片位置
@@ -24,21 +24,21 @@ object CardPositionManager {
         private set
     
     /**
-     * 🔥 是否正在从视频详情页返回
+     *  是否正在从视频详情页返回
      * 用于跳过首页卡片的入场动画
      */
     var isReturningFromDetail: Boolean = false
         private set
     
     /**
-     * 🔥 是否是单列卡片（故事卡片）
+     *  是否是单列卡片（故事卡片）
      * 用于决定导航动画方向：单列用垂直滑动，双列用水平滑动
      */
     var isSingleColumnCard: Boolean = false
         private set
     
     /**
-     * 🔥🔥 [新增] 屏幕密度，用于计算 dp 到 px
+     *  [新增] 屏幕密度，用于计算 dp 到 px
      */
     var lastScreenDensity: Float = 3f
         private set
@@ -58,17 +58,17 @@ object CardPositionManager {
         screenHeight: Float,
         isSingleColumn: Boolean = false,
         density: Float = 3f,
-        bottomBarHeightDp: Float = 80f  // 🔥 底部导航栏默认高度
+        bottomBarHeightDp: Float = 80f  //  底部导航栏默认高度
     ) {
         lastClickedCardBounds = bounds
         lastScreenDensity = density
         isSingleColumnCard = isSingleColumn
         
-        // 🔥🔥 [修复] 计算可见区域的底边界（屏幕高度减去底部导航栏）
+        //  [修复] 计算可见区域的底边界（屏幕高度减去底部导航栏）
         val bottomBarHeightPx = bottomBarHeightDp * density
         val visibleBottomPx = screenHeight - bottomBarHeightPx
         
-        // 🔥🔥 [修复] 计算卡片可见部分的中心点
+        //  [修复] 计算卡片可见部分的中心点
         // 如果卡片底部被导航栏遮挡，使用可见部分的中心
         val visibleTop = bounds.top
         val visibleBottom = bounds.bottom.coerceAtMost(visibleBottomPx)
@@ -81,19 +81,19 @@ object CardPositionManager {
         // 计算归一化的中心点坐标 (0-1 范围)
         lastClickedCardCenter = Offset(
             x = bounds.center.x / screenWidth,
-            y = visibleCenterY / screenHeight  // 🔥 使用可见部分的中心 Y
+            y = visibleCenterY / screenHeight  //  使用可见部分的中心 Y
         )
     }
     
     /**
-     * 🔥 标记正在返回
+     *  标记正在返回
      */
     fun markReturning() {
         isReturningFromDetail = true
     }
     
     /**
-     * 🔥 清除返回标记
+     *  清除返回标记
      */
     fun clearReturning() {
         isReturningFromDetail = false
@@ -109,14 +109,14 @@ object CardPositionManager {
     }
     
     /**
-     * 🔥 判断最后点击的卡片是否在屏幕左侧
+     *  判断最后点击的卡片是否在屏幕左侧
      * 用于小窗入场动画方向
      */
     val isCardOnLeft: Boolean
         get() = (lastClickedCardCenter?.x ?: 0.5f) < 0.5f
     
     /**
-     * 🔥🔥 [新增] 判断卡片是否完全可见（没有被顶部 header 遮挡）
+     *  [新增] 判断卡片是否完全可见（没有被顶部 header 遮挡）
      * Header 高度约为 156dp，如果卡片顶部在这个区域内，则认为被遮挡
      * 被遮挡的卡片应该禁用共享元素过渡
      */

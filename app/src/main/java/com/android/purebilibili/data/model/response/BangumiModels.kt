@@ -131,7 +131,7 @@ data class BangumiDetail(
     val episodes: List<BangumiEpisode>? = null,
     val seasons: List<SeasonInfo>? = null,      // 关联季度
     val areas: List<AreaInfo>? = null,          // 地区
-    val styles: List<String>? = null,           // 🔥🔥 [修复] 风格是字符串数组，不是对象数组
+    val styles: List<String>? = null,           //  [修复] 风格是字符串数组，不是对象数组
     val actors: String = "",                     // 演员/声优
     val staff: String = "",                      // 制作人员
     @SerialName("season_type")
@@ -298,13 +298,13 @@ data class BangumiVideoInfo(
     val acceptDescription: List<String>? = null,
     @SerialName("video_codecid")
     val videoCodecid: Int = 0,
-    // 🔥🔥 关键：durl 和 dash 字段
+    //  关键：durl 和 dash 字段
     val durl: List<Durl>? = null,
     val durls: List<Durl>? = null,  // 某些情况下叫 durls
     val dash: Dash? = null,
     @SerialName("support_formats")
     val supportFormats: List<FormatItem>? = null
-    // 🔥🔥 [修复] 移除类型不稳定的字段：has_paid, is_preview, status 等
+    //  [修复] 移除类型不稳定的字段：has_paid, is_preview, status 等
     // 这些字段有时返回 Int (0/1)，有时返回 Boolean (true/false)，导致解析失败
 )
 

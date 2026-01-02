@@ -11,7 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -35,7 +35,7 @@ import com.android.purebilibili.core.ui.blur.BlurIntensity
 import kotlinx.coroutines.launch
 
 /**
- * 🍎 外观设置二级页面
+ *  外观设置二级页面
  * iOS 风格设计
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,10 +43,10 @@ import kotlinx.coroutines.launch
 fun AppearanceSettingsScreen(
     viewModel: SettingsViewModel = viewModel(),
     onBack: () -> Unit,
-    onNavigateToBottomBarSettings: () -> Unit = {},  // 🔥 底栏设置导航
-    onNavigateToThemeSettings: () -> Unit = {},  // 🔥🔥 [新增] 主题设置导航
-    onNavigateToIconSettings: () -> Unit = {},  // 🔥🔥 [新增] 图标设置导航
-    onNavigateToAnimationSettings: () -> Unit = {}  // 🔥🔥 [新增] 动画设置导航
+    onNavigateToBottomBarSettings: () -> Unit = {},  //  底栏设置导航
+    onNavigateToThemeSettings: () -> Unit = {},  //  [新增] 主题设置导航
+    onNavigateToIconSettings: () -> Unit = {},  //  [新增] 图标设置导航
+    onNavigateToAnimationSettings: () -> Unit = {}  //  [新增] 动画设置导航
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
@@ -64,7 +64,7 @@ fun AppearanceSettingsScreen(
         ).coerceIn(0f, 1f)
     val appearanceAnimationSpeed = if (state.dynamicColor) 1.1f else 1f
     
-    // 🔥🔥 [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
+    //  [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
     val view = androidx.compose.ui.platform.LocalView.current
     androidx.compose.runtime.DisposableEffect(Unit) {
         val window = (context as? android.app.Activity)?.window
@@ -142,18 +142,18 @@ fun AppearanceSettingsScreen(
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
-        // 🔥🔥 [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，避免底部填充
+        //  [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，避免底部填充
         contentWindowInsets = WindowInsets(0.dp)
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize(),
-            // 🔥🔥 [修复] 添加底部导航栏内边距，确保沉浸式效果
+            //  [修复] 添加底部导航栏内边距，确保沉浸式效果
             contentPadding = WindowInsets.navigationBars.asPaddingValues()
         ) {
             
-            // 🔥🔥 [新增] 快速入口
+            //  [新增] 快速入口
             item { SettingsSectionTitle("快速入口") }
             item {
                 SettingsGroup {
@@ -199,7 +199,7 @@ fun AppearanceSettingsScreen(
                 }
             }
             
-            // 🍎 首页展示 - 抽屉式选择
+            //  首页展示 - 抽屉式选择
             item { SettingsSectionTitle("首页展示") }
             item {
                 SettingsGroup {
@@ -303,7 +303,7 @@ fun AppearanceSettingsScreen(
                 }
             }
 
-            // 🍎 界面效果
+            //  界面效果
             item { SettingsSectionTitle("界面效果") }
             item {
                 val scope = rememberCoroutineScope()
@@ -313,7 +313,7 @@ fun AppearanceSettingsScreen(
                     )
                 
                 SettingsGroup {
-                    // 🔥🔥 [导航入口] 底栏管理
+                    //  [导航入口] 底栏管理
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -359,7 +359,7 @@ fun AppearanceSettingsScreen(
                     
                     // ==================== 抽屉类选择器 ====================
                     
-                    // 🔥 底栏显示模式选择（抽屉式）
+                    //  底栏显示模式选择（抽屉式）
                     var visibilityModeExpanded by remember { mutableStateOf(false) }
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
@@ -457,7 +457,7 @@ fun AppearanceSettingsScreen(
                     
                     Divider()
                     
-                    // 🔥 底栏标签样式（选择器）
+                    //  底栏标签样式（选择器）
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -532,7 +532,7 @@ fun AppearanceSettingsScreen(
                     
                     // ==================== 开关类设置 ====================
                     
-                    // 🔥 悬浮底栏开关
+                    //  悬浮底栏开关
                     SettingSwitchItem(
                         icon = CupertinoIcons.Default.RectangleStack,
                         title = "悬浮底栏",
@@ -544,7 +544,7 @@ fun AppearanceSettingsScreen(
                     
                     Divider()
                     
-                    // 🔥 底栏磨砂效果开关
+                    //  底栏磨砂效果开关
                     SettingSwitchItem(
                         icon = CupertinoIcons.Default.Sparkles,
                         title = "底栏磨砂效果",
@@ -554,7 +554,7 @@ fun AppearanceSettingsScreen(
                         iconTint = iOSBlue
                     )
                     
-                    // 🔥 模糊强度选择（仅在磨砂开启时显示）
+                    //  模糊强度选择（仅在磨砂开启时显示）
                     if (state.bottomBarBlurEnabled) {
                         Divider()
                         BlurIntensitySelector(
@@ -565,7 +565,7 @@ fun AppearanceSettingsScreen(
                     
                     Divider()
                     
-                    // 🔥 卡片进场动画开关
+                    //  卡片进场动画开关
                     SettingSwitchItem(
                         icon = CupertinoIcons.Default.WandAndStars,
                         title = "卡片进场动画",
@@ -577,7 +577,7 @@ fun AppearanceSettingsScreen(
                     
                     Divider()
                     
-                    // 🔥 卡片过渡动画开关
+                    //  卡片过渡动画开关
                     SettingSwitchItem(
                         icon = CupertinoIcons.Default.ArrowLeftArrowRight,
                         title = "卡片过渡动画",
@@ -592,7 +592,7 @@ fun AppearanceSettingsScreen(
     }
 }
 /**
- * 🔥 模糊强度选择器 (可展开/收起)
+ *  模糊强度选择器 (可展开/收起)
  */
 @Composable
 fun BlurIntensitySelector(
@@ -654,7 +654,7 @@ fun BlurIntensitySelector(
             exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
         ) {
             Column(modifier = Modifier.padding(start = 40.dp, top = 4.dp, bottom = 8.dp)) {
-                // 🔥 [调整] 顺序：标准 → 玻璃拟态 → 浓郁
+                //  [调整] 顺序：标准 → 玻璃拟态 → 浓郁
                 BlurIntensityOption(
                     icon = CupertinoIcons.Default.CheckmarkCircle,
                     iconTint = iOSBlue,
@@ -667,7 +667,7 @@ fun BlurIntensitySelector(
                     }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // 🔥 玻璃拟态风格 - 移到中间
+                //  玻璃拟态风格 - 移到中间
                 BlurIntensityOption(
                     icon = CupertinoIcons.Default.Desktopcomputer,
                     iconTint = com.android.purebilibili.core.theme.iOSSystemGray,
@@ -680,7 +680,7 @@ fun BlurIntensitySelector(
                     }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // 🔥 浓郁 - 移到最后，有背景透色
+                //  浓郁 - 移到最后，有背景透色
                 BlurIntensityOption(
                     icon = CupertinoIcons.Default.Sparkle,
                     iconTint = iOSPurple,
@@ -750,7 +750,7 @@ fun BlurIntensityOption(
 }
 
 /**
- * 🔥🔥 动态取色预览组件
+ *  动态取色预览组件
  * 显示从壁纸提取的 Material You 颜色
  */
 @Composable

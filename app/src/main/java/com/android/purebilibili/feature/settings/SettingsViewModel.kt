@@ -26,18 +26,18 @@ data class SettingsUiState(
     val bottomBarLabelMode: Int = 1,  // 0=图标+文字, 1=仅图标, 2=仅文字
     val headerBlurEnabled: Boolean = true,
     val bottomBarBlurEnabled: Boolean = true,
-    val blurIntensity: BlurIntensity = BlurIntensity.THIN,  // 🔥🔥 模糊强度
+    val blurIntensity: BlurIntensity = BlurIntensity.THIN,  //  模糊强度
     val displayMode: Int = 0,
-    val cardAnimationEnabled: Boolean = false,     // 🔥 卡片进场动画（默认关闭）
-    val cardTransitionEnabled: Boolean = false,    // 🔥 卡片过渡动画（默认关闭）
+    val cardAnimationEnabled: Boolean = false,     //  卡片进场动画（默认关闭）
+    val cardTransitionEnabled: Boolean = false,    //  卡片过渡动画（默认关闭）
     val cacheSize: String = "计算中...",
-    val cacheBreakdown: CacheUtils.CacheBreakdown? = null,  // 🚀 详细缓存统计
-    // 🧪 实验性功能
+    val cacheBreakdown: CacheUtils.CacheBreakdown? = null,  //  详细缓存统计
+    //  实验性功能
     val auto1080p: Boolean = true,
     val autoSkipOpEd: Boolean = false,
     val prefetchVideo: Boolean = false,
     val doubleTapLike: Boolean = true,
-    // 🚀 空降助手
+    //  空降助手
     val sponsorBlockEnabled: Boolean = false,
     val sponsorBlockAutoSkip: Boolean = true
 )
@@ -58,19 +58,19 @@ data class ExtraSettings(
     val bottomBarLabelMode: Int,
     val headerBlurEnabled: Boolean,
     val bottomBarBlurEnabled: Boolean,
-    val blurIntensity: BlurIntensity,  // 🔥🔥 添加模糊强度
+    val blurIntensity: BlurIntensity,  //  添加模糊强度
     val displayMode: Int,
     val cardAnimationEnabled: Boolean,
     val cardTransitionEnabled: Boolean
 )
 
-// 🧪 实验性功能设置
+//  实验性功能设置
 data class ExperimentalSettings(
     val auto1080p: Boolean,
     val autoSkipOpEd: Boolean,
     val prefetchVideo: Boolean,
     val doubleTapLike: Boolean,
-    // 🚀 空降助手
+    //  空降助手
     val sponsorBlockEnabled: Boolean,
     val sponsorBlockAutoSkip: Boolean
 )
@@ -87,10 +87,10 @@ private data class BaseSettings(
     val bottomBarLabelMode: Int,
     val headerBlurEnabled: Boolean,
     val bottomBarBlurEnabled: Boolean,
-    val blurIntensity: BlurIntensity,  // 🔥🔥 模糊强度
-    val displayMode: Int, // 🔥 新增
-    val cardAnimationEnabled: Boolean, // 🔥 卡片进场动画
-    val cardTransitionEnabled: Boolean // 🔥 卡片过渡动画
+    val blurIntensity: BlurIntensity,  //  模糊强度
+    val displayMode: Int, //  新增
+    val cardAnimationEnabled: Boolean, //  卡片进场动画
+    val cardTransitionEnabled: Boolean //  卡片过渡动画
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -100,7 +100,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _cacheSize = MutableStateFlow("计算中...")
     private val _cacheBreakdown = MutableStateFlow<CacheUtils.CacheBreakdown?>(null)
 
-    // 🔥🔥 [核心修复] 分步合并，解决 combine 参数限制报错
+    //  [核心修复] 分步合并，解决 combine 参数限制报错
     // 第 1 步：合并前 4 个设置
     private val coreSettingsFlow = combine(
         SettingsManager.getHwDecode(context),
@@ -138,7 +138,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val blurSettingsFlow = combine(
         SettingsManager.getHeaderBlurEnabled(context),
         SettingsManager.getBottomBarBlurEnabled(context),
-        SettingsManager.getBlurIntensity(context)  // 🔥🔥 添加模糊强度
+        SettingsManager.getBlurIntensity(context)  //  添加模糊强度
     ) { headerBlur, bottomBarBlur, blurIntensity ->
         Triple(headerBlur, bottomBarBlur, blurIntensity)
     }
@@ -154,13 +154,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             displayMode = ui[5] as Int,
             headerBlurEnabled = blur.first,
             bottomBarBlurEnabled = blur.second,
-            blurIntensity = blur.third,  // 🔥🔥 模糊强度
+            blurIntensity = blur.third,  //  模糊强度
             cardAnimationEnabled = ui[6] as Boolean,
             cardTransitionEnabled = ui[7] as Boolean
         )
     }
     
-    // 🧪 第 4.5 步：合并实验性功能设置
+    //  第 4.5 步：合并实验性功能设置
     private val experimentalSettingsFlow = combine(
         SettingsManager.getAuto1080p(context),
         SettingsManager.getAutoSkipOpEd(context),
@@ -193,7 +193,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             bottomBarLabelMode = extra.bottomBarLabelMode,
             headerBlurEnabled = extra.headerBlurEnabled,
             bottomBarBlurEnabled = extra.bottomBarBlurEnabled,
-            blurIntensity = extra.blurIntensity,  // 🔥🔥 模糊强度
+            blurIntensity = extra.blurIntensity,  //  模糊强度
             displayMode = extra.displayMode,
             cardAnimationEnabled = extra.cardAnimationEnabled,
             cardTransitionEnabled = extra.cardTransitionEnabled
@@ -222,18 +222,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             bottomBarLabelMode = settings.bottomBarLabelMode,
             headerBlurEnabled = settings.headerBlurEnabled,
             bottomBarBlurEnabled = settings.bottomBarBlurEnabled,
-            blurIntensity = settings.blurIntensity,  // 🔥🔥 模糊强度
+            blurIntensity = settings.blurIntensity,  //  模糊强度
             displayMode = settings.displayMode,
             cardAnimationEnabled = settings.cardAnimationEnabled,
             cardTransitionEnabled = settings.cardTransitionEnabled,
             cacheSize = cache.first,
-            cacheBreakdown = cache.second,  // 🚀 详细缓存统计
-            // 🧪 实验性功能
+            cacheBreakdown = cache.second,  //  详细缓存统计
+            //  实验性功能
             auto1080p = experimental.auto1080p,
             autoSkipOpEd = experimental.autoSkipOpEd,
             prefetchVideo = experimental.prefetchVideo,
             doubleTapLike = experimental.doubleTapLike,
-            // 🚀 空降助手
+            //  空降助手
             sponsorBlockEnabled = experimental.sponsorBlockEnabled,
             sponsorBlockAutoSkip = experimental.sponsorBlockAutoSkip
         )
@@ -249,7 +249,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     // --- 功能方法 ---
 
-    // 🚀 优化：同时获取缓存大小和详细统计
+    //  优化：同时获取缓存大小和详细统计
     fun refreshCacheSize() {
         viewModelScope.launch { 
             val breakdown = CacheUtils.getCacheBreakdown(context)
@@ -276,19 +276,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
     fun toggleDynamicColor(value: Boolean) { viewModelScope.launch { SettingsManager.setDynamicColor(context, value) } }
     fun toggleBgPlay(value: Boolean) { viewModelScope.launch { SettingsManager.setBgPlay(context, value) } }
-    // 🔥🔥 [新增] 手势灵敏度和主题色
+    //  [新增] 手势灵敏度和主题色
     fun setGestureSensitivity(value: Float) { viewModelScope.launch { SettingsManager.setGestureSensitivity(context, value) } }
     fun setThemeColorIndex(index: Int) { 
         viewModelScope.launch { 
             SettingsManager.setThemeColorIndex(context, index)
-            // 🔥 选择自定义主题色时，自动关闭动态取色
+            //  选择自定义主题色时，自动关闭动态取色
             if (index != 0) {
                 SettingsManager.setDynamicColor(context, false)
             }
         }
     }
 
-    // 🔥🔥 [新增] 切换应用图标
+    //  [新增] 切换应用图标
     fun setAppIcon(iconKey: String) {
         viewModelScope.launch {
             // 1. 保存偏好
@@ -317,7 +317,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             val targetAlias = allAliases.find { it.first == iconKey }?.second
                 ?: "${packageName}.MainActivityAlias3D" // 默认3D
             
-            // 🔥🔥 [修复] 先启用目标 alias，再禁用其他 alias
+            //  [修复] 先启用目标 alias，再禁用其他 alias
             // 关键：确保在任何时刻都有一个活动的入口点，避免系统卡死
             
             try {
@@ -346,24 +346,24 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    // 🔥🔥 [新增] 切换底栏样式
+    //  [新增] 切换底栏样式
     fun toggleBottomBarFloating(value: Boolean) { viewModelScope.launch { SettingsManager.setBottomBarFloating(context, value) } }
     
-    // 🔥🔥 [新增] 底栏显示模式 (0=图标+文字, 1=仅图标, 2=仅文字)
+    //  [新增] 底栏显示模式 (0=图标+文字, 1=仅图标, 2=仅文字)
     fun setBottomBarLabelMode(mode: Int) { viewModelScope.launch { SettingsManager.setBottomBarLabelMode(context, mode) } }
     
-    // 🔥🔥 [新增] 模糊效果开关
+    //  [新增] 模糊效果开关
     fun toggleHeaderBlur(value: Boolean) { viewModelScope.launch { SettingsManager.setHeaderBlurEnabled(context, value) } }
     fun toggleBottomBarBlur(value: Boolean) { viewModelScope.launch { SettingsManager.setBottomBarBlurEnabled(context, value) } }
-    fun setBlurIntensity(intensity: BlurIntensity) { viewModelScope.launch { SettingsManager.setBlurIntensity(context, intensity) } }  // 🔥🔥 模糊强度设置
+    fun setBlurIntensity(intensity: BlurIntensity) { viewModelScope.launch { SettingsManager.setBlurIntensity(context, intensity) } }  //  模糊强度设置
     
-    // 🔥 [新增] 卡片进场动画开关
+    //  [新增] 卡片进场动画开关
     fun toggleCardAnimation(value: Boolean) { viewModelScope.launch { SettingsManager.setCardAnimationEnabled(context, value) } }
     
-    // 🔥 [新增] 卡片过渡动画开关
+    //  [新增] 卡片过渡动画开关
     fun toggleCardTransition(value: Boolean) { viewModelScope.launch { SettingsManager.setCardTransitionEnabled(context, value) } }
     
-    // 🔥🔥 [新增] 首页展示模式
+    //  [新增] 首页展示模式
     fun setDisplayMode(mode: Int) { 
         viewModelScope.launch { 
             // 兼容旧的 shared preferences
@@ -382,13 +382,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         } 
     }
     
-    // 🧪🧪 [新增] 实验性功能
+    //  [新增] 实验性功能
     fun toggleAuto1080p(value: Boolean) { viewModelScope.launch { SettingsManager.setAuto1080p(context, value) } }
     fun toggleAutoSkipOpEd(value: Boolean) { viewModelScope.launch { SettingsManager.setAutoSkipOpEd(context, value) } }
     fun togglePrefetchVideo(value: Boolean) { viewModelScope.launch { SettingsManager.setPrefetchVideo(context, value) } }
     fun toggleDoubleTapLike(value: Boolean) { viewModelScope.launch { SettingsManager.setDoubleTapLike(context, value) } }
     
-    // 🚀🚀 [新增] 空降助手
+    //  [新增] 空降助手
     fun toggleSponsorBlock(value: Boolean) { viewModelScope.launch { SettingsManager.setSponsorBlockEnabled(context, value) } }
     fun toggleSponsorBlockAutoSkip(value: Boolean) { viewModelScope.launch { SettingsManager.setSponsorBlockAutoSkip(context, value) } }
 }

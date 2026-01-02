@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -48,7 +48,7 @@ fun QualitySelectionMenu(
         }
     }
     
-    // 🔥🔥 [新增] 判断用户是否有权限使用该画质
+    //  [新增] 判断用户是否有权限使用该画质
     fun isQualityAvailable(qualityId: Int): Boolean {
         return when {
             qualityId >= 112 -> isVip  // VIP 画质需要大会员
@@ -70,7 +70,7 @@ fun QualitySelectionMenu(
         Surface(
             modifier = Modifier
                 .widthIn(min = 200.dp, max = 280.dp)
-                .heightIn(max = 400.dp)  // 🔥🔥 [修复] 限制最大高度，允许滚动
+                .heightIn(max = 400.dp)  //  [修复] 限制最大高度，允许滚动
                 .clip(RoundedCornerShape(12.dp))
                 .clickable(enabled = false) {},
             color = Color(0xFF2B2B2B),
@@ -80,7 +80,7 @@ fun QualitySelectionMenu(
             Column(
                 modifier = Modifier
                     .padding(vertical = 8.dp)
-                    .verticalScroll(rememberScrollState())  // 🔥🔥 [修复] 添加垂直滚动
+                    .verticalScroll(rememberScrollState())  //  [修复] 添加垂直滚动
             ) {
                 Text(
                     text = "画质选择",
@@ -99,7 +99,7 @@ fun QualitySelectionMenu(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            // 🔥🔥 [修改] 不可用画质仍可点击，由 ViewModel 处理权限提示
+                            //  [修改] 不可用画质仍可点击，由 ViewModel 处理权限提示
                             .clickable { onQualitySelected(index) }
                             .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent)
                             .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -107,7 +107,7 @@ fun QualitySelectionMenu(
                     ) {
                         Text(
                             text = quality,
-                            // 🔥🔥 [修改] 不可用画质显示为灰色
+                            //  [修改] 不可用画质显示为灰色
                             color = when {
                                 isSelected -> MaterialTheme.colorScheme.primary
                                 !isAvailable -> Color.White.copy(0.4f)

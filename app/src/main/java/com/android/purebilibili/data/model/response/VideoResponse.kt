@@ -34,7 +34,7 @@ data class PlayUrlData(
     @SerialName("last_play_cid")
     val lastPlayCid: Long? = null
 ) {
-    // 🔥 PiliPala 风格：提供便捷的访问方法
+    //  PiliPala 风格：提供便捷的访问方法
     val accept_quality: List<Int> get() = acceptQuality
     val accept_description: List<String> get() = acceptDescription
 }
@@ -61,7 +61,7 @@ data class Dash(
     val flac: Flac? = null
 )
 
-// 🔥 DASH 视频流 (重命名避免与 ListModels.VideoItem 冲突)
+//  DASH 视频流 (重命名避免与 ListModels.VideoItem 冲突)
 @Serializable
 data class DashVideo(
     val id: Int = 0,
@@ -87,7 +87,7 @@ data class DashVideo(
         get() = VideoDecodeFormat.fromCodecs(codecs)
 }
 
-// 🔥 DASH 音频流
+//  DASH 音频流
 @Serializable
 data class DashAudio(
     val id: Int = 0,
@@ -142,10 +142,10 @@ data class Flac(
 // 兼容旧代码的类型别名
 typealias DashMedia = DashVideo
 
-// 🔥🔥 扩展函数：获取最佳视频流
+//  扩展函数：获取最佳视频流
 fun Dash.getBestVideo(targetQn: Int, preferCodec: String = "avc"): DashVideo? {
     if (video.isEmpty()) {
-        android.util.Log.w("VideoResponse", "⚠️ getBestVideo: video list is empty!")
+        android.util.Log.w("VideoResponse", " getBestVideo: video list is empty!")
         return null
     }
     
@@ -153,7 +153,7 @@ fun Dash.getBestVideo(targetQn: Int, preferCodec: String = "avc"): DashVideo? {
     
     val validVideos = video.filter { it.getValidUrl().isNotEmpty() }
     if (validVideos.isEmpty()) {
-        android.util.Log.w("VideoResponse", "⚠️ getBestVideo: no video has valid URL")
+        android.util.Log.w("VideoResponse", " getBestVideo: no video has valid URL")
         return video.firstOrNull()
     }
     
@@ -174,11 +174,11 @@ fun Dash.getBestVideo(targetQn: Int, preferCodec: String = "avc"): DashVideo? {
         }
         .firstOrNull()
     
-    com.android.purebilibili.core.util.Logger.d("VideoResponse", "✅ getBestVideo: selected id=${selected?.id}, codec=${selected?.codecs}")
+    com.android.purebilibili.core.util.Logger.d("VideoResponse", " getBestVideo: selected id=${selected?.id}, codec=${selected?.codecs}")
     return selected
 }
 
-// 🔥🔥 扩展函数：获取最佳音频流
+//  扩展函数：获取最佳音频流
 fun Dash.getBestAudio(): DashAudio? {
     if (audio.isNullOrEmpty()) {
         com.android.purebilibili.core.util.Logger.d("VideoResponse", "ℹ️ getBestAudio: no audio streams")
@@ -191,6 +191,6 @@ fun Dash.getBestAudio(): DashAudio? {
     }
     
     val selected = validAudios.maxByOrNull { it.bandwidth }
-    com.android.purebilibili.core.util.Logger.d("VideoResponse", "✅ getBestAudio: selected id=${selected?.id}, bandwidth=${selected?.bandwidth}")
+    com.android.purebilibili.core.util.Logger.d("VideoResponse", " getBestAudio: selected id=${selected?.id}, bandwidth=${selected?.bandwidth}")
     return selected
 }

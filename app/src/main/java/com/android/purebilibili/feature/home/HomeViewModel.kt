@@ -23,19 +23,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val isRefreshing = _isRefreshing.asStateFlow()
 
     private var refreshIdx = 0
-    private var popularPage = 1  // 🔥 热门视频分页
-    private var livePage = 1     // 🔥 直播分页
-    private var hasMoreLiveData = true  // 🔥 是否还有更多直播数据
+    private var popularPage = 1  //  热门视频分页
+    private var livePage = 1     //  直播分页
+    private var hasMoreLiveData = true  //  是否还有更多直播数据
 
     init {
         loadData()
     }
 
-    // 🔥🔥 [新增] 切换分类
+    //  [新增] 切换分类
     fun switchCategory(category: HomeCategory) {
         if (_uiState.value.currentCategory == category) return
         viewModelScope.launch {
-            // 🔥🔥 [修复] 如果切换到直播分类，未登录用户默认显示热门
+            //  [修复] 如果切换到直播分类，未登录用户默认显示热门
             val liveSubCategory = if (category == HomeCategory.LIVE) {
                 val isLoggedIn = !com.android.purebilibili.core.store.TokenManager.sessDataCache.isNullOrEmpty()
                 if (isLoggedIn) _uiState.value.liveSubCategory else LiveSubCategory.POPULAR
@@ -47,32 +47,32 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 currentCategory = category,
                 liveSubCategory = liveSubCategory,
                 videos = emptyList(),
-                liveRooms = emptyList(),  // 🔥 清空直播列表
+                liveRooms = emptyList(),  //  清空直播列表
                 isLoading = true,
                 error = null,
-                displayedTabIndex = category.ordinal  // 🔥🔥 [新增] 同步更新标签页索引
+                displayedTabIndex = category.ordinal  //  [新增] 同步更新标签页索引
             )
             refreshIdx = 0
             popularPage = 1
             livePage = 1
-            hasMoreLiveData = true  // 🔥 重置分页标志
+            hasMoreLiveData = true  //  重置分页标志
             fetchData(isLoadMore = false)
         }
     }
     
-    // 🔥🔥 [新增] 更新显示的标签页索引（用于特殊分类，不改变内容只更新标签高亮）
+    //  [新增] 更新显示的标签页索引（用于特殊分类，不改变内容只更新标签高亮）
     fun updateDisplayedTabIndex(index: Int) {
         _uiState.value = _uiState.value.copy(displayedTabIndex = index)
     }
     
-    // 🗑️ [新增] 开始消散动画（触发 UI 播放粒子动画）
+    //  [新增] 开始消散动画（触发 UI 播放粒子动画）
     fun startVideoDissolve(bvid: String) {
         _uiState.value = _uiState.value.copy(
             dissolvingVideos = _uiState.value.dissolvingVideos + bvid
         )
     }
     
-    // 🗑️ [新增] 完成消散动画（从列表移除并记录到已过滤集合）
+    //  [新增] 完成消散动画（从列表移除并记录到已过滤集合）
     fun completeVideoDissolve(bvid: String) {
         _uiState.value = _uiState.value.copy(
             dissolvingVideos = _uiState.value.dissolvingVideos - bvid,
@@ -81,7 +81,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     
-    // 🔥🔥 [新增] 切换直播子分类
+    //  [新增] 切换直播子分类
     fun switchLiveSubCategory(subCategory: LiveSubCategory) {
         if (_uiState.value.liveSubCategory == subCategory) return
         viewModelScope.launch {
@@ -92,7 +92,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 error = null
             )
             livePage = 1
-            hasMoreLiveData = true  // 🔥 修复：切换分类时重置分页标志
+            hasMoreLiveData = true  //  修复：切换分类时重置分页标志
             fetchLiveRooms(isLoadMore = false)
         }
     }
@@ -110,11 +110,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             _isRefreshing.value = true
             refreshIdx = 0
             popularPage = 1
-            livePage = 1  // 🔥 修复：刷新时也要重置直播分页
-            hasMoreLiveData = true  // 🔥 修复：刷新时重置分页标志
+            livePage = 1  //  修复：刷新时也要重置直播分页
+            hasMoreLiveData = true  //  修复：刷新时重置分页标志
             fetchData(isLoadMore = false)
-            // 🔥 数据加载完成后再更新 refreshKey，避免闪烁
-            // 🥚 刷新成功后显示趣味提示
+            //  数据加载完成后再更新 refreshKey，避免闪烁
+            //  刷新成功后显示趣味提示
             val refreshMessage = com.android.purebilibili.core.util.EasterEggs.getRefreshMessage()
             _uiState.value = _uiState.value.copy(
                 refreshKey = System.currentTimeMillis(),
@@ -127,7 +127,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun loadMore() {
         if (_uiState.value.isLoading || _isRefreshing.value) return
         
-        // 🔥 修复：如果是直播分类且没有更多数据，不再加载
+        //  修复：如果是直播分类且没有更多数据，不再加载
         if (_uiState.value.currentCategory == HomeCategory.LIVE && !hasMoreLiveData) {
             com.android.purebilibili.core.util.Logger.d("HomeVM", "🔴 No more live data, skipping loadMore")
             return
@@ -135,7 +135,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            // 🔥 修复：先增加页码再获取数据（确保请求下一页）
+            //  修复：先增加页码再获取数据（确保请求下一页）
             refreshIdx++
             popularPage++
             livePage++
@@ -146,24 +146,24 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun fetchData(isLoadMore: Boolean) {
         val currentCategory = _uiState.value.currentCategory
         
-        // 🔥 直播分类单独处理
+        //  直播分类单独处理
         if (currentCategory == HomeCategory.LIVE) {
             fetchLiveRooms(isLoadMore)
             return
         }
         
-        // 🔥🔥 关注动态分类单独处理
+        //  关注动态分类单独处理
         if (currentCategory == HomeCategory.FOLLOW) {
             fetchFollowFeed(isLoadMore)
             return
         }
         
-        // 🔥 视频类分类处理
+        //  视频类分类处理
         val videoResult = when (currentCategory) {
             HomeCategory.RECOMMEND -> VideoRepository.getHomeVideos(refreshIdx)
             HomeCategory.POPULAR -> VideoRepository.getPopularVideos(popularPage)
             else -> {
-                // 🔥🔥 [修复] 未实现的分类显示错误，但保留 previousCategory 供返回使用
+                //  [修复] 未实现的分类显示错误，但保留 previousCategory 供返回使用
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = "该分类暂未实现"
@@ -182,7 +182,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         videoResult.onSuccess { videos ->
             val validVideos = videos.filter { it.bvid.isNotEmpty() && it.title.isNotEmpty() }
             
-            // 🔌 应用原生 FeedPlugin 过滤器
+            //  应用原生 FeedPlugin 过滤器
             val nativeFiltered = validVideos.filter { video ->
                 val plugins = PluginManager.getEnabledFeedPlugins()
                 if (plugins.isEmpty()) return@filter true
@@ -197,7 +197,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             
-            // 🔌🔌 [新增] 应用 JSON 规则插件过滤器
+            //  [新增] 应用 JSON 规则插件过滤器
             val filteredVideos = com.android.purebilibili.core.plugin.json.JsonPluginManager.filterVideos(nativeFiltered)
             
             if (filteredVideos.isNotEmpty()) {
@@ -221,7 +221,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
-    // 🔥🔥 [新增] 获取关注动态列表
+    //  [新增] 获取关注动态列表
     private suspend fun fetchFollowFeed(isLoadMore: Boolean) {
         if (!isLoadMore) {
             fetchUserInfo()
@@ -233,7 +233,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         if (isLoadMore) delay(100)
         
         result.onSuccess { items ->
-            // 🔥 将 DynamicItem 转换为 VideoItem（只保留视频类型）
+            //  将 DynamicItem 转换为 VideoItem（只保留视频类型）
             val videos = items.mapNotNull { item ->
                 val archive = item.modules.module_dynamic?.major?.archive
                 if (archive != null && archive.bvid.isNotEmpty()) {
@@ -275,7 +275,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
-    // 🔥 解析时长文本 "10:24" -> 624 秒
+    //  解析时长文本 "10:24" -> 624 秒
     private fun parseDurationText(text: String): Int {
         val parts = text.split(":")
         return try {
@@ -287,7 +287,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         } catch (e: Exception) { 0 }
     }
     
-    // 🔥 解析统计文本 "123.4万" -> 1234000
+    //  解析统计文本 "123.4万" -> 1234000
     private fun parseStatText(text: String): Int {
         return try {
             if (text.contains("万")) {
@@ -300,14 +300,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         } catch (e: Exception) { 0 }
     }
     
-    // 🔥🔥 [新增] 获取直播间列表（支持关注/热门切换）
+    //  [新增] 获取直播间列表（支持关注/热门切换）
     private suspend fun fetchLiveRooms(isLoadMore: Boolean) {
         val page = if (isLoadMore) livePage else 1
         val subCategory = _uiState.value.liveSubCategory
         
         com.android.purebilibili.core.util.Logger.d("HomeVM", "🔴 fetchLiveRooms: isLoadMore=$isLoadMore, page=$page, livePage=$livePage, subCategory=$subCategory")
         
-        // 🔥 根据子分类选择不同的 API
+        //  根据子分类选择不同的 API
         val result = when (subCategory) {
             LiveSubCategory.FOLLOWED -> LiveRepository.getFollowedLive(page)
             LiveSubCategory.POPULAR -> LiveRepository.getLiveRooms(page)
@@ -320,7 +320,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             com.android.purebilibili.core.util.Logger.d("HomeVM", "🔴 Fetched ${rooms.size} rooms for page $page")
             
             if (rooms.isNotEmpty()) {
-                // 🔥 修复：过滤重复的直播间
+                //  修复：过滤重复的直播间
                 val existingRoomIds = _uiState.value.liveRooms.map { it.roomid }.toSet()
                 val newRooms = if (isLoadMore) {
                     rooms.filter { it.roomid !in existingRoomIds }
@@ -330,7 +330,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 
                 com.android.purebilibili.core.util.Logger.d("HomeVM", "🔴 New unique rooms: ${newRooms.size}")
                 
-                // 🔥 关键修复：如果没有新的唯一房间，标记为无更多数据
+                //  关键修复：如果没有新的唯一房间，标记为无更多数据
                 if (isLoadMore && newRooms.isEmpty()) {
                     hasMoreLiveData = false
                     com.android.purebilibili.core.util.Logger.d("HomeVM", "🔴 No more unique live data, stopping pagination")
@@ -345,7 +345,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     error = null
                 )
             } else {
-                // 🔥 没有更多数据时，不再触发加载更多
+                //  没有更多数据时，不再触发加载更多
                 val message = when (subCategory) {
                     LiveSubCategory.FOLLOWED -> "暂无关注的主播在直播"
                     LiveSubCategory.POPULAR -> "没有直播"
@@ -363,7 +363,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
-    // 🔥 提取用户信息获取逻辑
+    //  提取用户信息获取逻辑
     private suspend fun fetchUserInfo() {
         val navResult = VideoRepository.getNavInfo()
         navResult.onSuccess { navData ->
@@ -384,7 +384,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 )
                 
-                // 🔥 获取关注列表（异步，不阻塞主流程）
+                //  获取关注列表（异步，不阻塞主流程）
                 fetchFollowingList(navData.mid)
             } else {
                 com.android.purebilibili.core.store.TokenManager.isVipCache = false
@@ -397,14 +397,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
-    // 🔥 获取关注列表（并行分页获取，支持更多关注，带本地缓存）
+    //  获取关注列表（并行分页获取，支持更多关注，带本地缓存）
     private suspend fun fetchFollowingList(mid: Long) {
         val context = getApplication<android.app.Application>()
         val prefs = context.getSharedPreferences("following_cache", android.content.Context.MODE_PRIVATE)
         val cacheKey = "following_mids_$mid"
         val cacheTimeKey = "following_time_$mid"
         
-        // 🔥 检查缓存（1小时内有效）
+        //  检查缓存（1小时内有效）
         val cachedTime = prefs.getLong(cacheTimeKey, 0)
         val cacheValidDuration = 60 * 60 * 1000L  // 1小时
         if (System.currentTimeMillis() - cachedTime < cacheValidDuration) {
@@ -412,18 +412,18 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             if (!cachedMids.isNullOrEmpty()) {
                 val mids = cachedMids.mapNotNull { it.toLongOrNull() }.toSet()
                 _uiState.value = _uiState.value.copy(followingMids = mids)
-                com.android.purebilibili.core.util.Logger.d("HomeVM", "📋 Loaded ${mids.size} following mids from cache")
+                com.android.purebilibili.core.util.Logger.d("HomeVM", " Loaded ${mids.size} following mids from cache")
                 return
             }
         }
         
-        // 🔥 动态获取所有关注列表（无上限）
+        //  动态获取所有关注列表（无上限）
         try {
             val allMids = mutableSetOf<Long>()
             
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 var page = 1
-                while (true) {  // 🔥 无限循环，直到获取完所有关注
+                while (true) {  //  无限循环，直到获取完所有关注
                     try {
                         val result = com.android.purebilibili.core.network.NetworkModule.api.getFollowings(mid, page, 50)
                         if (result.code == 0 && result.data != null) {
@@ -434,7 +434,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             
                             // 如果这一页不满50，说明已经获取完所有关注
                             if (list.size < 50) {
-                                com.android.purebilibili.core.util.Logger.d("HomeVM", "📋 Reached end at page $page, total: ${allMids.size}")
+                                com.android.purebilibili.core.util.Logger.d("HomeVM", " Reached end at page $page, total: ${allMids.size}")
                                 break
                             }
                             page++
@@ -442,22 +442,22 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             break
                         }
                     } catch (e: Exception) {
-                        com.android.purebilibili.core.util.Logger.e("HomeVM", "📋 Error at page $page", e)
+                        com.android.purebilibili.core.util.Logger.e("HomeVM", " Error at page $page", e)
                         break
                     }
                 }
             }
             
-            // 🔥 保存到本地缓存
+            //  保存到本地缓存
             prefs.edit()
                 .putStringSet(cacheKey, allMids.map { it.toString() }.toSet())
                 .putLong(cacheTimeKey, System.currentTimeMillis())
                 .apply()
             
             _uiState.value = _uiState.value.copy(followingMids = allMids.toSet())
-            com.android.purebilibili.core.util.Logger.d("HomeVM", "📋 Total following mids fetched and cached: ${allMids.size}")
+            com.android.purebilibili.core.util.Logger.d("HomeVM", " Total following mids fetched and cached: ${allMids.size}")
         } catch (e: Exception) {
-            com.android.purebilibili.core.util.Logger.e("HomeVM", "📋 Error fetching following list", e)
+            com.android.purebilibili.core.util.Logger.e("HomeVM", " Error fetching following list", e)
         }
     }
 }

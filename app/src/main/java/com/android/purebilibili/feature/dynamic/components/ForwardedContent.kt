@@ -19,7 +19,7 @@ import com.android.purebilibili.core.theme.iOSBlue
 import com.android.purebilibili.data.model.response.DynamicItem
 
 /**
- * 🔥 转发的原始内容
+ *  转发的原始内容
  */
 @Composable
 fun ForwardedContent(

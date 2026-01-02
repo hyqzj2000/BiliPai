@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 
 /**
- * 🔥 离线缓存列表页面
+ *  离线缓存列表页面
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +60,7 @@ fun DownloadListScreen(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "📥",
+                        text = "",
                         fontSize = 48.sp
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -139,7 +139,7 @@ private fun DownloadTaskItem(
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                // 🔥 确保使用 HTTPS 并添加 Referer
+                //  确保使用 HTTPS 并添加 Referer
                 val coverUrl = task.cover.let { url ->
                     if (url.startsWith("http://")) url.replace("http://", "https://")
                     else url

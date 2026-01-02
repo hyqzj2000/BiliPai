@@ -49,7 +49,7 @@ import com.android.purebilibili.feature.dynamic.components.DynamicCommentSheet
 import com.android.purebilibili.feature.dynamic.components.RepostDialog
 
 /**
- * 🔥 动态页面 - 支持两种布局模式
+ *  动态页面 - 支持两种布局模式
  * 
  * 1. SIDEBAR 模式：UP 主列表在左侧边栏
  * 2. HORIZONTAL 模式：UP 主列表在顶部横向滚动
@@ -74,7 +74,7 @@ fun DynamicScreen(
     val selectedUserId by viewModel.selectedUserId.collectAsState()
     val isSidebarExpanded by viewModel.isSidebarExpanded.collectAsState()
     
-    // 🔥🔥 [新增] 评论/点赞/转发状态
+    //  [新增] 评论/点赞/转发状态
     val selectedDynamicId by viewModel.selectedDynamicId.collectAsState()
     val comments by viewModel.comments.collectAsState()
     val commentsLoading by viewModel.commentsLoading.collectAsState()
@@ -85,7 +85,7 @@ fun DynamicScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("全部", "视频")
     
-    // 🔥 布局模式状态（侧边栏/横向）
+    //  布局模式状态（侧边栏/横向）
     var displayMode by remember { mutableStateOf(DynamicDisplayMode.SIDEBAR) }
     
     val density = LocalDensity.current
@@ -134,11 +134,11 @@ fun DynamicScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        // 🔥 [新增] 模式切换动画
+        //  [新增] 模式切换动画
         AnimatedContent(
             targetState = displayMode,
             transitionSpec = {
-                // 🔥 根据切换方向使用不同动画
+                //  根据切换方向使用不同动画
                 val slideDirection = if (targetState == DynamicDisplayMode.HORIZONTAL) {
                     // 从侧边栏切换到横向：向左滑出+淡出，向左滑入+淡入
                     (slideInHorizontally { -it / 4 } + fadeIn(animationSpec = tween(300))) togetherWith
@@ -152,7 +152,7 @@ fun DynamicScreen(
             },
             label = "displayModeTransition"
         ) { targetMode ->
-            // 🔥 根据布局模式选择不同布局
+            //  根据布局模式选择不同布局
             when (targetMode) {
                 DynamicDisplayMode.SIDEBAR -> {
                     // 侧边栏模式
@@ -256,7 +256,7 @@ fun DynamicScreen(
                                 onBackClick = onHomeClick
                             )
                             
-                            // 🔥 横向 UP 主列表
+                            //  横向 UP 主列表
                             HorizontalUserList(
                                 users = followedUsers,
                                 selectedUserId = selectedUserId,
@@ -271,7 +271,7 @@ fun DynamicScreen(
         }
     }
     
-    // 🔥🔥 [新增] 评论弹窗
+    //  [新增] 评论弹窗
     selectedDynamicId?.let { dynamicId ->
         DynamicCommentSheet(
             comments = comments,
@@ -285,7 +285,7 @@ fun DynamicScreen(
         )
     }
     
-    // 🔥🔥 [新增] 转发弹窗
+    //  [新增] 转发弹窗
     showRepostDialog?.let { dynamicId ->
         RepostDialog(
             onDismiss = { showRepostDialog = null },
@@ -300,7 +300,7 @@ fun DynamicScreen(
 }
 
 /**
- * 🔥 动态列表内容
+ *  动态列表内容
  */
 @Composable
 private fun DynamicList(
@@ -314,7 +314,7 @@ private fun DynamicList(
     onLiveClick: (Long, String, String) -> Unit,
     onLoginClick: () -> Unit,
     gifImageLoader: ImageLoader,
-    // 🔥🔥 [新增] 动态操作回调
+    //  [新增] 动态操作回调
     onCommentClick: (String) -> Unit = {},
     onRepostClick: (String) -> Unit = {},
     onLikeClick: (String) -> Unit = {},
@@ -388,7 +388,7 @@ private fun DynamicList(
 }
 
 /**
- * 🔥 横向 UP 主列表（Telegram 风格）
+ *  横向 UP 主列表（Telegram 风格）
  */
 @Composable
 private fun HorizontalUserList(
@@ -404,7 +404,7 @@ private fun HorizontalUserList(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // 🔥 [简化] 移除「全部」按钮，直接显示 UP 主头像列表
+            //  [简化] 移除「全部」按钮，直接显示 UP 主头像列表
             // UP 主头像列表
             items(users, key = { it.uid }) { user ->
                 val isSelected = selectedUserId == user.uid
@@ -435,7 +435,7 @@ private fun HorizontalUserList(
                             contentScale = ContentScale.Crop
                         )
                         
-                        // 🔥 在线状态
+                        //  在线状态
                         if (user.isLive) {
                             Box(
                                 modifier = Modifier

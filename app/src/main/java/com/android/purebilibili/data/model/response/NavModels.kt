@@ -26,7 +26,7 @@ data class NavData(
     val money: Double = 0.0, // 硬币
     val wallet: Wallet = Wallet(),
     val vip: VipInfo = VipInfo(),
-    // 🔥🔥 核心修复：补回 wbi_img 字段 🔥🔥
+    //  核心修复：补回 wbi_img 字段 
     val wbi_img: WbiImg? = null
 )
 

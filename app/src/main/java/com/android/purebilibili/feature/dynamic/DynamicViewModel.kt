@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * 🔥 动态页面 ViewModel
+ *  动态页面 ViewModel
  * 支持：动态列表、侧边栏关注用户、在线状态
  */
 class DynamicViewModel : ViewModel() {
@@ -24,7 +24,7 @@ class DynamicViewModel : ViewModel() {
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
     
-    // 🔥 侧边栏相关状态
+    //  侧边栏相关状态
     private val _followedUsers = MutableStateFlow<List<SidebarUser>>(emptyList())
     val followedUsers: StateFlow<List<SidebarUser>> = _followedUsers.asStateFlow()
     
@@ -40,7 +40,7 @@ class DynamicViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 加载关注用户列表及其直播状态
+     *  加载关注用户列表及其直播状态
      */
     fun loadFollowedUsers() {
         viewModelScope.launch {
@@ -48,7 +48,7 @@ class DynamicViewModel : ViewModel() {
             com.android.purebilibili.data.repository.LiveRepository.getFollowedLive(page = 1).onSuccess { liveRooms ->
                 // 提取所有关注用户信息
                 val users = extractUsersFromDynamics() + extractUsersFromLive(liveRooms)
-                // 🔥🔥 [修复] 过滤无效用户数据，避免真机崩溃
+                //  [修复] 过滤无效用户数据，避免真机崩溃
                 _followedUsers.value = users
                     .filter { it.uid > 0 && it.name.isNotBlank() }
                     .distinctBy { it.uid }
@@ -148,7 +148,7 @@ class DynamicViewModel : ViewModel() {
         loadDynamicFeed(refresh = false)
     }
     
-    // ==================== 🔥🔥 动态评论/点赞/转发功能 ====================
+    // ====================  动态评论/点赞/转发功能 ====================
     
     // 当前选中的动态（用于评论弹窗）
     private val _selectedDynamic = MutableStateFlow<DynamicItem?>(null)
@@ -172,7 +172,7 @@ class DynamicViewModel : ViewModel() {
     val likedDynamics: StateFlow<Set<String>> = _likedDynamics.asStateFlow()
     
     /**
-     * 🔥 根据动态类型获取评论 oid 和 type
+     *  根据动态类型获取评论 oid 和 type
      * - 视频动态: type=1, oid=aid
      * - 图片动态: type=11, oid=draw.id
      * - 文字动态: type=17, oid=id_str
@@ -205,14 +205,14 @@ class DynamicViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 根据动态ID获取动态对象
+     *  根据动态ID获取动态对象
      */
     private fun findDynamicById(dynamicId: String): DynamicItem? {
         return _uiState.value.items.find { it.id_str == dynamicId }
     }
     
     /**
-     * 🔥 打开评论弹窗
+     *  打开评论弹窗
      */
     fun openCommentSheet(dynamicId: String) {
         val item = findDynamicById(dynamicId)
@@ -223,7 +223,7 @@ class DynamicViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 关闭评论弹窗
+     *  关闭评论弹窗
      */
     fun closeCommentSheet() {
         _selectedDynamic.value = null
@@ -231,7 +231,7 @@ class DynamicViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 加载动态评论 (使用正确的 oid 和 type)
+     *  加载动态评论 (使用正确的 oid 和 type)
      */
     private fun loadCommentsForDynamic(item: DynamicItem) {
         viewModelScope.launch {
@@ -262,7 +262,7 @@ class DynamicViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 加载评论 (兼容旧调用方式)
+     *  加载评论 (兼容旧调用方式)
      */
     fun loadComments(dynamicId: String) {
         val item = findDynamicById(dynamicId)
@@ -272,7 +272,7 @@ class DynamicViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 发表评论
+     *  发表评论
      */
     fun postComment(dynamicId: String, message: String, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
@@ -299,7 +299,7 @@ class DynamicViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 点赞动态
+     *  点赞动态
      */
     fun likeDynamic(dynamicId: String, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
@@ -332,7 +332,7 @@ class DynamicViewModel : ViewModel() {
     }
     
     /**
-     * 🔥 转发动态
+     *  转发动态
      */
     fun repostDynamic(dynamicId: String, content: String = "", onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
@@ -357,7 +357,7 @@ class DynamicViewModel : ViewModel() {
 }
 
 /**
- * 🔥 侧边栏用户数据
+ *  侧边栏用户数据
  */
 data class SidebarUser(
     val uid: Long,

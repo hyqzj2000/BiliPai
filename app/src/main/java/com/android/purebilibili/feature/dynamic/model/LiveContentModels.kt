@@ -4,7 +4,7 @@ package com.android.purebilibili.feature.dynamic.model
 import kotlinx.serialization.Serializable
 
 /**
- * 🔥 直播内容信息（用于解析 JSON）
+ *  直播内容信息（用于解析 JSON）
  * 注意：B站动态API的live_rcmd.content是嵌套的JSON字符串
  */
 @Serializable
@@ -19,7 +19,7 @@ data class LivePlayInfo(
     val cover: String = "",
     val online: Int = 0,
     val room_id: Long = 0,
-    // 🔥 添加更多可选字段提高兼容性
+    //  添加更多可选字段提高兼容性
     val area_name: String = "",  // 分区名称
     val parent_area_name: String = "",  // 父分区名称
     val uid: Long = 0,  // UP主ID

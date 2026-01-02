@@ -19,7 +19,7 @@ object WbiUtils {
         return sb.toString().substring(0, 32)
     }
 
-    // 🔥 过滤非法字符 (Bilibili 要求)
+    //  过滤非法字符 (Bilibili 要求)
     private fun filterIllegalChars(value: String): String {
         return value.replace(Regex("[!'()*]"), "")
     }
@@ -41,7 +41,7 @@ object WbiUtils {
      * 核心修改：返回的 Map 中，Value 保持原始状态（未编码），让 Retrofit 去编码。
      * 签名计算时使用编码后的值。
      * 
-     * 🔥 2024 更新：添加 dm_img 系列参数以通过 Bilibili 风控
+     *  2024 更新：添加 dm_img 系列参数以通过 Bilibili 风控
      */
     fun sign(params: Map<String, String>, imgKey: String, subKey: String): Map<String, String> {
         val mixinKey = getMixinKey(imgKey + subKey)
@@ -54,7 +54,7 @@ object WbiUtils {
         }
         rawParams["wts"] = currTime.toString()
         
-        // 🔥🔥 [关键] 添加 dm_img 系列参数以通过风控
+        //  [关键] 添加 dm_img 系列参数以通过风控
         // 这些是 Bilibili 2024 年新增的风控参数，代表设备指纹信息
         rawParams["dm_img_list"] = "[]"
         rawParams["dm_img_str"] = "V2ViR0wgMS4wIChPcGVuR0wgRVMgMi4wIENocm9taXVtKQ"  // Base64 of "WebGL 1.0 (OpenGL ES 2.0 Chromium)"
@@ -83,7 +83,7 @@ object WbiUtils {
         val strToHash = queryBuilder.toString() + mixinKey
         val wRid = md5(strToHash)
         
-        com.android.purebilibili.core.util.Logger.d("WbiUtils", "🔐 w_rid: $wRid, params count: ${rawParams.size}")
+        com.android.purebilibili.core.util.Logger.d("WbiUtils", " w_rid: $wRid, params count: ${rawParams.size}")
 
         // 5. 将签名加入原始参数表
         rawParams["w_rid"] = wRid

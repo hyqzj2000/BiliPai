@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * 🔥 BiliPai 品牌渐变按钮
+ *  BiliPai 品牌渐变按钮
  * 带有弹性动画和触觉反馈
  */
 @Composable
@@ -113,7 +113,7 @@ fun BiliGradientButton(
 }
 
 /**
- * 🔥 毛玻璃效果卡片
+ *  毛玻璃效果卡片
  */
 @Composable
 fun GlassCard(
@@ -157,7 +157,7 @@ fun GlassCard(
 }
 
 /**
- * 🔥 标签/徽章组件
+ *  标签/徽章组件
  */
 @Composable
 fun BiliTag(
@@ -182,7 +182,7 @@ fun BiliTag(
 }
 
 /**
- * 🔥 统计数字组件 (播放量/点赞/收藏等)
+ *  统计数字组件 (播放量/点赞/收藏等)
  */
 @Composable
 fun StatItem(
@@ -212,7 +212,7 @@ fun StatItem(
 }
 
 /**
- * 🔥 分割线
+ *  分割线
  */
 @Composable
 fun BiliDivider(
@@ -228,7 +228,7 @@ fun BiliDivider(
 }
 
 /**
- * 🔥 圆形头像
+ *  圆形头像
  */
 @Composable
 fun CircleAvatar(
@@ -255,7 +255,7 @@ fun CircleAvatar(
 }
 
 /**
- * 🔥 底部操作按钮栏
+ *  底部操作按钮栏
  */
 @Composable
 fun ActionBar(
@@ -280,7 +280,7 @@ fun ActionBar(
 }
 
 /**
- * 🔥 带涟漪效果的点击
+ *  带涟漪效果的点击
  */
 fun Modifier.bouncyClickable(
     onClick: () -> Unit

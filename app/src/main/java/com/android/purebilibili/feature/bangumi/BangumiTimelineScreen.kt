@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.data.model.response.TimelineDay
 import com.android.purebilibili.data.model.response.TimelineEpisode
@@ -288,7 +288,7 @@ private fun TimelineEpisodeCard(
                 if (isDelayed && episode.delayReason.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "⚠️ ${episode.delayReason}",
+                        text = " ${episode.delayReason}",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.error
                     )

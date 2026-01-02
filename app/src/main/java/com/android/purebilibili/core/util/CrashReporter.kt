@@ -5,7 +5,7 @@ import com.google.firebase.crashlytics.ktx.crashlytics
 import com.google.firebase.ktx.Firebase
 
 /**
- * 🔥 崩溃报告工具类
+ *  崩溃报告工具类
  * 封装 Firebase Crashlytics，提供统一的错误上报接口
  */
 object CrashReporter {
@@ -18,7 +18,7 @@ object CrashReporter {
     fun setEnabled(enabled: Boolean) {
         try {
             Firebase.crashlytics.setCrashlyticsCollectionEnabled(enabled)
-            Logger.d(TAG, "📊 Crashlytics collection ${if (enabled) "enabled" else "disabled"}")
+            Logger.d(TAG, " Crashlytics collection ${if (enabled) "enabled" else "disabled"}")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to set Crashlytics enabled state", e)
         }
@@ -32,7 +32,7 @@ object CrashReporter {
         try {
             message?.let { Firebase.crashlytics.log(it) }
             Firebase.crashlytics.recordException(e)
-            Logger.e(TAG, "📊 Exception logged: ${e.message}", e)
+            Logger.e(TAG, " Exception logged: ${e.message}", e)
         } catch (ex: Exception) {
             Log.e(TAG, "Failed to log exception", ex)
         }
@@ -45,7 +45,7 @@ object CrashReporter {
     fun log(message: String) {
         try {
             Firebase.crashlytics.log(message)
-            Logger.d(TAG, "📊 Log: $message")
+            Logger.d(TAG, " Log: $message")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to log message", e)
         }
@@ -96,10 +96,10 @@ object CrashReporter {
         }
     }
     
-    // ========== 🔥🔥 视频播放错误上报 ==========
+    // ==========  视频播放错误上报 ==========
     
     /**
-     * 🎬 上报视频播放错误
+     *  上报视频播放错误
      * @param bvid 视频 BV 号
      * @param errorType 错误类型 (如 "no_play_url", "network_error", "decode_error")
      * @param errorMessage 错误详情
@@ -117,13 +117,13 @@ object CrashReporter {
             Firebase.crashlytics.setCustomKey("video_error_type", errorType)
             
             // 记录详细日志
-            Firebase.crashlytics.log("🎬 Video Error: [$errorType] $bvid - $errorMessage")
+            Firebase.crashlytics.log(" Video Error: [$errorType] $bvid - $errorMessage")
             
             // 上报异常
             val wrappedException = exception ?: VideoPlaybackException(errorType, errorMessage)
             Firebase.crashlytics.recordException(wrappedException)
             
-            Logger.e(TAG, "📊 Video error reported: [$errorType] $bvid - $errorMessage", exception)
+            Logger.e(TAG, " Video error reported: [$errorType] $bvid - $errorMessage", exception)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to report video error", e)
         }
@@ -150,22 +150,22 @@ object CrashReporter {
             Firebase.crashlytics.log("🌐 API Error: [$httpCode] $endpoint - $errorMessage")
             Firebase.crashlytics.recordException(ApiException(endpoint, httpCode, errorMessage))
             
-            Logger.e(TAG, "📊 API error reported: [$httpCode] $endpoint - $errorMessage")
+            Logger.e(TAG, " API error reported: [$httpCode] $endpoint - $errorMessage")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to report API error", e)
         }
     }
     
     /**
-     * 📺 上报弹幕加载错误
+     *  上报弹幕加载错误
      */
     fun reportDanmakuError(cid: Long, errorMessage: String, exception: Throwable? = null) {
         try {
             Firebase.crashlytics.setCustomKey("danmaku_cid", cid.toString())
-            Firebase.crashlytics.log("📺 Danmaku Error: cid=$cid - $errorMessage")
+            Firebase.crashlytics.log(" Danmaku Error: cid=$cid - $errorMessage")
             Firebase.crashlytics.recordException(exception ?: DanmakuException(cid, errorMessage))
             
-            Logger.e(TAG, "📊 Danmaku error reported: cid=$cid - $errorMessage", exception)
+            Logger.e(TAG, " Danmaku error reported: cid=$cid - $errorMessage", exception)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to report danmaku error", e)
         }
@@ -190,7 +190,7 @@ object CrashReporter {
             Firebase.crashlytics.log("🔴 Live Error: [$errorType] roomId=$roomId - $errorMessage")
             Firebase.crashlytics.recordException(exception ?: LiveStreamException(roomId, errorType, errorMessage))
             
-            Logger.e(TAG, "📊 Live error reported: [$errorType] roomId=$roomId - $errorMessage", exception)
+            Logger.e(TAG, " Live error reported: [$errorType] roomId=$roomId - $errorMessage", exception)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to report live error", e)
         }
@@ -204,7 +204,7 @@ object CrashReporter {
     }
 }
 
-// ========== 🔥 自定义异常类（用于 Crashlytics 分类） ==========
+// ==========  自定义异常类（用于 Crashlytics 分类） ==========
 
 /**
  * 视频播放异常

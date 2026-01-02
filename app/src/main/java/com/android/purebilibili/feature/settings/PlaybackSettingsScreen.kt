@@ -13,7 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -35,7 +35,7 @@ import com.android.purebilibili.core.theme.iOSSystemGray
 import kotlinx.coroutines.launch
 
 /**
- * 🍎 播放设置二级页面
+ *  播放设置二级页面
  * iOS 风格设计
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,7 +66,7 @@ fun PlaybackSettingsScreen(
             if (isStatsEnabled) 0.1f else 0f
         ).coerceIn(0f, 1f)
     
-    // 🔥🔥 [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
+    //  [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
     val view = androidx.compose.ui.platform.LocalView.current
     androidx.compose.runtime.DisposableEffect(Unit) {
         val window = (context as? android.app.Activity)?.window
@@ -163,18 +163,18 @@ fun PlaybackSettingsScreen(
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
-        // 🔥🔥 [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，避免底部填充
+        //  [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，避免底部填充
         contentWindowInsets = WindowInsets(0.dp)
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize(),
-            // 🔥🔥 [修复] 添加底部导航栏内边距，确保沉浸式效果
+            //  [修复] 添加底部导航栏内边距，确保沉浸式效果
             contentPadding = WindowInsets.navigationBars.asPaddingValues()
         ) {
             
-            // 🍎 解码设置
+            //  解码设置
             item { SettingsSectionTitle("解码") }
             item {
                 SettingsGroup {
@@ -189,7 +189,7 @@ fun PlaybackSettingsScreen(
                 }
             }
             
-            // 🍎 小窗播放
+            //  小窗播放
             item { SettingsSectionTitle("小窗播放") }
             item {
                 val scope = rememberCoroutineScope()
@@ -199,7 +199,7 @@ fun PlaybackSettingsScreen(
                 var isExpanded by remember { mutableStateOf(false) }
                 
                 SettingsGroup {
-                    // 🍎 点击展开模式选择
+                    //  点击展开模式选择
                     SettingClickableItem(
                         icon = CupertinoIcons.Default.Pip,
                         title = "小窗模式",
@@ -208,7 +208,7 @@ fun PlaybackSettingsScreen(
                         iconTint = iOSTeal
                     )
                     
-                    // 🍎 展开的模式选择列表
+                    //  展开的模式选择列表
                     androidx.compose.animation.AnimatedVisibility(
                         visible = isExpanded,
                         enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
@@ -273,7 +273,7 @@ fun PlaybackSettingsScreen(
                         }
                     }
                     
-                    // 🔥 权限提示（仅当选择系统PiP且无权限时显示）
+                    //  权限提示（仅当选择系统PiP且无权限时显示）
                     if (miniPlayerMode == com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.SYSTEM_PIP 
                         && !checkPipPermission()) {
                         Divider()
@@ -314,7 +314,7 @@ fun PlaybackSettingsScreen(
                 }
             }
             
-            // 🍎 手势设置
+            //  手势设置
             item { SettingsSectionTitle("手势控制") }
             item {
                 SettingsGroup {
@@ -357,7 +357,7 @@ fun PlaybackSettingsScreen(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            // 🍎 iOS 风格滑块
+                            //  iOS 风格滑块
                             io.github.alexzhirkevich.cupertino.CupertinoSlider(
                                 value = state.gestureSensitivity,
                                 onValueChange = { viewModel.setGestureSensitivity(it) },
@@ -375,7 +375,7 @@ fun PlaybackSettingsScreen(
                 }
             }
             
-            // 🍎 调试选项
+            //  调试选项
             item { SettingsSectionTitle("调试") }
             item {
                 SettingsGroup {
@@ -393,19 +393,19 @@ fun PlaybackSettingsScreen(
                 }
             }
             
-            // 🍎 交互设置
+            //  交互设置
             item { SettingsSectionTitle("交互") }
             item {
                 val scope = rememberCoroutineScope()
                 val swipeHidePlayerEnabled by com.android.purebilibili.core.store.SettingsManager
                     .getSwipeHidePlayerEnabled(context).collectAsState(initial = false)
                 
-                // 🔥🔥 [新增] 自动播放下一个
+                //  [新增] 自动播放下一个
                 val autoPlayEnabled by com.android.purebilibili.core.store.SettingsManager
                     .getAutoPlay(context).collectAsState(initial = true)
                 
                 SettingsGroup {
-                    // 🔥🔥 [新增] 自动播放下一个视频
+                    //  [新增] 自动播放下一个视频
                     SettingSwitchItem(
                         icon = CupertinoIcons.Default.ForwardEnd,
                         title = "自动播放下一个",
@@ -445,7 +445,7 @@ fun PlaybackSettingsScreen(
                 }
             }
             
-            // 🍎 网络与画质
+            //  网络与画质
             item { SettingsSectionTitle("网络与画质") }
             item {
                 val scope = rememberCoroutineScope()
@@ -477,7 +477,7 @@ fun PlaybackSettingsScreen(
                             iconTint = com.android.purebilibili.core.theme.iOSBlue
                         )
                         
-                        // 🍎 展开动画
+                        //  展开动画
                         androidx.compose.animation.AnimatedVisibility(
                             visible = wifiExpanded,
                             enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
@@ -562,7 +562,7 @@ fun PlaybackSettingsScreen(
                             }
                         }
                         
-                        // 🍎 展开动画
+                        //  展开动画
                         androidx.compose.animation.AnimatedVisibility(
                             visible = mobileExpanded,
                             enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
@@ -623,7 +623,7 @@ fun PlaybackSettingsScreen(
                 var isExpanded by remember { mutableStateOf(false) }
                 
                 SettingsGroup {
-                    // 🍎 点击展开模式选择
+                    //  点击展开模式选择
                     SettingClickableItem(
                         icon = CupertinoIcons.Default.Leaf,
                         title = "省流量模式",
@@ -632,7 +632,7 @@ fun PlaybackSettingsScreen(
                         iconTint = iOSGreen
                     )
                     
-                    // 🍎 展开的模式选择列表
+                    //  展开的模式选择列表
                     androidx.compose.animation.AnimatedVisibility(
                         visible = isExpanded,
                         enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
@@ -691,7 +691,7 @@ fun PlaybackSettingsScreen(
                         }
                     }
                     
-                    // 🔥 功能说明
+                    //  功能说明
                     Divider()
                     Row(
                         modifier = Modifier

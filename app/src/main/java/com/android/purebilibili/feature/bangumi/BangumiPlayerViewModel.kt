@@ -40,28 +40,28 @@ sealed class BangumiPlayerState {
 /**
  * 番剧播放器 ViewModel
  * 
- * 🔥🔥 [重构] 继承 BasePlayerViewModel，复用空降助手、DASH 播放、弹幕等公共功能
+ *  [重构] 继承 BasePlayerViewModel，复用空降助手、DASH 播放、弹幕等公共功能
  */
 class BangumiPlayerViewModel : BasePlayerViewModel() {
     
     private val _uiState = MutableStateFlow<BangumiPlayerState>(BangumiPlayerState.Loading)
     val uiState = _uiState.asStateFlow()
     
-    // 🔥 Toast 事件通道
+    //  Toast 事件通道
     private val _toastEvent = Channel<String>()
     val toastEvent = _toastEvent.receiveAsFlow()
     
     private var currentSeasonId: Long = 0
     private var currentEpId: Long = 0
     
-    // 🔥🔥 [重构] 覆盖基类的空降跳过回调，显示 toast
+    //  [重构] 覆盖基类的空降跳过回调，显示 toast
     override fun onSponsorSkipped(segment: SponsorSegment) {
         viewModelScope.launch {
             _toastEvent.send("已跳过: ${segment.categoryName}")
         }
     }
     
-    // 🔥🔥 [新增] 播放完成监听器
+    //  [新增] 播放完成监听器
     private val playbackEndListener = object : androidx.media3.common.Player.Listener {
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == androidx.media3.common.Player.STATE_ENDED) {
@@ -72,7 +72,7 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
     }
     
     /**
-     * 🔥🔥 [新增] 自动播放下一集
+     *  [新增] 自动播放下一集
      */
     fun playNextEpisode() {
         val currentState = _uiState.value as? BangumiPlayerState.Success ?: return
@@ -99,12 +99,12 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
      */
     override fun attachPlayer(player: ExoPlayer) {
         super.attachPlayer(player)
-        // 🔥🔥 [新增] 添加播放完成监听
+        //  [新增] 添加播放完成监听
         player.addListener(playbackEndListener)
     }
     
     /**
-     * 🔥🔥 [新增] 清理时移除监听器
+     *  [新增] 清理时移除监听器
      */
     override fun onCleared() {
         super.onCleared()
@@ -195,13 +195,13 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
                 acceptDescription = playData.acceptDescription ?: emptyList()
             )
             
-            // 🔥🔥 [重构] 使用基类方法播放视频
+            //  [重构] 使用基类方法播放视频
             playDashVideo(videoUrl, audioUrl)
             
-            // 🔥🔥 [重构] 使用基类方法加载弹幕
+            //  [重构] 使用基类方法加载弹幕
             loadDanmaku(episode.cid)
             
-            // 🔥 [重构] 使用基类方法加载空降片段
+            //  [重构] 使用基类方法加载空降片段
             episode.bvid?.let { loadSponsorSegments(it) }
             
         }.onFailure { e ->
@@ -267,7 +267,7 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
                     quality = playData.quality
                 )
                 
-                // 🔥🔥 [修复] 切换清晰度时使用 resetPlayer=false 减少闪烁
+                //  [修复] 切换清晰度时使用 resetPlayer=false 减少闪烁
                 playDashVideo(videoUrl, audioUrl, currentPos, resetPlayer = false)
             }
         }
@@ -288,14 +288,14 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
             }
             
             if (result.isSuccess) {
-                // 🔥🔥 [修复] 立即更新本地状态，不等待重新获取
+                //  [修复] 立即更新本地状态，不等待重新获取
                 val newFollowStatus = if (isFollowing) 0 else 1
                 val updatedUserStatus = currentState.seasonDetail.userStatus?.copy(follow = newFollowStatus)
                     ?: com.android.purebilibili.data.model.response.UserStatus(follow = newFollowStatus)
                 val updatedDetail = currentState.seasonDetail.copy(userStatus = updatedUserStatus)
                 _uiState.value = currentState.copy(seasonDetail = updatedDetail)
                 
-                // 🔥 显示 Toast 反馈
+                //  显示 Toast 反馈
                 _toastEvent.send(if (isFollowing) "已取消追番" else "追番成功")
             } else {
                 _toastEvent.send("操作失败，请重试")

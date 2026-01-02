@@ -52,7 +52,7 @@ object NetworkUtils {
         } else {
             prefs.getInt("mobile_quality", 64)  // 默认流量=720P
         }
-        Logger.d("NetworkUtils", "🎬 获取默认画质: isWifi=$isOnWifi, quality=$quality")
+        Logger.d("NetworkUtils", " 获取默认画质: isWifi=$isOnWifi, quality=$quality")
         return quality
     }
     

@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -363,8 +363,8 @@ fun BangumiErrorContent(
             Text(
                 text = when {
                     isVipRequired -> "👑"
-                    isLoginRequired -> "🔐"
-                    else -> "⚠️"
+                    isLoginRequired -> ""
+                    else -> ""
                 },
                 fontSize = 48.sp
             )

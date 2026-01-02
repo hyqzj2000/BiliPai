@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -35,7 +35,7 @@ fun CommonListScreen(
     val state by viewModel.uiState.collectAsState()
     val gridState = rememberLazyGridState()
     
-    // 🔥🔥 [修复] 分页支持：收藏 + 历史记录
+    //  [修复] 分页支持：收藏 + 历史记录
     val favoriteViewModel = viewModel as? FavoriteViewModel
     val historyViewModel = viewModel as? HistoryViewModel
     
@@ -45,17 +45,17 @@ fun CommonListScreen(
     val hasMoreFav by favoriteViewModel?.hasMoreState?.collectAsState() 
         ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     
-    // 🔥 历史记录分页状态
+    //  历史记录分页状态
     val isLoadingMoreHis by historyViewModel?.isLoadingMoreState?.collectAsState() 
         ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val hasMoreHis by historyViewModel?.hasMoreState?.collectAsState() 
         ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     
-    // 🔥 统一分页状态
+    //  统一分页状态
     val isLoadingMore = isLoadingMoreFav || isLoadingMoreHis
     val hasMore = hasMoreFav || hasMoreHis
     
-    // 🔥 使用 derivedStateOf 来高效检测滚动位置
+    //  使用 derivedStateOf 来高效检测滚动位置
     val shouldLoadMore = androidx.compose.runtime.remember {
         androidx.compose.runtime.derivedStateOf {
             val layoutInfo = gridState.layoutInfo
@@ -65,11 +65,11 @@ fun CommonListScreen(
         }
     }
     
-    // 🔥 滚动到底部时加载更多
+    //  滚动到底部时加载更多
     LaunchedEffect(shouldLoadMore.value, hasMore, isLoadingMore) {
         if (shouldLoadMore.value && hasMore && !isLoadingMore) {
             favoriteViewModel?.loadMore()
-            historyViewModel?.loadMore()  // 🔥 历史记录加载更多
+            historyViewModel?.loadMore()  //  历史记录加载更多
         }
     }
 
@@ -134,7 +134,7 @@ fun CommonListScreen(
                         )
                     }
                     
-                    // 🔥 加载更多指示器
+                    //  加载更多指示器
                     if (isLoadingMore) {
                         item {
                             Box(

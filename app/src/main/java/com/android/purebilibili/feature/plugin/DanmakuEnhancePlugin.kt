@@ -3,7 +3,7 @@ package com.android.purebilibili.feature.plugin
 
 import android.content.Context
 import androidx.compose.foundation.layout.*
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -32,7 +32,7 @@ import kotlinx.serialization.decodeFromString
 private const val TAG = "DanmakuEnhancePlugin"
 
 /**
- * 💬 弹幕增强插件
+ *  弹幕增强插件
  * 
  * 提供弹幕过滤和高亮功能：
  * - 关键词屏蔽
@@ -65,7 +65,7 @@ class DanmakuEnhancePlugin : DanmakuPlugin {
     
     override suspend fun onEnable() {
         filteredCount = 0
-        Logger.d(TAG, "✅ 弹幕增强已启用")
+        Logger.d(TAG, " 弹幕增强已启用")
     }
     
     override suspend fun onDisable() {

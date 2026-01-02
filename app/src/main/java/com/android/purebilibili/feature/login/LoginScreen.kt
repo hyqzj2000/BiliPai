@@ -19,13 +19,13 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import kotlinx.coroutines.launch
 
 // 登录方式枚举
 enum class LoginMethod {
     QR_CODE,    // 扫码登录
-    PHONE_SMS,  // 🔥 手机短信登录
+    PHONE_SMS,  //  手机短信登录
     WEB_LOGIN   // 网页登录
 }
 
@@ -42,7 +42,7 @@ fun LoginScreen(
     val scope = rememberCoroutineScope()
     val view = LocalView.current
     
-    // 🔥 设置沉浸式状态栏和导航栏（进入时修改，离开时恢复）
+    //  设置沉浸式状态栏和导航栏（进入时修改，离开时恢复）
     DisposableEffect(Unit) {
         val window = (context as? Activity)?.window
         val insetsController = if (window != null) {
@@ -97,7 +97,7 @@ fun LoginScreen(
             .fillMaxSize()
             .background(Color(0xFF0D0D0D)) // 深色背景
     ) {
-        // 🔥 顶部装饰渐变
+        //  顶部装饰渐变
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -113,7 +113,7 @@ fun LoginScreen(
                 )
         )
 
-        // 🔥 浮动装饰圆 (Extracted)
+        //  浮动装饰圆 (Extracted)
         FloatingDecorations()
 
         Column(
@@ -134,12 +134,12 @@ fun LoginScreen(
             ) {
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // 🔥 Logo 和标题 (Extracted)
+                //  Logo 和标题 (Extracted)
                 BrandingSection()
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // 🔥 登录方式选择 (Extracted)
+                //  登录方式选择 (Extracted)
                 LoginMethodTabs(
                     selectedMethod = selectedMethod,
                     onMethodChange = { selectedMethod = it }
@@ -147,7 +147,7 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // 🔥 登录内容区域
+                //  登录内容区域
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -182,7 +182,7 @@ fun LoginScreen(
                     }
                 }
 
-                // 🔥 底部安全提示
+                //  底部安全提示
                 SecurityFooter()
 
                 Spacer(modifier = Modifier.height(24.dp))

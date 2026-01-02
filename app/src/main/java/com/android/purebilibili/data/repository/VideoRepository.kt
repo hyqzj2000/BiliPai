@@ -20,24 +20,24 @@ object VideoRepository {
 
     private val QUALITY_CHAIN = listOf(120, 116, 112, 80, 74, 64, 32, 16)
     
-    // 🔥 [新增] 确保 buvid3 来自 Bilibili SPI API + 激活（解决 412 问题）
+    //  [新增] 确保 buvid3 来自 Bilibili SPI API + 激活（解决 412 问题）
     private var buvidInitialized = false
     
     private suspend fun ensureBuvid3FromSpi() {
         if (buvidInitialized) return
         try {
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 Fetching buvid3 from SPI API...")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " Fetching buvid3 from SPI API...")
             val response = buvidApi.getSpi()
             if (response.code == 0 && response.data != null) {
                 val b3 = response.data.b_3
                 if (b3.isNotEmpty()) {
                     TokenManager.buvid3Cache = b3
-                    com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ buvid3 from SPI: ${b3.take(20)}...")
+                    com.android.purebilibili.core.util.Logger.d("VideoRepo", " buvid3 from SPI: ${b3.take(20)}...")
                     
-                    // 🔥🔥 [关键] 激活 buvid (参考 PiliPala)
+                    //  [关键] 激活 buvid (参考 PiliPala)
                     try {
                         activateBuvid()
-                        com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ buvid activated!")
+                        com.android.purebilibili.core.util.Logger.d("VideoRepo", " buvid activated!")
                     } catch (e: Exception) {
                         android.util.Log.w("VideoRepo", "buvid activation failed: ${e.message}")
                     }
@@ -46,7 +46,7 @@ object VideoRepository {
                 }
             }
         } catch (e: Exception) {
-            android.util.Log.e("VideoRepo", "❌ Failed to get buvid3 from SPI: ${e.message}")
+            android.util.Log.e("VideoRepo", " Failed to get buvid3 from SPI: ${e.message}")
         }
     }
     
@@ -57,7 +57,7 @@ object VideoRepository {
         ensureBuvid3FromSpi()
     }
     
-    // 🔥 激活 buvid (参考 PiliPala buvidActivate)
+    //  激活 buvid (参考 PiliPala buvidActivate)
     private suspend fun activateBuvid() {
         val random = java.util.Random()
         val randBytes = ByteArray(32) { random.nextInt(256).toByte() }
@@ -91,17 +91,17 @@ object VideoRepository {
             val signedParams = WbiUtils.sign(params, imgKey, subKey)
             val feedResp = api.getRecommendParams(signedParams)
             
-            // 🔥 [调试] 检查 API 是否返回 dimension 字段
+            //  [调试] 检查 API 是否返回 dimension 字段
             feedResp.data?.item?.take(3)?.forEachIndexed { index, item ->
                 com.android.purebilibili.core.util.Logger.d("VideoRepo", 
-                    "🎬 视频[$index]: ${item.title?.take(15)}... dimension=${item.dimension} isVertical=${item.dimension?.isVertical}")
+                    " 视频[$index]: ${item.title?.take(15)}... dimension=${item.dimension} isVertical=${item.dimension?.isVertical}")
             }
             
             val list = feedResp.data?.item?.map { it.toVideoItem() }?.filter { it.bvid.isNotEmpty() } ?: emptyList()
             
-            // 🔥 [调试] 检查转换后的 VideoItem
+            //  [调试] 检查转换后的 VideoItem
             val verticalCount = list.count { it.isVertical }
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 首页视频: total=${list.size}, vertical=$verticalCount")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " 首页视频: total=${list.size}, vertical=$verticalCount")
             
             Result.success(list)
         } catch (e: Exception) {
@@ -110,7 +110,7 @@ object VideoRepository {
         }
     }
     
-    // 🔥🔥 [新增] 热门视频
+    //  [新增] 热门视频
     suspend fun getPopularVideos(page: Int = 1): Result<List<VideoItem>> = withContext(Dispatchers.IO) {
         try {
             val resp = api.getPopularVideos(pn = page, ps = 20)
@@ -122,7 +122,7 @@ object VideoRepository {
         }
     }
     
-    // 🔥🔥 [新增] 分区视频（按分类 ID 获取视频）
+    //  [新增] 分区视频（按分类 ID 获取视频）
     suspend fun getRegionVideos(tid: Int, page: Int = 1): Result<List<VideoItem>> = withContext(Dispatchers.IO) {
         try {
             val resp = api.getRegionVideos(rid = tid, pn = page, ps = 30)
@@ -134,13 +134,13 @@ object VideoRepository {
         }
     }
     
-    // 🔥🔥 [新增] 上报播放心跳（记录到历史记录）
+    //  [新增] 上报播放心跳（记录到历史记录）
     suspend fun reportPlayHeartbeat(bvid: String, cid: Long, playedTime: Long = 0) = withContext(Dispatchers.IO) {
         try {
-            // 🔒 隐私无痕模式检查：如果启用则跳过上报
+            //  隐私无痕模式检查：如果启用则跳过上报
             val context = com.android.purebilibili.core.network.NetworkModule.appContext
             if (context != null && com.android.purebilibili.core.store.SettingsManager.isPrivacyModeEnabledSync(context)) {
-                com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔒 Privacy mode enabled, skipping heartbeat report")
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", " Privacy mode enabled, skipping heartbeat report")
                 return@withContext true  // 返回成功但不实际上报
             }
             
@@ -149,7 +149,7 @@ object VideoRepository {
             com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔴 Heartbeat response: code=${resp.code}, msg=${resp.message}")
             resp.code == 0
         } catch (e: Exception) {
-            android.util.Log.e("VideoRepo", "❌ Heartbeat failed: ${e.message}")
+            android.util.Log.e("VideoRepo", " Heartbeat failed: ${e.message}")
             false
         }
     }
@@ -178,23 +178,23 @@ object VideoRepository {
             val info = viewResp.data ?: throw Exception("视频详情为空: ${viewResp.code}")
             val cid = info.cid
             
-            // 🔥🔥 [调试] 记录视频信息
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🎬 getVideoDetails: bvid=${info.bvid}, aid=${info.aid}, cid=$cid, title=${info.title.take(20)}...")
+            //  [调试] 记录视频信息
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " getVideoDetails: bvid=${info.bvid}, aid=${info.aid}, cid=$cid, title=${info.title.take(20)}...")
             
             if (cid == 0L) throw Exception("CID 获取失败")
 
-            // 🔥🔥 [优化] 使用缓存加速重复播放
+            //  [优化] 使用缓存加速重复播放
             val cachedPlayData = PlayUrlCache.get(bvid, cid)
             if (cachedPlayData != null) {
-                com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ Using cached PlayUrlData for bvid=$bvid")
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", " Using cached PlayUrlData for bvid=$bvid")
                 return@withContext Result.success(Pair(info, cachedPlayData))
             }
 
-            // 🔥🔥 [优化] 根据登录和大会员状态选择起始画质
+            //  [优化] 根据登录和大会员状态选择起始画质
             val isLogin = !TokenManager.sessDataCache.isNullOrEmpty()
             val isVip = TokenManager.isVipCache
             
-            // 🧪 [实验性功能] 读取 auto1080p 设置
+            //  [实验性功能] 读取 auto1080p 设置
             val auto1080pEnabled = try {
                 val context = com.android.purebilibili.core.network.NetworkModule.appContext
                 context?.getSharedPreferences("settings_prefs", android.content.Context.MODE_PRIVATE)
@@ -203,26 +203,26 @@ object VideoRepository {
                 true // 出错时默认开启
             }
             
-            // 🔥🔥 [关键修复] 优先使用传入的用户画质设置，否则使用内部逻辑
+            //  [关键修复] 优先使用传入的用户画质设置，否则使用内部逻辑
             val startQuality = targetQuality ?: when {
                 isVip -> 116     // 大会员：优先 1080P+ (HDR)
-                isLogin && auto1080pEnabled -> 80  // 🧪 已登录 + 开启1080p：优先 1080p
+                isLogin && auto1080pEnabled -> 80  //  已登录 + 开启1080p：优先 1080p
                 isLogin -> 64    // 已登录非大会员（关闭1080p设置）：优先 720p
                 else -> 32       // 未登录：优先 480p（避免限制）
             }
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 Selected startQuality=$startQuality (userSetting=$targetQuality, isLogin=$isLogin, isVip=$isVip, auto1080p=$auto1080pEnabled)")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " Selected startQuality=$startQuality (userSetting=$targetQuality, isLogin=$isLogin, isVip=$isVip, auto1080p=$auto1080pEnabled)")
 
             val playData = fetchPlayUrlRecursive(bvid, cid, startQuality)
                 ?: throw Exception("无法获取任何画质的播放地址")
 
-            // 🔥 支持 DASH 和 durl 两种格式
+            //  支持 DASH 和 durl 两种格式
             val hasDash = !playData.dash?.video.isNullOrEmpty()
             val hasDurl = !playData.durl.isNullOrEmpty()
             if (!hasDash && !hasDurl) throw Exception("播放地址解析失败 (无 dash/durl)")
 
-            // 🔥🔥 [优化] 缓存结果
+            //  [优化] 缓存结果
             PlayUrlCache.put(bvid, cid, playData, playData.quality)
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "💾 Cached PlayUrlData for bvid=$bvid, cid=$cid")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " Cached PlayUrlData for bvid=$bvid, cid=$cid")
 
             Result.success(Pair(info, playData))
         } catch (e: Exception) {
@@ -231,12 +231,12 @@ object VideoRepository {
         }
     }
 
-    // 🔥🔥 [优化] WBI Key 缓存
+    //  [优化] WBI Key 缓存
     private var wbiKeysCache: Pair<String, String>? = null
     private var wbiKeysTimestamp: Long = 0
-    private const val WBI_CACHE_DURATION = 1000 * 60 * 30 // 🔥 优化：30分钟缓存
+    private const val WBI_CACHE_DURATION = 1000 * 60 * 30 //  优化：30分钟缓存
     
-    // 🔥 412 错误冷却期（避免过快重试触发风控）
+    //  412 错误冷却期（避免过快重试触发风控）
     private var last412Time: Long = 0
     private const val COOLDOWN_412_MS = 5000L // 412 后等待 5 秒
 
@@ -247,7 +247,7 @@ object VideoRepository {
             return cached
         }
 
-        // 🔥🔥 [优化] 增加重试逻辑，最多 3 次尝试
+        //  [优化] 增加重试逻辑，最多 3 次尝试
         val maxRetries = 3
         var lastError: Exception? = null
         
@@ -262,7 +262,7 @@ object VideoRepository {
                     
                     wbiKeysCache = Pair(imgKey, subKey)
                     wbiKeysTimestamp = System.currentTimeMillis()
-                    com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ WBI Keys obtained successfully (attempt $attempt)")
+                    com.android.purebilibili.core.util.Logger.d("VideoRepo", " WBI Keys obtained successfully (attempt $attempt)")
                     return wbiKeysCache!!
                 }
             } catch (e: Exception) {
@@ -278,24 +278,24 @@ object VideoRepository {
     }
 
     suspend fun getPlayUrlData(bvid: String, cid: Long, qn: Int): PlayUrlData? = withContext(Dispatchers.IO) {
-        // 🔥🔥 [新增] 对于高画质请求 (>=112)，优先尝试 APP API
+        //  [新增] 对于高画质请求 (>=112)，优先尝试 APP API
         val isHighQuality = qn >= 112
         val accessToken = TokenManager.accessTokenCache
         
         if (isHighQuality && !accessToken.isNullOrEmpty()) {
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 High quality request (qn=$qn), trying APP API first...")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " High quality request (qn=$qn), trying APP API first...")
             val appResult = fetchPlayUrlWithAccessToken(bvid, cid, qn)
             if (appResult != null) {
-                com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ APP API success for high quality")
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", " APP API success for high quality")
                 return@withContext appResult
             }
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "⚠️ APP API failed, fallback to Web API")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " APP API failed, fallback to Web API")
         }
         
-        // 🔥🔥 [修复] 412 错误处理：清除 WBI 密钥缓存后重试
+        //  [修复] 412 错误处理：清除 WBI 密钥缓存后重试
         var result = fetchPlayUrlWithWbi(bvid, cid, qn)
         if (result == null) {
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 First attempt failed (likely 412), invalidating WBI keys and retrying...")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " First attempt failed (likely 412), invalidating WBI keys and retrying...")
             // 清除 WBI 密钥缓存
             wbiKeysCache = null
             wbiKeysTimestamp = 0
@@ -307,13 +307,13 @@ object VideoRepository {
     }
 
 
-    // 🔥🔥 [v2 优化] 核心播放地址获取逻辑 - 根据登录状态区分策略
+    //  [v2 优化] 核心播放地址获取逻辑 - 根据登录状态区分策略
     private suspend fun fetchPlayUrlRecursive(bvid: String, cid: Long, targetQn: Int): PlayUrlData? {
-        // 🔥 关键：确保有正确的 buvid3 (来自 Bilibili SPI API)
+        //  关键：确保有正确的 buvid3 (来自 Bilibili SPI API)
         ensureBuvid3FromSpi()
         
         val isLoggedIn = !TokenManager.sessDataCache.isNullOrEmpty()
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 fetchPlayUrlRecursive: bvid=$bvid, isLoggedIn=$isLoggedIn, targetQn=$targetQn")
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " fetchPlayUrlRecursive: bvid=$bvid, isLoggedIn=$isLoggedIn, targetQn=$targetQn")
         
         return if (isLoggedIn) {
             // 已登录：DASH 优先（风控宽松），HTML5 降级
@@ -324,36 +324,36 @@ object VideoRepository {
         }
     }
     
-    // 🔥 已登录用户：APP API 优先 -> DASH -> HTML5 降级策略
+    //  已登录用户：APP API 优先 -> DASH -> HTML5 降级策略
     private suspend fun fetchDashWithFallback(bvid: String, cid: Long, targetQn: Int): PlayUrlData? {
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 [LoggedIn] DASH-first strategy, qn=$targetQn")
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] DASH-first strategy, qn=$targetQn")
         
-        // 🔥🔥 [新增] 如果有 access_token，优先使用 APP API 获取高画质
+        //  [新增] 如果有 access_token，优先使用 APP API 获取高画质
         val accessToken = TokenManager.accessTokenCache
         if (!accessToken.isNullOrEmpty()) {
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 [LoggedIn] Trying APP API first with access_token...")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] Trying APP API first with access_token...")
             val appResult = fetchPlayUrlWithAccessToken(bvid, cid, targetQn)
             if (appResult != null && (!appResult.durl.isNullOrEmpty() || !appResult.dash?.video.isNullOrEmpty())) {
-                com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ [LoggedIn] APP API success: quality=${appResult.quality}")
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] APP API success: quality=${appResult.quality}")
                 return appResult
             }
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "⚠️ [LoggedIn] APP API failed, trying DASH...")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] APP API failed, trying DASH...")
         }
         
         // 尝试 DASH，最多 2 次重试
         val retryDelays = listOf(0L, 500L)
         for ((attempt, delay) in retryDelays.withIndex()) {
             if (delay > 0) {
-                com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 DASH retry ${attempt + 1}...")
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", " DASH retry ${attempt + 1}...")
                 kotlinx.coroutines.delay(delay)
             }
             try {
                 val data = fetchPlayUrlWithWbiInternal(bvid, cid, targetQn)
                 if (data != null && (!data.durl.isNullOrEmpty() || !data.dash?.video.isNullOrEmpty())) {
-                    com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ [LoggedIn] DASH success: quality=${data.quality}")
+                    com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] DASH success: quality=${data.quality}")
                     return data
                 }
-                android.util.Log.w("VideoRepo", "🔥 DASH attempt ${attempt + 1}: data is null or empty")
+                android.util.Log.w("VideoRepo", " DASH attempt ${attempt + 1}: data is null or empty")
             } catch (e: Exception) {
                 android.util.Log.w("VideoRepo", "DASH attempt ${attempt + 1} failed: ${e.message}")
                 if (e.message?.contains("412") == true) {
@@ -363,21 +363,21 @@ object VideoRepository {
         }
         
         // DASH 失败，降级到 HTML5
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 [LoggedIn] DASH failed, trying HTML5 fallback...")
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] DASH failed, trying HTML5 fallback...")
         val html5Data = fetchPlayUrlHtml5Fallback(bvid, cid, 80)
         if (html5Data != null && (!html5Data.durl.isNullOrEmpty() || !html5Data.dash?.video.isNullOrEmpty())) {
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ [LoggedIn] HTML5 fallback success: quality=${html5Data.quality}")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] HTML5 fallback success: quality=${html5Data.quality}")
             return html5Data
         }
         
-        // 🔥🔥 [新增] HTML5 失败，尝试 Legacy API（无 WBI 签名）
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 [LoggedIn] HTML5 failed, trying Legacy API...")
+        //  [新增] HTML5 失败，尝试 Legacy API（无 WBI 签名）
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] HTML5 failed, trying Legacy API...")
         try {
             val legacyResult = api.getPlayUrlLegacy(bvid = bvid, cid = cid, qn = 80)
             if (legacyResult.code == 0 && legacyResult.data != null) {
                 val data = legacyResult.data
                 if (!data.durl.isNullOrEmpty() || !data.dash?.video.isNullOrEmpty()) {
-                    com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ [LoggedIn] Legacy API success: quality=${data.quality}")
+                    com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] Legacy API success: quality=${data.quality}")
                     return data
                 }
             } else {
@@ -387,23 +387,23 @@ object VideoRepository {
             android.util.Log.w("VideoRepo", "[LoggedIn] Legacy API failed: ${e.message}")
         }
         
-        // 🔥🔥🔥 [终极修复] 所有方法都失败了，尝试以游客身份获取（无登录凭证）
+        //  [终极修复] 所有方法都失败了，尝试以游客身份获取（无登录凭证）
         // 这是为了解决"登录后反而看不了视频"的问题
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥🔥 [LoggedIn] All auth methods failed! Trying GUEST fallback (no auth)...")
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] All auth methods failed! Trying GUEST fallback (no auth)...")
         val guestResult = fetchAsGuestFallback(bvid, cid)
         if (guestResult != null) {
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ [LoggedIn->Guest] Guest fallback success: quality=${guestResult.quality}")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn->Guest] Guest fallback success: quality=${guestResult.quality}")
             return guestResult
         }
         
-        android.util.Log.e("VideoRepo", "❌ [LoggedIn] All attempts failed for bvid=$bvid")
+        android.util.Log.e("VideoRepo", " [LoggedIn] All attempts failed for bvid=$bvid")
         return null
     }
     
-    // 🔥🔥 [新增] 以游客身份获取视频（忽略登录凭证）
+    //  [新增] 以游客身份获取视频（忽略登录凭证）
     private suspend fun fetchAsGuestFallback(bvid: String, cid: Long): PlayUrlData? {
         try {
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 fetchAsGuestFallback: bvid=$bvid, cid=$cid")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " fetchAsGuestFallback: bvid=$bvid, cid=$cid")
             
             // 直接使用 Legacy API，这个 API 对登录状态更宽容
             val legacyResult = api.getPlayUrlLegacy(
@@ -418,12 +418,12 @@ object VideoRepository {
             if (legacyResult.code == 0 && legacyResult.data != null) {
                 val data = legacyResult.data
                 if (!data.durl.isNullOrEmpty()) {
-                    com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ Guest fallback (Legacy 64p) success")
+                    com.android.purebilibili.core.util.Logger.d("VideoRepo", " Guest fallback (Legacy 64p) success")
                     return data
                 }
             }
             
-            // 🔥 如果 64p 也失败，尝试更低画质 32p
+            //  如果 64p 也失败，尝试更低画质 32p
             val lowQualityResult = api.getPlayUrlLegacy(
                 bvid = bvid, 
                 cid = cid, 
@@ -436,7 +436,7 @@ object VideoRepository {
             if (lowQualityResult.code == 0 && lowQualityResult.data != null) {
                 val data = lowQualityResult.data
                 if (!data.durl.isNullOrEmpty()) {
-                    com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ Guest fallback (Legacy 32p) success")
+                    com.android.purebilibili.core.util.Logger.d("VideoRepo", " Guest fallback (Legacy 32p) success")
                     return data
                 }
             }
@@ -448,18 +448,18 @@ object VideoRepository {
         return null
     }
     
-    // 🔥 未登录用户：旧版 API 优先策略（无 WBI 签名，避免 412）
+    //  未登录用户：旧版 API 优先策略（无 WBI 签名，避免 412）
     private suspend fun fetchHtml5WithFallback(bvid: String, cid: Long, targetQn: Int): PlayUrlData? {
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 [Guest] Legacy API-first strategy (no WBI)")
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " [Guest] Legacy API-first strategy (no WBI)")
         
-        // 🔥🔥 [关键] 首先尝试旧版 API（无 WBI 签名）
+        //  [关键] 首先尝试旧版 API（无 WBI 签名）
         try {
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 [Guest] Trying legacy playurl API...")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " [Guest] Trying legacy playurl API...")
             val legacyResult = api.getPlayUrlLegacy(bvid = bvid, cid = cid, qn = 80)
             if (legacyResult.code == 0 && legacyResult.data != null) {
                 val data = legacyResult.data
                 if (!data.durl.isNullOrEmpty() || !data.dash?.video.isNullOrEmpty()) {
-                    com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ [Guest] Legacy API success: quality=${data.quality}")
+                    com.android.purebilibili.core.util.Logger.d("VideoRepo", " [Guest] Legacy API success: quality=${data.quality}")
                     return data
                 }
             } else {
@@ -470,37 +470,37 @@ object VideoRepository {
         }
         
         // 降级到 HTML5 WBI
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 [Guest] Legacy failed, trying HTML5 WBI fallback...")
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " [Guest] Legacy failed, trying HTML5 WBI fallback...")
         val html5Result = fetchPlayUrlHtml5Fallback(bvid, cid, 80)
         if (html5Result != null) {
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ [Guest] HTML5 success: quality=${html5Result.quality}")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " [Guest] HTML5 success: quality=${html5Result.quality}")
             return html5Result
         }
         
         // 最后尝试 DASH (限 1 次)
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 [Guest] HTML5 failed, trying DASH...")
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " [Guest] HTML5 failed, trying DASH...")
         try {
             val dashData = fetchPlayUrlWithWbiInternal(bvid, cid, targetQn)
             if (dashData != null && (!dashData.durl.isNullOrEmpty() || !dashData.dash?.video.isNullOrEmpty())) {
-                com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ [Guest] DASH fallback success: quality=${dashData.quality}")
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", " [Guest] DASH fallback success: quality=${dashData.quality}")
                 return dashData
             }
         } catch (e: Exception) {
             android.util.Log.w("VideoRepo", "[Guest] DASH fallback failed: ${e.message}")
         }
         
-        android.util.Log.e("VideoRepo", "❌ [Guest] All attempts failed for bvid=$bvid")
+        android.util.Log.e("VideoRepo", " [Guest] All attempts failed for bvid=$bvid")
         return null
     }
 
-    // 🔥 内部方法：单次请求播放地址 (使用 fnval=4048 获取全部 DASH 流)
+    //  内部方法：单次请求播放地址 (使用 fnval=4048 获取全部 DASH 流)
     private suspend fun fetchPlayUrlWithWbiInternal(bvid: String, cid: Long, qn: Int): PlayUrlData? {
         com.android.purebilibili.core.util.Logger.d("VideoRepo", "fetchPlayUrlWithWbiInternal: bvid=$bvid, cid=$cid, qn=$qn")
         
-        // 🔥 使用缓存的 Keys
+        //  使用缓存的 Keys
         val (imgKey, subKey) = getWbiKeys()
         
-        // 🔥🔥 [新增] 生成 session 参数 (buvid3 + 时间戳 MD5)
+        //  [新增] 生成 session 参数 (buvid3 + 时间戳 MD5)
         val buvid3 = com.android.purebilibili.core.store.TokenManager.buvid3Cache ?: ""
         val timestamp = System.currentTimeMillis()
         val sessionRaw = buvid3 + timestamp.toString()
@@ -510,14 +510,14 @@ object VideoRepository {
         
         val params = mapOf(
             "bvid" to bvid, "cid" to cid.toString(), "qn" to qn.toString(),
-            "fnval" to "4048",  // 🔥 全部 DASH 格式，一次性获取所有可用流
+            "fnval" to "4048",  //  全部 DASH 格式，一次性获取所有可用流
             "fnver" to "0", "fourk" to "1", 
-            "platform" to "pc",  // 🔥 改用 pc (Web默认值)，支持所有格式
+            "platform" to "pc",  //  改用 pc (Web默认值)，支持所有格式
             "high_quality" to "1",
-            "try_look" to "1",  // 🔥 允许未登录用户尝试获取更高画质 (64/80)
-            // 🔥🔥 [新增] session 参数 - VIP 画质可能需要
+            "try_look" to "1",  //  允许未登录用户尝试获取更高画质 (64/80)
+            //  [新增] session 参数 - VIP 画质可能需要
             "session" to session,
-            // 🔥🔥 [参考 PiliPala] 以下参数经过用户验证，提高成功率
+            //  [参考 PiliPala] 以下参数经过用户验证，提高成功率
             "voice_balance" to "1",
             "gaia_source" to "pre-load",
             "web_location" to "1550101"
@@ -525,17 +525,17 @@ object VideoRepository {
         val signedParams = WbiUtils.sign(params, imgKey, subKey)
         val response = api.getPlayUrl(signedParams)
         
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 PlayUrl response: code=${response.code}, requestedQn=$qn, returnedQuality=${response.data?.quality}")
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 accept_quality=${response.data?.accept_quality}, accept_description=${response.data?.accept_description}")
-        // 🔥🔥 [调试] 输出 DASH 视频流 ID 列表
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " PlayUrl response: code=${response.code}, requestedQn=$qn, returnedQuality=${response.data?.quality}")
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " accept_quality=${response.data?.accept_quality}, accept_description=${response.data?.accept_description}")
+        //  [调试] 输出 DASH 视频流 ID 列表
         val dashIds = response.data?.dash?.video?.map { it.id }?.distinct()?.sortedDescending()
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 DASH video IDs: $dashIds")
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " DASH video IDs: $dashIds")
         
         if (response.code == 0) return response.data
         
-        // 🔥🔥 [优化] API 返回错误码分类处理，提供更明确的错误信息
+        //  [优化] API 返回错误码分类处理，提供更明确的错误信息
         val errorMessage = classifyPlayUrlError(response.code, response.message)
-        android.util.Log.e("VideoRepo", "🔥 PlayUrl API error: code=${response.code}, message=${response.message}, classified=$errorMessage")
+        android.util.Log.e("VideoRepo", " PlayUrl API error: code=${response.code}, message=${response.message}, classified=$errorMessage")
         // 对于不可重试的错误，抛出明确异常
         if (response.code in listOf(-404, -403, -10403, -62002)) {
             throw Exception(errorMessage)
@@ -543,17 +543,17 @@ object VideoRepository {
         return null
     }
     
-    // 🔥🔥 [新增] 使用 access_token 获取高画质视频流 (4K/HDR/1080P60)
+    //  [新增] 使用 access_token 获取高画质视频流 (4K/HDR/1080P60)
     private suspend fun fetchPlayUrlWithAccessToken(bvid: String, cid: Long, qn: Int): PlayUrlData? {
         val accessToken = com.android.purebilibili.core.store.TokenManager.accessTokenCache
         if (accessToken.isNullOrEmpty()) {
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "❌ No access_token available, fallback to Web API")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " No access_token available, fallback to Web API")
             return null
         }
         
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 fetchPlayUrlWithAccessToken: bvid=$bvid, qn=$qn, accessToken=${accessToken.take(10)}...")
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " fetchPlayUrlWithAccessToken: bvid=$bvid, qn=$qn, accessToken=${accessToken.take(10)}...")
         
-        // 🔥🔥 [修复] 必须使用 TV appkey，因为 access_token 是通过 TV 登录获取的
+        //  [修复] 必须使用 TV appkey，因为 access_token 是通过 TV 登录获取的
         // 根据 B站 API 文档：通过某一组 APPKEY/APPSEC 获取到的 access_token，之后的 API 调用也必须使用同一组
         val params = mapOf(
             "bvid" to bvid,
@@ -563,50 +563,50 @@ object VideoRepository {
             "fnver" to "0",
             "fourk" to "1",
             "access_key" to accessToken,
-            "appkey" to AppSignUtils.TV_APP_KEY,  // 🔥 使用 TV appkey (与登录时一致)
+            "appkey" to AppSignUtils.TV_APP_KEY,  //  使用 TV appkey (与登录时一致)
             "ts" to AppSignUtils.getTimestamp().toString(),
             "platform" to "android",
-            "mobi_app" to "android_tv_yst",  // 🔥 TV 端标识
+            "mobi_app" to "android_tv_yst",  //  TV 端标识
             "device" to "android"
         )
         
-        val signedParams = AppSignUtils.signForTvLogin(params)  // 🔥 使用 TV 签名
+        val signedParams = AppSignUtils.signForTvLogin(params)  //  使用 TV 签名
         
         try {
             val response = api.getPlayUrlApp(signedParams)
             
             val dashIds = response.data?.dash?.video?.map { it.id }?.distinct()?.sortedDescending()
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 APP PlayUrl response: code=${response.code}, qn=$qn, dashIds=$dashIds")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " APP PlayUrl response: code=${response.code}, qn=$qn, dashIds=$dashIds")
             
             if (response.code == 0 && response.data != null) {
                 // 检查是否真的获取到了高画质流
                 val hasHighQuality = dashIds?.any { it >= qn } == true
                 if (hasHighQuality) {
-                    com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ APP API returned high quality: $dashIds")
+                    com.android.purebilibili.core.util.Logger.d("VideoRepo", " APP API returned high quality: $dashIds")
                     return response.data
                 } else {
-                    com.android.purebilibili.core.util.Logger.d("VideoRepo", "⚠️ APP API didn't return target quality $qn, available: $dashIds")
+                    com.android.purebilibili.core.util.Logger.d("VideoRepo", " APP API didn't return target quality $qn, available: $dashIds")
                 }
             } else {
-                com.android.purebilibili.core.util.Logger.d("VideoRepo", "❌ APP API error: code=${response.code}, msg=${response.message}")
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", " APP API error: code=${response.code}, msg=${response.message}")
             }
         } catch (e: Exception) {
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "❌ APP API exception: ${e.message}")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " APP API exception: ${e.message}")
         }
         
         return null
     }
 
-    // 🔥🔥 [重构] 带 HTML5 降级的播放地址获取
+    //  [重构] 带 HTML5 降级的播放地址获取
     private suspend fun fetchPlayUrlWithWbi(bvid: String, cid: Long, qn: Int): PlayUrlData? {
         try {
             return fetchPlayUrlWithWbiInternal(bvid, cid, qn)
         } catch (e: HttpException) {
             android.util.Log.e("VideoRepo", "HttpException: ${e.code()}")
             
-            // 🔥 412 错误时尝试 HTML5 降级方案
+            //  412 错误时尝试 HTML5 降级方案
             if (e.code() == 412) {
-                com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 Trying HTML5 fallback for 412 error...")
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", " Trying HTML5 fallback for 412 error...")
                 return fetchPlayUrlHtml5Fallback(bvid, cid, qn)
             }
             
@@ -615,9 +615,9 @@ object VideoRepository {
         } catch (e: Exception) { 
             android.util.Log.e("VideoRepo", "Exception: ${e.message}")
             
-            // 🔥 如果异常消息包含 412，也尝试降级
+            //  如果异常消息包含 412，也尝试降级
             if (e.message?.contains("412") == true) {
-                com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 Trying HTML5 fallback for 412 in exception...")
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", " Trying HTML5 fallback for 412 in exception...")
                 return fetchPlayUrlHtml5Fallback(bvid, cid, qn)
             }
             
@@ -625,23 +625,23 @@ object VideoRepository {
         }
     }
     
-    // 🔥🔥 [新增] HTML5 降级方案 (无 Referer 鉴权，仅 MP4 格式)
+    //  [新增] HTML5 降级方案 (无 Referer 鉴权，仅 MP4 格式)
     private suspend fun fetchPlayUrlHtml5Fallback(bvid: String, cid: Long, qn: Int): PlayUrlData? {
         try {
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 fetchPlayUrlHtml5Fallback: bvid=$bvid, cid=$cid, qn=$qn")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " fetchPlayUrlHtml5Fallback: bvid=$bvid, cid=$cid, qn=$qn")
             
             val (imgKey, subKey) = getWbiKeys()
             
-            // 🔥 HTML5 参数：platform=html5，fnval=1 (MP4)，high_quality=1
+            //  HTML5 参数：platform=html5，fnval=1 (MP4)，high_quality=1
             val params = mapOf(
                 "bvid" to bvid, 
                 "cid" to cid.toString(), 
                 "qn" to qn.toString(),
-                "fnval" to "1",  // 🔥 MP4 格式
+                "fnval" to "1",  //  MP4 格式
                 "fnver" to "0", 
                 "fourk" to "1", 
-                "platform" to "html5",  // 🔥 关键：移除 Referer 鉴权
-                "high_quality" to "1",  // 🔥 尝试获取 1080p
+                "platform" to "html5",  //  关键：移除 Referer 鉴权
+                "high_quality" to "1",  //  尝试获取 1080p
                 "try_look" to "1",
                 "gaia_source" to "pre-load",
                 "web_location" to "1550101"
@@ -649,26 +649,51 @@ object VideoRepository {
             val signedParams = WbiUtils.sign(params, imgKey, subKey)
             val response = api.getPlayUrlHtml5(signedParams)
             
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🔥 HTML5 fallback response: code=${response.code}, quality=${response.data?.quality}")
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", " HTML5 fallback response: code=${response.code}, quality=${response.data?.quality}")
             
             if (response.code == 0 && response.data != null) {
-                com.android.purebilibili.core.util.Logger.d("VideoRepo", "✅ HTML5 fallback success!")
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", " HTML5 fallback success!")
                 return response.data
             }
             
             return null
         } catch (e: Exception) {
-            android.util.Log.e("VideoRepo", "❌ HTML5 fallback failed: ${e.message}")
+            android.util.Log.e("VideoRepo", " HTML5 fallback failed: ${e.message}")
             return null
         }
     }
 
+    /**
+     * 获取视频预览图数据 (Videoshot API)
+     * 
+     * 用于进度条拖动时显示视频缩略图预览
+     * @param bvid 视频 BV 号
+     * @param cid 视频 CID
+     * @return VideoshotData 或 null（如果获取失败）
+     */
+    suspend fun getVideoshot(bvid: String, cid: Long): VideoshotData? = withContext(Dispatchers.IO) {
+        try {
+            com.android.purebilibili.core.util.Logger.d("VideoRepo", "🖼️ getVideoshot: bvid=$bvid, cid=$cid")
+            val response = api.getVideoshot(bvid = bvid, cid = cid)
+            if (response.code == 0 && response.data != null && response.data.isValid) {
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", "🖼️ Videoshot success: ${response.data.image.size} images, ${response.data.index.size} frames")
+                response.data
+            } else {
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", "🖼️ Videoshot failed: code=${response.code}")
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("VideoRepo", "🖼️ Videoshot exception: ${e.message}")
+            null
+        }
+    }
+    
     suspend fun getRelatedVideos(bvid: String): List<RelatedVideo> = withContext(Dispatchers.IO) {
         try { api.getRelatedVideos(bvid).data ?: emptyList() } catch (e: Exception) { emptyList() }
     }
 
 
-    // 🔥🔥 [新增] API 错误码分类，提供用户友好的错误提示
+    //  [新增] API 错误码分类，提供用户友好的错误提示
     private fun classifyPlayUrlError(code: Int, message: String?): String {
         return when (code) {
             -404 -> "视频不存在或已被删除"

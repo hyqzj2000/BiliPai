@@ -10,7 +10,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -70,10 +70,10 @@ fun BangumiPlayerView(
     showSponsorSkipButton: Boolean = false,
     onSponsorSkip: () -> Unit = {},
     onSponsorDismiss: () -> Unit = {},
-    // 🔥 新增：倍速控制
+    //  新增：倍速控制
     currentSpeed: Float = 1.0f,
     onSpeedChange: (Float) -> Unit = {},
-    // 🔥 新增：弹幕设置
+    //  新增：弹幕设置
     danmakuOpacity: Float = 0.85f,
     danmakuFontScale: Float = 1.0f,
     danmakuSpeed: Float = 1.0f,
@@ -93,8 +93,8 @@ fun BangumiPlayerView(
     var showControls by remember { mutableStateOf(true) }
     var lastInteractionTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var showQualityMenu by remember { mutableStateOf(false) }
-    var showSpeedMenu by remember { mutableStateOf(false) }  // 🔥 倍速菜单
-    var showDanmakuSettings by remember { mutableStateOf(false) }  // 🔥 弹幕设置面板
+    var showSpeedMenu by remember { mutableStateOf(false) }  //  倍速菜单
+    var showDanmakuSettings by remember { mutableStateOf(false) }  //  弹幕设置面板
     
     // 手势状态
     var gestureMode by remember { mutableStateOf(BangumiGestureMode.None) }
@@ -249,7 +249,7 @@ fun BangumiPlayerView(
                 },
                 update = { view ->
                     if (view.width > 0 && view.height > 0) {
-                        android.util.Log.d("BangumiPlayer", "🔄 DanmakuView update: size=${view.width}x${view.height}")
+                        android.util.Log.d("BangumiPlayer", " DanmakuView update: size=${view.width}x${view.height}")
                         danmakuManager.attachView(view)
                     }
                 },
@@ -326,7 +326,7 @@ fun BangumiPlayerView(
                         }
                     }
                     
-                    // 🔥 弹幕设置按钮（仅横屏显示）
+                    //  弹幕设置按钮（仅横屏显示）
                     if (isFullscreen && danmakuEnabled) {
                         Surface(
                             onClick = { showDanmakuSettings = true },
@@ -344,7 +344,7 @@ fun BangumiPlayerView(
                         }
                     }
                     
-                    // 🔥 倍速按钮
+                    //  倍速按钮
                     SpeedButton(
                         currentSpeed = currentSpeed,
                         onClick = { showSpeedMenu = true }
@@ -465,7 +465,7 @@ fun BangumiPlayerView(
             )
         }
         
-        // 🔥 倍速选择菜单
+        //  倍速选择菜单
         if (showSpeedMenu) {
             Box(
                 modifier = Modifier
@@ -481,7 +481,7 @@ fun BangumiPlayerView(
                     currentSpeed = currentSpeed,
                     onSpeedSelected = { speed ->
                         onSpeedChange(speed)
-                        exoPlayer.setPlaybackSpeed(speed)  // 🔥 直接应用倍速
+                        exoPlayer.setPlaybackSpeed(speed)  //  直接应用倍速
                         showSpeedMenu = false
                     },
                     onDismiss = { showSpeedMenu = false }
@@ -489,7 +489,7 @@ fun BangumiPlayerView(
             }
         }
         
-        // 🔥 弹幕设置面板
+        //  弹幕设置面板
         if (showDanmakuSettings) {
             DanmakuSettingsPanel(
                 opacity = danmakuOpacity,
@@ -512,7 +512,7 @@ fun BangumiPlayerView(
             onDismiss = onSponsorDismiss,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = 60.dp, end = 16.dp)  // 🔥 向上偏移避免与进度条重叠
+                .padding(bottom = 60.dp, end = 16.dp)  //  向上偏移避免与进度条重叠
         )
     }
 }
@@ -539,7 +539,7 @@ fun BangumiGestureIndicator(
         ) {
             when (mode) {
                 BangumiGestureMode.Brightness -> {
-                    // 🔥 亮度图标：CupertinoIcons SunMax (iOS SF Symbols 风格)
+                    //  亮度图标：CupertinoIcons SunMax (iOS SF Symbols 风格)
                     Icon(CupertinoIcons.Default.SunMax, null, tint = Color.White, modifier = Modifier.size(36.dp))
                     Spacer(Modifier.height(8.dp))
                     Text("亮度", color = Color.White, fontSize = 14.sp)
@@ -547,7 +547,7 @@ fun BangumiGestureIndicator(
                     Text("${(value * 100).toInt()}%", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 }
                 BangumiGestureMode.Volume -> {
-                    // 🔥 动态音量图标：3 级
+                    //  动态音量图标：3 级
                     val volumeIcon = when {
                         value < 0.01f -> CupertinoIcons.Default.SpeakerSlash
                         value < 0.5f -> CupertinoIcons.Default.Speaker

@@ -12,7 +12,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -62,7 +62,7 @@ fun VideoPlayerOverlay(
     realResolution: String = "",
     isQualitySwitching: Boolean = false,
     isVip: Boolean = false,
-    // 🔥🔥 [新增] 弹幕开关和设置
+    //  [新增] 弹幕开关和设置
     danmakuEnabled: Boolean = true,
     onDanmakuToggle: () -> Unit = {},
     danmakuOpacity: Float = 0.85f,
@@ -73,16 +73,16 @@ fun VideoPlayerOverlay(
     onDanmakuFontScaleChange: (Float) -> Unit = {},
     onDanmakuSpeedChange: (Float) -> Unit = {},
     onDanmakuDisplayAreaChange: (Float) -> Unit = {},
-    // 🧪🧪 [实验性功能] 双击点赞
+    //  [实验性功能] 双击点赞
     doubleTapLikeEnabled: Boolean = true,
     onDoubleTapLike: () -> Unit = {},
-    // 🔥 视频比例调节
+    //  视频比例调节
     currentAspectRatio: VideoAspectRatio = VideoAspectRatio.FIT,
     onAspectRatioChange: (VideoAspectRatio) -> Unit = {},
     // 🔗 [新增] 分享功能
     bvid: String = "",
     onShare: (() -> Unit)? = null,
-    // 🔥 [新增] 视频设置面板回调
+    //  [新增] 视频设置面板回调
     onReloadVideo: () -> Unit = {},
     sleepTimerMinutes: Int? = null,
     onSleepTimerChange: (Int?) -> Unit = {},
@@ -92,30 +92,32 @@ fun VideoPlayerOverlay(
     onFlipVertical: () -> Unit = {},
     isAudioOnly: Boolean = false,
     onAudioOnlyToggle: () -> Unit = {},
-    // 🔥 [新增] 画质列表和回调
+    //  [新增] 画质列表和回调
     onQualityChange: (Int, Long) -> Unit = { _, _ -> },
-    // 🔥 [新增] CDN 线路切换
+    //  [新增] CDN 线路切换
     currentCdnIndex: Int = 0,
     cdnCount: Int = 1,
     onSwitchCdn: () -> Unit = {},
-    onSwitchCdnTo: (Int) -> Unit = {}
+    onSwitchCdnTo: (Int) -> Unit = {},
+    // 🖼️ [新增] 视频预览图数据
+    videoshotData: com.android.purebilibili.data.model.response.VideoshotData? = null
 ) {
     var showQualityMenu by remember { mutableStateOf(false) }
     var showSpeedMenu by remember { mutableStateOf(false) }
     var showRatioMenu by remember { mutableStateOf(false) }
     var showDanmakuSettings by remember { mutableStateOf(false) }
-    var showVideoSettings by remember { mutableStateOf(false) }  // 🔥 新增
+    var showVideoSettings by remember { mutableStateOf(false) }  //  新增
     var currentSpeed by remember { mutableFloatStateOf(1.0f) }
-    // 🔥 使用传入的比例状态
+    //  使用传入的比例状态
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
     
-    // 🧪 双击检测状态
+    //  双击检测状态
     var lastTapTime by remember { mutableLongStateOf(0L) }
     var showLikeAnimation by remember { mutableStateOf(false) }
 
     val progressState by produceState(initialValue = PlayerProgress(), key1 = player, key2 = isVisible) {
         while (isActive) {
-            // 🔥🔥 [修复] 始终更新进度，不仅在播放时
+            //  [修复] 始终更新进度，不仅在播放时
             // 这样横竖屏切换后也能显示正确的进度
             val duration = if (player.duration < 0) 0L else player.duration
             value = PlayerProgress(
@@ -138,7 +140,7 @@ fun VideoPlayerOverlay(
         }
     }
     
-    // 🧪 双击点赞动画自动消失
+    //  双击点赞动画自动消失
     LaunchedEffect(showLikeAnimation) {
         if (showLikeAnimation) {
             delay(800)
@@ -152,7 +154,7 @@ fun VideoPlayerOverlay(
             visible = isVisible,
             enter = fadeIn(),
             exit = fadeOut(),
-            // 🔥🔥 [修复] align 必须在 AnimatedVisibility 的 modifier 上，而不是内部 Box 上
+            //  [修复] align 必须在 AnimatedVisibility 的 modifier 上，而不是内部 Box 上
             modifier = Modifier.align(Alignment.TopCenter)
         ) {
             Box(
@@ -199,12 +201,12 @@ fun VideoPlayerOverlay(
             visible = isVisible,
             enter = fadeIn(tween(300)),
             exit = fadeOut(tween(300)),
-            // 🔥🔥 [修复] 确保 AnimatedVisibility 填充整个父容器
+            //  [修复] 确保 AnimatedVisibility 填充整个父容器
             modifier = Modifier.fillMaxSize()
         ) {
-            // 🔥🔥 [修复] 使用 Box 分别定位顶部和底部控制栏
+            //  [修复] 使用 Box 分别定位顶部和底部控制栏
             Box(modifier = Modifier.fillMaxSize()) {
-                // 🔥 顶部控制栏 - 仅在横屏（全屏）模式显示标题和清晰度
+                //  顶部控制栏 - 仅在横屏（全屏）模式显示标题和清晰度
                 if (isFullscreen) {
                     TopControlBar(
                         title = title,
@@ -212,15 +214,15 @@ fun VideoPlayerOverlay(
                         currentQualityLabel = currentQualityLabel,
                         onBack = onBack,
                         onQualityClick = { showQualityMenu = true },
-                        // 🔥🔥 弹幕开关和设置
+                        //  弹幕开关和设置
                         danmakuEnabled = danmakuEnabled,
                         onDanmakuToggle = onDanmakuToggle,
                         onDanmakuSettingsClick = { showDanmakuSettings = true },
-                        // 🔥🔥 [修复] 传入 modifier 确保在顶部
+                        //  [修复] 传入 modifier 确保在顶部
                         modifier = Modifier.align(Alignment.TopCenter)
                     )
                 } else {
-                    // 🔥🔥 [新增] 竖屏模式顶部栏（返回 + 设置 + 分享按钮）
+                    //  [新增] 竖屏模式顶部栏（返回 + 设置 + 分享按钮）
                     val context = LocalContext.current
                     PortraitTopBar(
                         onBack = onBack,
@@ -236,7 +238,7 @@ fun VideoPlayerOverlay(
                     )
                 }
                 
-                // 🔥🔥 [修复] 底部控制栏 - 固定在底部
+                //  [修复] 底部控制栏 - 固定在底部
                 BottomControlBar(
                     isPlaying = isPlaying,
                     progress = progressState,
@@ -251,18 +253,20 @@ fun VideoPlayerOverlay(
                     onSpeedClick = { showSpeedMenu = true },
                     onRatioClick = { showRatioMenu = true },
                     onToggleFullscreen = onToggleFullscreen,
-                    // 🔥🔥 [新增] 竖屏模式弹幕和清晰度控制
+                    //  [新增] 竖屏模式弹幕和清晰度控制
                     danmakuEnabled = danmakuEnabled,
                     onDanmakuToggle = onDanmakuToggle,
                     currentQualityLabel = currentQualityLabel,
                     onQualityClick = { showQualityMenu = true },
-                    // 🔥🔥 [修复] 传入 modifier 确保在底部
+                    // 🖼️ [新增] 视频预览图数据
+                    videoshotData = videoshotData,
+                    //  [修复] 传入 modifier 确保在底部
                     modifier = Modifier.align(Alignment.BottomStart)
                 )
             }
         }
 
-        // --- 4. 🔥🔥 [新增] 真实分辨率统计信息 (仅在设置开启时显示) ---
+        // --- 4.  [新增] 真实分辨率统计信息 (仅在设置开启时显示) ---
         if (showStats && realResolution.isNotEmpty() && isVisible) {
             Box(
                 modifier = Modifier
@@ -305,7 +309,7 @@ fun VideoPlayerOverlay(
             }
         }
 
-        // --- 5.5 🔥🔥 清晰度切换中 Loading 指示器 ---
+        // --- 5.5  清晰度切换中 Loading 指示器 ---
         AnimatedVisibility(
             visible = isQualitySwitching,
             modifier = Modifier.align(Alignment.Center),
@@ -321,7 +325,7 @@ fun VideoPlayerOverlay(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
                 ) {
-                    // 🍎 iOS 风格加载器
+                    //  iOS 风格加载器
                     CupertinoActivityIndicator()
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
@@ -350,7 +354,7 @@ fun VideoPlayerOverlay(
             )
         }
         
-        // --- 7. 🔥🔥 [新增] 倍速选择菜单 ---
+        // --- 7.  [新增] 倍速选择菜单 ---
         if (showSpeedMenu) {
             SpeedSelectionMenu(
                 currentSpeed = currentSpeed,
@@ -363,7 +367,7 @@ fun VideoPlayerOverlay(
             )
         }
         
-        // --- 7.5 🔥 [新增] 视频比例选择菜单 ---
+        // --- 7.5  [新增] 视频比例选择菜单 ---
         if (showRatioMenu) {
             AspectRatioMenu(
                 currentRatio = currentAspectRatio,
@@ -375,7 +379,7 @@ fun VideoPlayerOverlay(
             )
         }
         
-        // --- 8. 🔥🔥 [新增] 弹幕设置面板 ---
+        // --- 8.  [新增] 弹幕设置面板 ---
         if (showDanmakuSettings) {
             DanmakuSettingsPanel(
                 opacity = danmakuOpacity,
@@ -390,7 +394,7 @@ fun VideoPlayerOverlay(
             )
         }
         
-        // --- 9. 🔥 [新增] 视频设置面板 ---
+        // --- 9.  [新增] 视频设置面板 ---
         if (showVideoSettings) {
             VideoSettingsPanel(
                 sleepTimerMinutes = sleepTimerMinutes,
@@ -415,7 +419,7 @@ fun VideoPlayerOverlay(
                 onFlipVertical = onFlipVertical,
                 isAudioOnly = isAudioOnly,
                 onAudioOnlyToggle = onAudioOnlyToggle,
-                // 🔥 CDN 线路切换
+                //  CDN 线路切换
                 currentCdnIndex = currentCdnIndex,
                 cdnCount = cdnCount,
                 onSwitchCdn = onSwitchCdn,
@@ -430,7 +434,7 @@ fun VideoPlayerOverlay(
 }
 
 /**
- * 🔥 竖屏模式顶部控制栏
+ *  竖屏模式顶部控制栏
  * 
  * 包含返回首页按钮、设置按钮和分享按钮
  */
@@ -469,7 +473,7 @@ private fun PortraitTopBar(
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 🔥 听视频模式按钮
+            //  听视频模式按钮
             IconButton(
                 onClick = onAudioMode,
                 modifier = Modifier
@@ -487,7 +491,7 @@ private fun PortraitTopBar(
                 )
             }
 
-            // 🔥 设置按钮
+            //  设置按钮
             IconButton(
                 onClick = onSettings,
                 modifier = Modifier

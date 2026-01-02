@@ -12,7 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * 🍎 iOS 风格 Spring 动画预设
+ *  iOS 风格 Spring 动画预设
  * 
  * 基于 iOS Human Interface Guidelines 的动画参数，
  * 提供统一的弹性动画效果，让交互更加自然流畅。
@@ -90,7 +90,7 @@ object iOSSpringSpecs {
 }
 
 /**
- * 🔥 列表项进场动画 (Premium 非线性动画)
+ *  列表项进场动画 (Premium 非线性动画)
  * 
  * 特点：
  * - 交错延迟实现波浪效果
@@ -109,7 +109,7 @@ fun Modifier.animateEnter(
     initialOffsetY: Float = 80f,
     animationEnabled: Boolean = true
 ): Modifier = composed {
-    // 🔥 如果动画被禁用，直接返回无动画效果
+    //  如果动画被禁用，直接返回无动画效果
     if (!animationEnabled) {
         return@composed this
     }
@@ -120,9 +120,9 @@ fun Modifier.animateEnter(
     val scale = remember(key) { Animatable(0.85f) }
 
     LaunchedEffect(key) {
-        // 🔥🔥 在 LaunchedEffect 内部检查，确保每次执行时都检查最新状态
+        //  在 LaunchedEffect 内部检查，确保每次执行时都检查最新状态
         if (CardPositionManager.isReturningFromDetail) {
-            // 🔥 直接设置为最终值，不播放动画
+            //  直接设置为最终值，不播放动画
             alpha.snapTo(1f)
             translationY.snapTo(0f)
             scale.snapTo(1f)
@@ -132,11 +132,11 @@ fun Modifier.animateEnter(
             return@LaunchedEffect
         }
         
-        // 🔥 交错延迟：每个卡片延迟 40ms，最多 300ms
+        //  交错延迟：每个卡片延迟 40ms，最多 300ms
         val delayMs = (index * 40L).coerceAtMost(300L)
         delay(delayMs)
 
-        // 🔥 并行启动动画
+        //  并行启动动画
         launch {
             alpha.animateTo(
                 targetValue = 1f,

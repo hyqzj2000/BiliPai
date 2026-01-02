@@ -4,7 +4,7 @@ package com.android.purebilibili.feature.video.ui.overlay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -18,12 +18,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// 🔥 已改用 MaterialTheme.colorScheme.primary
+//  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.feature.video.ui.components.VideoAspectRatio
 
 /**
- * 🔥🔥🔥 横屏底部控制栏（官方 B 站样式）
+ *  横屏底部控制栏（官方 B 站样式）
  * 
  * 布局结构：
  * - 上层：进度条 + 时间
@@ -36,7 +36,7 @@ fun LandscapeBottomControlBar(
     currentSpeed: Float = 1.0f,
     currentRatio: VideoAspectRatio = VideoAspectRatio.FIT,
     danmakuEnabled: Boolean = true,
-    // 🔥🔥🔥 [新增] 清晰度相关参数
+    //  [新增] 清晰度相关参数
     currentQualityLabel: String = "自动",
     onQualityClick: () -> Unit = {},
     onPlayPauseClick: () -> Unit,
@@ -66,7 +66,7 @@ fun LandscapeBottomControlBar(
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-            // 🔥 上层：进度条 + 时间
+            //  上层：进度条 + 时间
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -127,7 +127,7 @@ fun LandscapeBottomControlBar(
             
             Spacer(modifier = Modifier.height(4.dp))
             
-            // 🔥 下层：控制按钮 + 弹幕输入框
+            //  下层：控制按钮 + 弹幕输入框
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -168,7 +168,7 @@ fun LandscapeBottomControlBar(
                     )
                 }
                 
-                // 🔥🔥🔥 [官方适配] 清晰度按钮
+                //  [官方适配] 清晰度按钮
                 LandscapeControlButton(
                     text = currentQualityLabel,
                     isHighlighted = true,  // 清晰度始终高亮显示
@@ -177,7 +177,7 @@ fun LandscapeBottomControlBar(
                 
                 Spacer(modifier = Modifier.width(4.dp))
                 
-                // 🔥🔥🔥 [官方适配] 倍速按钮
+                //  [官方适配] 倍速按钮
                 LandscapeControlButton(
                     text = if (currentSpeed == 1.0f) "倍速" else "${currentSpeed}x",
                     isHighlighted = currentSpeed != 1.0f,
@@ -186,7 +186,7 @@ fun LandscapeBottomControlBar(
                 
                 Spacer(modifier = Modifier.width(4.dp))
                 
-                // 🔥🔥🔥 [官方适配] 画面比例按钮
+                //  [官方适配] 画面比例按钮
                 LandscapeControlButton(
                     text = currentRatio.displayName,
                     isHighlighted = currentRatio != VideoAspectRatio.FIT,
@@ -213,7 +213,7 @@ fun LandscapeBottomControlBar(
 }
 
 /**
- * 🔥 横屏控制栏按钮
+ *  横屏控制栏按钮
  */
 @Composable
 private fun LandscapeControlButton(

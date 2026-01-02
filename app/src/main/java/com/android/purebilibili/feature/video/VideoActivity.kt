@@ -48,7 +48,7 @@ import com.android.purebilibili.feature.video.ui.section.VideoPlayerSection
 private const val TAG = "BiliPlayerActivity"
 
 
-// 🔥 PiP 控制 Action 常量
+//  PiP 控制 Action 常量
 private const val ACTION_PIP_CONTROL = "com.android.purebilibili.PIP_CONTROL"
 private const val EXTRA_CONTROL_TYPE = "control_type"
 private const val CONTROL_TYPE_PLAY = 1
@@ -60,7 +60,7 @@ class VideoActivity : ComponentActivity() {
     private var isFullscreen by mutableStateOf(false)
     private var isInPipMode by mutableStateOf(false)
     
-    // 🔥 PiP 广播接收器
+    //  PiP 广播接收器
     private val pipReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == ACTION_PIP_CONTROL) {
@@ -78,11 +78,11 @@ class VideoActivity : ComponentActivity() {
         }
     }
 
-    // 🔥 1. 权限回调
+    //  1. 权限回调
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
-        if (isGranted) Logger.d(TAG, "✅ 通知权限已授予") else com.android.purebilibili.core.util.Logger.w(TAG, "❌ 通知权限被拒绝，媒体控件可能无法显示")
+        if (isGranted) Logger.d(TAG, " 通知权限已授予") else com.android.purebilibili.core.util.Logger.w(TAG, " 通知权限被拒绝，媒体控件可能无法显示")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,12 +91,12 @@ class VideoActivity : ComponentActivity() {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
 
-        // 🔥 2. 请求权限 (Android 13+)
+        //  2. 请求权限 (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         
-        // 🔥 注册 PiP 控制广播 (使用 ContextCompat 兼容所有版本)
+        //  注册 PiP 控制广播 (使用 ContextCompat 兼容所有版本)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val filter = IntentFilter(ACTION_PIP_CONTROL)
             androidx.core.content.ContextCompat.registerReceiver(
@@ -121,14 +121,14 @@ class VideoActivity : ComponentActivity() {
                 val sleepTimerMinutes by viewModel.sleepTimerMinutes.collectAsStateWithLifecycle()
                 val isAudioOnly by viewModel.isInAudioMode.collectAsStateWithLifecycle()
                 
-                // 🚀 空降助手状态 - 已由插件系统自动处理，无需UI
+                //  空降助手状态 - 已由插件系统自动处理，无需UI
                 // val sponsorSegment by viewModel.currentSponsorSegment.collectAsStateWithLifecycle()
                 // val showSponsorSkipButton by viewModel.showSkipButton.collectAsStateWithLifecycle()
                 // val sponsorBlockEnabled by com.android.purebilibili.core.store.SettingsManager
                 //     .getSponsorBlockEnabled(this@VideoActivity)
                 //     .collectAsStateWithLifecycle(initialValue = false)
                 
-                // 🚀 空降助手：已由插件系统后台处理
+                //  空降助手：已由插件系统后台处理
                 // androidx.compose.runtime.LaunchedEffect(sponsorBlockEnabled, uiState) {
                 //     if (sponsorBlockEnabled && uiState is PlayerUiState.Success) {
                 //         while (true) {
@@ -169,18 +169,18 @@ class VideoActivity : ComponentActivity() {
                             onBack = {
                                 if (isFullscreen) toggleFullscreen() else finish()
                             },
-                            // 🧪 实验性功能：双击点赞
+                            //  实验性功能：双击点赞
                             onDoubleTapLike = { viewModel.toggleLike() },
                             
-                            // 🔥 [新增] 音频模式
+                            //  [新增] 音频模式
                             isAudioOnly = isAudioOnly,
                             onAudioOnlyToggle = { viewModel.setAudioMode(!isAudioOnly) },
                             
-                            // 🔥 [新增] 定时关闭
+                            //  [新增] 定时关闭
                             sleepTimerMinutes = sleepTimerMinutes,
                             onSleepTimerChange = { viewModel.setSleepTimer(it) }
                             
-                            // 🚀 空降助手 - 已由插件系统自动处理
+                            //  空降助手 - 已由插件系统自动处理
                             // sponsorSegment = sponsorSegment,
                             // showSponsorSkipButton = showSponsorSkipButton,
                             // onSponsorSkip = { viewModel.skipCurrentSponsorSegment() },
@@ -203,7 +203,7 @@ class VideoActivity : ComponentActivity() {
     
     override fun onDestroy() {
         super.onDestroy()
-        // 🔥 注销广播接收器
+        //  注销广播接收器
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
                 unregisterReceiver(pipReceiver)
@@ -239,7 +239,7 @@ class VideoActivity : ComponentActivity() {
         }
     }
 
-    // 🔥 构建 PiP 参数 (带播放控制按钮)
+    //  构建 PiP 参数 (带播放控制按钮)
     private fun buildPipParams(isPlaying: Boolean = true): PictureInPictureParams {
         val builder = PictureInPictureParams.Builder()
             .setAspectRatio(Rational(16, 9))
@@ -289,7 +289,7 @@ class VideoActivity : ComponentActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        // 🔥 检查设置是否开启了后台播放
+        //  检查设置是否开启了后台播放
         val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
         val bgPlayEnabled = prefs.getBoolean("bg_play", false)
         

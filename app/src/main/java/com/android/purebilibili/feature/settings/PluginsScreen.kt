@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -35,7 +35,7 @@ import io.github.alexzhirkevich.cupertino.CupertinoSwitchDefaults
 import kotlinx.coroutines.launch
 
 /**
- * 🔌 插件中心页面
+ *  插件中心页面
  * 
  * 显示所有可用插件，支持启用/禁用和配置。
  */
@@ -56,21 +56,21 @@ fun PluginsScreen(
     // 展开状态追踪
     var expandedPluginId by remember { mutableStateOf<String?>(null) }
     
-    // 🆕 导入插件对话框状态
+    //  导入插件对话框状态
     var showImportDialog by remember { mutableStateOf(false) }
     var importUrl by remember { mutableStateOf("") }
     var isImporting by remember { mutableStateOf(false) }
     var importError by remember { mutableStateOf<String?>(null) }
     
-    // 🔥🔥 [修复] 编辑插件状态移至顶层，避免在 LazyColumn 内嵌套 LazyColumn 导致闪退
+    //  [修复] 编辑插件状态移至顶层，避免在 LazyColumn 内嵌套 LazyColumn 导致闪退
     var editingPlugin by remember { mutableStateOf<com.android.purebilibili.core.plugin.json.JsonRulePlugin?>(null) }
     
-    // 🆕 测试对话框状态
+    //  测试对话框状态
     var testingPluginId by remember { mutableStateOf<String?>(null) }
     var testResult by remember { mutableStateOf<Triple<Int, Int, List<com.android.purebilibili.data.model.response.VideoItem>>?>(null) }
     var testingSampleVideos by remember { mutableStateOf<List<com.android.purebilibili.data.model.response.VideoItem>>(emptyList()) }
     
-    // 🆕 如果正在编辑插件，显示编辑器全屏覆盖
+    //  如果正在编辑插件，显示编辑器全屏覆盖
     editingPlugin?.let { plugin ->
         JsonPluginEditorScreen(
             plugin = plugin,
@@ -82,7 +82,7 @@ fun PluginsScreen(
         return
     }
     
-    // 🔥🔥 [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
+    //  [修复] 设置导航栏透明，确保底部手势栏沉浸式效果
     val context = androidx.compose.ui.platform.LocalContext.current
     val view = androidx.compose.ui.platform.LocalView.current
     androidx.compose.runtime.DisposableEffect(Unit) {
@@ -117,7 +117,7 @@ fun PluginsScreen(
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
-        // 🔥🔥 [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，避免底部填充
+        //  [修复] 禁用 Scaffold 默认的 WindowInsets 消耗，避免底部填充
         contentWindowInsets = WindowInsets(0.dp)
     ) { padding ->
         LazyColumn(
@@ -190,7 +190,7 @@ fun PluginsScreen(
                 )
             }
             
-            // 🆕 导入外部插件按钮
+            //  导入外部插件按钮
             item {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
@@ -253,7 +253,7 @@ fun PluginsScreen(
                 }
             }
             
-            // 🆕 已安装的 JSON 插件列表
+            //  已安装的 JSON 插件列表
             if (jsonPlugins.isNotEmpty()) {
                 item {
                     Spacer(modifier = Modifier.height(12.dp))
@@ -277,7 +277,7 @@ fun PluginsScreen(
                                         )
                                     },
                                     onEdit = {
-                                        // 🔥 使用顶层的 editingPlugin 状态
+                                        //  使用顶层的 editingPlugin 状态
                                         editingPlugin = loadedPlugin.plugin
                                     },
                                     onDelete = {
@@ -294,7 +294,7 @@ fun PluginsScreen(
                                         ).show()
                                     },
                                     onTest = {
-                                        // 🔥 获取首页样本视频进行测试
+                                        //  获取首页样本视频进行测试
                                         scope.launch {
                                             try {
                                                 // 从 API 获取样本视频
@@ -357,7 +357,7 @@ fun PluginsScreen(
         }
     }
     
-    // 🆕 导入插件对话框
+    //  导入插件对话框
     if (showImportDialog) {
         AlertDialog(
             onDismissRequest = { 
@@ -425,7 +425,7 @@ fun PluginsScreen(
                                 showImportDialog = false
                                 importUrl = ""
                                 importError = null
-                                // 🆕 显示成功 Toast
+                                //  显示成功 Toast
                                 android.widget.Toast.makeText(
                                     context,
                                     "插件 \"${result.getOrNull()?.name}\" 安装成功！",
@@ -456,7 +456,7 @@ fun PluginsScreen(
         )
     }
     
-    // 🔥 测试结果对话框
+    //  测试结果对话框
     testingPluginId?.let { pluginId ->
         testResult?.let { (original, filtered, blockedVideos) ->
             val pluginName = jsonPlugins.find { it.plugin.id == pluginId }?.plugin?.name ?: "未知插件"
@@ -525,7 +525,7 @@ private fun PluginItem(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    // 🔥 暂不可用标签
+                    //  暂不可用标签
                     if (plugin.unavailable) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Surface(
@@ -547,7 +547,7 @@ private fun PluginItem(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                // 🆕 显示作者
+                //  显示作者
                 if (plugin.author != "Unknown") {
                     Text(
                         text = "by ${plugin.author}",
@@ -684,7 +684,7 @@ private fun JsonPluginItem(
                         color = iOSPurple
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    // 🔥 统计始终显示
+                    //  统计始终显示
                     Surface(
                         shape = RoundedCornerShape(4.dp),
                         color = if (filterCount > 0) 
@@ -725,7 +725,7 @@ private fun JsonPluginItem(
             )
         }
         
-        // 🔥 展开的操作区域
+        //  展开的操作区域
         AnimatedVisibility(
             visible = isExpanded,
             enter = expandVertically(),
@@ -820,7 +820,7 @@ private fun JsonPluginItem(
 }
 
 /**
- * 🔥 测试结果对话框
+ *  测试结果对话框
  */
 @Composable
 private fun TestResultDialog(
@@ -955,7 +955,7 @@ private fun TestResultDialog(
                 } else if (blockedCount == 0) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "✅ 当前测试样本中没有符合过滤条件的视频",
+                        text = " 当前测试样本中没有符合过滤条件的视频",
                         style = MaterialTheme.typography.bodySmall,
                         color = iOSGreen
                     )

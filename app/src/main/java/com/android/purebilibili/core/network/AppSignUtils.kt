@@ -4,19 +4,19 @@ package com.android.purebilibili.core.network
 import java.security.MessageDigest
 
 /**
- * 🔥🔥 APP 签名工具类
+ *  APP 签名工具类
  * 用于 TV 端登录和 APP API 调用的签名计算
  * 
  * 参考: https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/misc/sign/APPKey.md
  */
 object AppSignUtils {
     
-    // 🔥 TV 端 appkey 和 appsec (云视听小电视)
+    //  TV 端 appkey 和 appsec (云视听小电视)
     // 注意：通过某一组 APPKEY/APPSEC 获取到的 access_token，之后的 API 调用也必须使用同一组
     const val TV_APP_KEY = "4409e2ce8ffd12b8"
     private const val TV_APP_SEC = "59b43e04ad6965f34319062b478f83dd"
     
-    // 🔥 Android 客户端 appkey 和 appsec (用于获取高画质视频)
+    //  Android 客户端 appkey 和 appsec (用于获取高画质视频)
     const val ANDROID_APP_KEY = "1d8b6e7d45233436"
     private const val ANDROID_APP_SEC = "560c52ccd288fed045859ed18bffd973"
     

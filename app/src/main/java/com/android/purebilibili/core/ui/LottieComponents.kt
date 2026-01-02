@@ -28,11 +28,11 @@ import com.android.purebilibili.R
 import kotlinx.coroutines.launch
 
 /**
- * 🎬 Lottie 动画加载器
+ *  Lottie 动画加载器
  * 使用在线 Lottie 动画 URL
  */
 object LottieUrls {
-    // 🔥 精选免费 Lottie 动画资源
+    //  精选免费 Lottie 动画资源
     const val LOADING_DOTS = "https://lottie.host/5d9d2c7c-d7f4-4f3e-9e9f-f8a6e1f8c3a1/loading.json"
     const val LOADING_CIRCLE = "https://assets2.lottiefiles.com/packages/lf20_p8bfn5to.json"
     const val LOADING_BILIBILI = "https://assets10.lottiefiles.com/packages/lf20_jcikwtux.json"
@@ -44,65 +44,65 @@ object LottieUrls {
     const val EMPTY = "https://assets9.lottiefiles.com/packages/lf20_wnqlfojb.json"
     const val REFRESH = "https://assets3.lottiefiles.com/packages/lf20_ykzaax7v.json"
     
-    // 🎨 新手引导页面动画
+    //  新手引导页面动画
     const val WELCOME = "https://assets10.lottiefiles.com/packages/lf20_u4yrau.json"  // 庆祝彩屑
     const val THEME_COLORS = "https://assets5.lottiefiles.com/packages/lf20_jtbfg2nb.json"  // 彩虹渐变
     const val VIDEO_PLAY = "https://assets8.lottiefiles.com/packages/lf20_khzniaya.json"  // 播放按钮
     
-    // 🎬 Telegram 风格设置页面动画 (使用 Telegram Android 开源项目的官方动画)
+    //  Telegram 风格设置页面动画 (使用 Telegram Android 开源项目的官方动画)
     // 来源: https://github.com/DrKLO/Telegram/tree/master/TMessagesProj/src/main/res/raw
     
     private const val TELEGRAM_RAW_BASE = "https://raw.githubusercontent.com/DrKLO/Telegram/master/TMessagesProj/src/main/res/raw"
     
-    // 🔌 插件中心 - 使用添加图标动画
+    //  插件中心 - 使用添加图标动画
     const val SETTINGS_PLUGINS = "$TELEGRAM_RAW_BASE/addone_icon.json"
     
-    // 🎨 外观设置 - 使用相机/图库动画
+    //  外观设置 - 使用相机/图库动画
     const val SETTINGS_APPEARANCE = "$TELEGRAM_RAW_BASE/attach_gallery.json"
     
-    // 🌙 主题设置 - 使用夜间模式切换动画
+    //  主题设置 - 使用夜间模式切换动画
     const val SETTINGS_THEME = "$TELEGRAM_RAW_BASE/auto_night_off.json"
     
     // ✨ 动画与效果 - 使用火焰开启动画
     const val SETTINGS_ANIMATION = "$TELEGRAM_RAW_BASE/fire_on.json"
     
-    // 🎬 播放设置 - 使用相机动画
+    //  播放设置 - 使用相机动画
     const val SETTINGS_PLAYBACK = "$TELEGRAM_RAW_BASE/camera.json"
     
     // 🛡️ 隐私/权限 - 使用消息锁动画
     const val SETTINGS_PRIVACY = "$TELEGRAM_RAW_BASE/large_message_lock.json"
     
-    // 📱 设备 - 使用 iPhone 设备动画
+    //  设备 - 使用 iPhone 设备动画
     const val SETTINGS_DEVICE = "$TELEGRAM_RAW_BASE/iphone_30.json"
     // 🔔 通知 - 使用静音/取消静音动画
     const val SETTINGS_NOTIFICATION = "$TELEGRAM_RAW_BASE/ic_unmute.json"
-    // 📊 数据 - 使用下载动画
+    //  数据 - 使用下载动画
     const val SETTINGS_DATA = "$TELEGRAM_RAW_BASE/ic_download.json"
-    // 💬 聊天 - 使用气泡动画
+    //  聊天 - 使用气泡动画
     const val SETTINGS_CHAT = "$TELEGRAM_RAW_BASE/bubble.json"
     // 📁 文件夹 - 使用文件夹导入动画
     const val SETTINGS_FOLDER = "$TELEGRAM_RAW_BASE/folder_in.json"
-    // 👆 手势滑动 - 使用滑动回复提示动画
+    //  手势滑动 - 使用滑动回复提示动画
     const val SETTINGS_SWIPE = "$TELEGRAM_RAW_BASE/hint_swipe_reply.json"
     
     // ➕ 更多 Telegram 设置动画
-    // 🔄 同步/联系人
+    //  同步/联系人
     const val SETTINGS_SYNC = "$TELEGRAM_RAW_BASE/contacts_sync_on.json"
     // 📤 转发
     const val SETTINGS_FORWARD = "$TELEGRAM_RAW_BASE/forward.json"
-    // 📥 归档
+    //  归档
     const val SETTINGS_ARCHIVE = "$TELEGRAM_RAW_BASE/chats_archive.json"
-    // 📋 复制
+    //  复制
     const val SETTINGS_COPY = "$TELEGRAM_RAW_BASE/copy.json"
     // 🎁 礼物/打赏
     const val SETTINGS_GIFT = "$TELEGRAM_RAW_BASE/gift.json"
     // ℹ️ 信息/关于
     const val SETTINGS_INFO = "$TELEGRAM_RAW_BASE/info.json"
-    // 🔄 筛选/过滤
+    //  筛选/过滤
     const val SETTINGS_FILTER = "$TELEGRAM_RAW_BASE/filters.json"
-    // ✅ 完成/成功
+    //  完成/成功
     const val SETTINGS_DONE = "$TELEGRAM_RAW_BASE/done.json"
-    // ❌ 错误
+    //  错误
     const val SETTINGS_ERROR = "$TELEGRAM_RAW_BASE/error.json"
     // 🌐 翻译
     const val SETTINGS_TRANSLATE = "$TELEGRAM_RAW_BASE/msg_translate.json"
@@ -114,28 +114,28 @@ object LottieUrls {
 }
 
 /**
- * 🎬 设置页本地动画资源
+ *  设置页本地动画资源
  * 更精美、更贴合功能语义的动画资源
  */
 object SettingsHeaderAnimations {
-    // 🔌 插件中心 - 拼图/插件模块
+    //  插件中心 - 拼图/插件模块
     val PLUGINS = R.raw.puzzle_plugin
-    // 🎨 外观设置 - 调色盘/配色
+    //  外观设置 - 调色盘/配色
     val APPEARANCE = R.raw.palette_color
-    // 🌙 主题设置 - 日夜切换
+    //  主题设置 - 日夜切换
     val THEME = R.raw.auto_night_off
     // ✨ 动画与效果 - 火箭/加速
     val ANIMATION = R.raw.boosts
-    // 🎬 播放设置 - 静音/取消静音
+    //  播放设置 - 静音/取消静音
     val PLAYBACK = R.raw.media_mute_unmute
     // 🛡️ 权限管理 - 安全锁
     val PRIVACY = R.raw.large_message_lock
-    // 📱 应用图标 - 星星/高级
+    //  应用图标 - 星星/高级
     val ICON = R.raw.premium_star
 }
 
 /**
- * 🔥 从本地 raw 资源加载 Lottie 动画
+ *  从本地 raw 资源加载 Lottie 动画
  * 
  * @param rawResId 本地 raw 资源 ID
  * @param dynamicColor 是否启用动态颜色适配（根据深浅色模式自动调整）
@@ -162,7 +162,7 @@ fun LottieAnimationFromRaw(
     )
     val resolvedProgress = progressOverride?.coerceIn(0f, 1f) ?: progress
     
-    // 🔥 直接显示动画，使用原生颜色，无背景容器
+    //  直接显示动画，使用原生颜色，无背景容器
     // 通过阴影效果确保在深浅色模式下都能清晰可见
     val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
     
@@ -189,7 +189,7 @@ fun LottieAnimationFromRaw(
 }
 
 /**
- * 🎬 精美互动设置页面动画头部 (使用本地资源)
+ *  精美互动设置页面动画头部 (使用本地资源)
  * 用于在设置二级页面顶部显示主题动画
  * 
  * @param rawResId 本地 raw 资源 ID
@@ -208,13 +208,13 @@ fun SettingsAnimatedHeaderLocal(
     progressOverride: Float? = null,
     enableTapBoost: Boolean = true
 ) {
-    // 🔥 入场动画
+    //  入场动画
     var isVisible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         isVisible = true
     }
     
-    // 🔥 呼吸缩放动画
+    //  呼吸缩放动画
     val infiniteTransition = rememberInfiniteTransition(label = "headerPulseLocal")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -231,7 +231,7 @@ fun SettingsAnimatedHeaderLocal(
     val boostedInteraction = (clampedInteraction + boost.value).coerceIn(0f, 1f)
     val effectiveSpeed = (animationSpeed * (1f + 0.6f * boostedInteraction)).coerceIn(0.6f, 2f)
     
-    // 🔥 入场动画值
+    //  入场动画值
     val animatedAlpha by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
         animationSpec = tween(500),
@@ -246,7 +246,7 @@ fun SettingsAnimatedHeaderLocal(
         label = "headerOffsetLocal"
     )
     
-    // 🎨 根据动画资源ID选择渐变颜色（每个页面不同颜色）
+    //  根据动画资源ID选择渐变颜色（每个页面不同颜色）
     val gradientColors = remember(rawResId) {
         when (rawResId) {
             R.raw.puzzle_plugin -> listOf(
@@ -298,8 +298,8 @@ fun SettingsAnimatedHeaderLocal(
             },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 🎬 Lottie 动画 (从本地资源加载) 
-        // 🔥 移除强制圆形背景，让动画更生动
+        //  Lottie 动画 (从本地资源加载) 
+        //  移除强制圆形背景，让动画更生动
         Box(
             modifier = Modifier
                 .size(animationSize)
@@ -361,7 +361,7 @@ fun SettingsAnimatedHeaderLocal(
 }
 
 /**
- * 🔥 通用 Lottie 动画组件
+ *  通用 Lottie 动画组件
  */
 @Composable
 fun LottieAnimation(
@@ -388,7 +388,7 @@ fun LottieAnimation(
 }
 
 /**
- * 🔥 加载动画组件
+ *  加载动画组件
  */
 @Composable
 fun LoadingAnimation(
@@ -416,7 +416,7 @@ fun LoadingAnimation(
 }
 
 /**
- * 🔥 点赞动画按钮
+ *  点赞动画按钮
  */
 @Composable
 fun LikeButton(
@@ -473,7 +473,7 @@ fun LikeButton(
 }
 
 /**
- * 🔥 收藏动画按钮
+ *  收藏动画按钮
  */
 @Composable
 fun FavoriteButton(
@@ -520,8 +520,8 @@ fun FavoriteButton(
 }
 
 /**
- * 🔥 空状态组件
- * 🥚 支持点击动画彩蛋：连续点击会触发有趣的提示
+ *  空状态组件
+ *  支持点击动画彩蛋：连续点击会触发有趣的提示
  */
 @Composable
 fun EmptyState(
@@ -529,14 +529,14 @@ fun EmptyState(
     modifier: Modifier = Modifier,
     actionText: String? = null,
     onAction: (() -> Unit)? = null,
-    // 🥚 [彩蛋] 是否启用点击彩蛋
+    //  [彩蛋] 是否启用点击彩蛋
     enableEasterEgg: Boolean = true
 ) {
-    // 🥚 点击计数器触发彩蛋
+    //  点击计数器触发彩蛋
     var clickCount by remember { mutableIntStateOf(0) }
     var easterEggMessage by remember { mutableStateOf<String?>(null) }
     
-    // 🥚 点击彩蛋消息列表
+    //  点击彩蛋消息列表
     val easterEggMessages = remember {
         listOf(
             "别戳我啦～ 😆",
@@ -574,7 +574,7 @@ fun EmptyState(
         )
         Spacer(modifier = Modifier.height(BiliDesign.Spacing.lg))
         
-        // 🥚 显示彩蛋消息或默认消息（使用柔和的主题色）
+        //  显示彩蛋消息或默认消息（使用柔和的主题色）
         Text(
             text = easterEggMessage ?: message,
             style = MaterialTheme.typography.bodyLarge,
@@ -597,22 +597,22 @@ fun EmptyState(
 }
 
 /**
- * 🔥 错误状态组件
- * 🥚 支持点击彩蛋：连续点击会显示鼓励消息
+ *  错误状态组件
+ *  支持点击彩蛋：连续点击会显示鼓励消息
  */
 @Composable
 fun ErrorState(
     message: String = "加载失败",
     modifier: Modifier = Modifier,
     onRetry: (() -> Unit)? = null,
-    // 🥚 [彩蛋] 是否启用点击彩蛋
+    //  [彩蛋] 是否启用点击彩蛋
     enableEasterEgg: Boolean = true
 ) {
-    // 🥚 点击计数器触发彩蛋
+    //  点击计数器触发彩蛋
     var clickCount by remember { mutableIntStateOf(0) }
     var showEncouragement by remember { mutableStateOf(false) }
     
-    // 🥚 鼓励消息列表
+    //  鼓励消息列表
     val encouragements = remember {
         listOf(
             "别灰心！再试一次～ 💪",
@@ -665,7 +665,7 @@ fun ErrorState(
         if (onRetry != null) {
             Spacer(modifier = Modifier.height(BiliDesign.Spacing.md))
             Text(
-                text = if (showEncouragement) "冲鸭！🚀" else "点击重试",
+                text = if (showEncouragement) "冲鸭！" else "点击重试",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clickable { onRetry() }
@@ -675,7 +675,7 @@ fun ErrorState(
 }
 
 /**
- * 🔥 成功动画
+ *  成功动画
  */
 @Composable
 fun SuccessAnimation(
@@ -708,7 +708,7 @@ fun SuccessAnimation(
 }
 
 /**
- * 🎬 Telegram 风格设置页面动画头部
+ *  Telegram 风格设置页面动画头部
  * 用于在设置二级页面顶部显示主题动画
  * 
  * @param lottieUrl Lottie 动画 URL
@@ -723,13 +723,13 @@ fun SettingsAnimatedHeader(
     modifier: Modifier = Modifier,
     animationSize: Dp = 120.dp
 ) {
-    // 🔥 入场动画
+    //  入场动画
     var isVisible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         isVisible = true
     }
     
-    // 🔥 呼吸缩放动画
+    //  呼吸缩放动画
     val infiniteTransition = rememberInfiniteTransition(label = "headerPulse")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -741,7 +741,7 @@ fun SettingsAnimatedHeader(
         label = "headerScale"
     )
     
-    // 🔥 入场动画值
+    //  入场动画值
     val animatedAlpha by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
         animationSpec = tween(500),
@@ -766,7 +766,7 @@ fun SettingsAnimatedHeader(
             },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 🎬 Lottie 动画
+        //  Lottie 动画
         Box(
             modifier = Modifier
                 .size(animationSize)

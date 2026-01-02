@@ -6,7 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
@@ -60,14 +60,14 @@ class AdFilterPlugin : FeedPlugin {
     private var config: AdFilterConfig = AdFilterConfig()
     private var filteredCount = 0
     
-    // 🔥 配置版本号，用于检测是否需要重载
+    //  配置版本号，用于检测是否需要重载
     @Volatile
     private var configVersion = 0
     @Volatile
     private var lastConfigReloadMs = 0L
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
-    // 🔥 内置广告关键词（强化版）
+    //  内置广告关键词（强化版）
     private val AD_KEYWORDS = listOf(
         // 商业合作类
         "商业合作", "恰饭", "推广", "广告", "赞助", "植入",
@@ -81,7 +81,7 @@ class AdFilterPlugin : FeedPlugin {
         "新游推荐", "游戏推广", "首发", "公测", "不删档"
     )
     
-    // 🔥 标题党关键词（强化版）
+    //  标题党关键词（强化版）
     private val CLICKBAIT_KEYWORDS = listOf(
         "震惊", "惊呆了", "太厉害了", "绝了", "离谱", "疯了",
         "价值几万", "价值百万", "价值千万", "一定要看", "必看",
@@ -94,8 +94,8 @@ class AdFilterPlugin : FeedPlugin {
     override suspend fun onEnable() {
         filteredCount = 0
         loadConfigSuspend()
-        Logger.d(TAG, "✅ 去广告增强v2.0已启用")
-        Logger.d(TAG, "📋 拉黑UP主: ${config.blockedUpNames.size}个, 屏蔽关键词: ${config.blockedKeywords.size}个")
+        Logger.d(TAG, " 去广告增强v2.0已启用")
+        Logger.d(TAG, " 拉黑UP主: ${config.blockedUpNames.size}个, 屏蔽关键词: ${config.blockedKeywords.size}个")
     }
     
     override suspend fun onDisable() {
@@ -104,7 +104,7 @@ class AdFilterPlugin : FeedPlugin {
     }
     
     override fun shouldShowItem(item: VideoItem): Boolean {
-        // 🔥 每次过滤前确保配置是最新的
+        //  每次过滤前确保配置是最新的
         reloadConfigAsync()
         
         val title = item.title
@@ -166,7 +166,7 @@ class AdFilterPlugin : FeedPlugin {
     }
     
     /**
-     * 🔥 检查UP主名称是否在拉黑列表中
+     *  检查UP主名称是否在拉黑列表中
      * 支持：精确匹配、模糊匹配(contains)、简繁体转换
      */
     private fun isUpNameBlocked(upName: String): Boolean {
@@ -185,7 +185,7 @@ class AdFilterPlugin : FeedPlugin {
     }
     
     /**
-     * 🔥 简繁体字符转换表
+     *  简繁体字符转换表
      * 常用字符的简体→繁体映射，方便双向比较
      */
     private val SIMPLIFIED_TO_TRADITIONAL = mapOf(
@@ -210,7 +210,7 @@ class AdFilterPlugin : FeedPlugin {
         }.joinToString("")
     }
     
-    // 🔥 公开方法：添加UP主到拉黑列表
+    //  公开方法：添加UP主到拉黑列表
     fun blockUploader(name: String, mid: Long) {
         if (name.isNotBlank() && !config.blockedUpNames.contains(name)) {
             config = config.copy(blockedUpNames = config.blockedUpNames + name)
@@ -222,7 +222,7 @@ class AdFilterPlugin : FeedPlugin {
         Logger.d(TAG, "➕ 已拉黑UP主: $name (MID: $mid)")
     }
     
-    // 🔥 公开方法：移除UP主拉黑
+    //  公开方法：移除UP主拉黑
     fun unblockUploader(name: String, mid: Long) {
         config = config.copy(
             blockedUpNames = config.blockedUpNames - name,
@@ -256,7 +256,7 @@ class AdFilterPlugin : FeedPlugin {
     }
     
     /**
-     * 🔥 同步重载配置
+     *  同步重载配置
      * 确保每次过滤使用最新的拉黑列表
      */
     private fun reloadConfigAsync() {
@@ -274,7 +274,7 @@ class AdFilterPlugin : FeedPlugin {
                     if (newConfig != config) {
                         config = newConfig
                         configVersion++
-                        Logger.d(TAG, "🔄 配置已重载 v$configVersion: 拉黑UP主=${config.blockedUpNames}")
+                        Logger.d(TAG, " 配置已重载 v$configVersion: 拉黑UP主=${config.blockedUpNames}")
                     }
                 }
             } catch (_: Exception) {

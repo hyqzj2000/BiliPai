@@ -14,7 +14,7 @@ private const val TAG = "RuleEngine"
  * 🔧 规则引擎
  * 
  * 评估 JSON 规则并执行相应动作。
- * 🆕 支持 AND/OR 复合条件的递归评估。
+ *  支持 AND/OR 复合条件的递归评估。
  */
 object RuleEngine {
     
@@ -64,7 +64,7 @@ object RuleEngine {
         return null
     }
     
-    // ============ 🆕 复合条件评估 ============
+    // ============  复合条件评估 ============
     
     /**
      * 递归评估条件表达式

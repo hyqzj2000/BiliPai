@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.valentinilk.shimmer.shimmer
 
 /**
- * 🔥 骨架屏组件 - iOS 风格加载占位
+ *  骨架屏组件 - iOS 风格加载占位
  */
 
 // 基础 Shimmer 容器
@@ -56,7 +56,7 @@ fun SkeletonCircle(size: Dp = 48.dp) {
 }
 
 /**
- * 🔥 视频详情页内容骨架屏（不包含播放器区域）
+ *  视频详情页内容骨架屏（不包含播放器区域）
  */
 @Composable
 fun VideoDetailSkeleton() {

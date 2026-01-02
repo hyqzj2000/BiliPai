@@ -24,7 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import com.android.purebilibili.feature.video.ui.components.VideoAspectRatio
 
 /**
- * 🔥🔥🔥 画面比例选择面板（官方 B 站样式）
+ *  画面比例选择面板（官方 B 站样式）
  * 
  * 从左侧滑入的面板，支持：
  * - 点击选择比例

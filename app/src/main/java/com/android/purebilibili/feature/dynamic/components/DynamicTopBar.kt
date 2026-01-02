@@ -15,19 +15,19 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// 🍎 Cupertino Icons - iOS SF Symbols 风格图标
+//  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
 
-// 🔥 动态页面布局模式
+//  动态页面布局模式
 enum class DynamicDisplayMode {
     SIDEBAR,     // 侧边栏模式（默认，UP主列表在左侧）
     HORIZONTAL   // 横向模式（UP主列表在顶部，类似 Telegram）
 }
 
 /**
- * 🔥 带Tab的顶栏
+ *  带Tab的顶栏
  */
 @Composable
 fun DynamicTopBarWithTabs(
@@ -50,14 +50,14 @@ fun DynamicTopBarWithTabs(
         Column {
             Spacer(modifier = Modifier.height(statusBarHeight))
             
-            // 🔥 标题行：返回按钮 + 标题
+            //  标题行：返回按钮 + 标题
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 🔥 返回视频首页按钮
+                //  返回视频首页按钮
                 IconButton(
                     onClick = onBackClick,
                     modifier = Modifier.size(40.dp)
@@ -82,7 +82,7 @@ fun DynamicTopBarWithTabs(
                 
                 Spacer(modifier = Modifier.weight(1f))
                 
-                // 🔥 布局模式切换按钮
+                //  布局模式切换按钮
                 IconButton(
                     onClick = {
                         val newMode = if (displayMode == DynamicDisplayMode.SIDEBAR) 

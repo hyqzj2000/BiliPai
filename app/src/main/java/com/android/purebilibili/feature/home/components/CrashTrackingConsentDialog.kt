@@ -18,7 +18,7 @@ import com.android.purebilibili.core.theme.BiliPink
 import kotlinx.coroutines.launch
 
 /**
- * 🔥 首次启动隐私提示弹窗
+ *  首次启动隐私提示弹窗
  * 告知用户关于崩溃追踪的用途，并让用户选择是否开启
  */
 @Composable
@@ -100,7 +100,7 @@ fun CrashTrackingConsentDialog(
                             // 应用设置到 Crashlytics
                             CrashReporter.setEnabled(isEnabled)
                             
-                            // 🔥🔥 [修复] 确保设置保存后再关闭弹窗
+                            //  [修复] 确保设置保存后再关闭弹窗
                             onDismiss()
                         }
                     },
