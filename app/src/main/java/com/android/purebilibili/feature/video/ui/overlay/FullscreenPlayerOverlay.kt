@@ -124,30 +124,49 @@ fun FullscreenPlayerOverlay(
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
     
+    //  [修复] 获取生命周期用于监听前后台切换
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    
     // 进入全屏时设置横屏和沉浸式
     DisposableEffect(Unit) {
         val activity = (context as? Activity) ?: return@DisposableEffect onDispose {}
         val window = activity.window
         val originalOrientation = activity.requestedOrientation
         
+        //  [重构] 定义设置沉浸式模式的函数（可复用）
+        val applyImmersiveMode = {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            )
+        }
+        
         // 设置横屏
         activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         
-        // 设置真正的沉浸式全屏
-        @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            or View.SYSTEM_UI_FLAG_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-        )
+        //  首次进入时应用沉浸式
+        applyImmersiveMode()
         
         // 保持屏幕常亮
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         
+        //  [关键修复] 生命周期观察器：返回前台时重新应用沉浸式模式
+        val lifecycleObserver = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                applyImmersiveMode()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
+        
         onDispose {
+            //  移除生命周期观察器
+            lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
+            
             // 恢复竖屏
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             

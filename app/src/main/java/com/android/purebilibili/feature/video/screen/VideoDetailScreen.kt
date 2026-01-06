@@ -95,6 +95,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.android.purebilibili.core.ui.LocalSharedTransitionScope
 import com.android.purebilibili.core.ui.LocalAnimatedVisibilityScope
 import com.android.purebilibili.feature.video.player.MiniPlayerManager
+// 📱 [新增] 竖屏全屏
+import com.android.purebilibili.feature.video.ui.overlay.PortraitFullscreenOverlay
+import com.android.purebilibili.feature.video.ui.overlay.PlayerProgress
+import com.android.purebilibili.feature.video.ui.components.VideoAspectRatio
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -142,6 +146,8 @@ fun VideoDetailScreen(
     
     //  [PiP修复] 记录视频播放器在屏幕上的位置，用于PiP窗口只显示视频区域
     var videoPlayerBounds by remember { mutableStateOf<android.graphics.Rect?>(null) }
+    
+    // 📱 [优化] isPortraitFullscreen 和 isVerticalVideo 现在从 playerState 获取（见 playerState 定义后）
     
     //  从小窗展开时自动进入横屏全屏
     LaunchedEffect(startInFullscreen) {
@@ -269,6 +275,12 @@ fun VideoDetailScreen(
     //  [修复] 此处逻辑已移至 VideoPlayerState.kt 统一处理
     // 删除冗余的暂停逻辑，避免与 VideoPlayerState 中的生命周期处理冲突
     // VideoPlayerState 会检查 PiP/小窗模式来决定是否暂停
+    
+    // 📱 [优化] 竖屏视频检测已移至 VideoPlayerState 集中管理
+    val isVerticalVideo by playerState.isVerticalVideo.collectAsState()
+    
+    // 📱 [优化] 竖屏全屏状态现在由 playerState 集中管理
+    val isPortraitFullscreen by playerState.isPortraitFullscreen.collectAsState()
 
     //  核心修改：初始化评论 & 媒体中心信息
     LaunchedEffect(uiState) {
@@ -284,6 +296,11 @@ fun VideoDetailScreen(
                 artist = info.owner.name,
                 coverUrl = info.pic
             )
+            
+            // 📱 [双重验证] 从 API dimension 字段设置预判断值
+            info.dimension?.let { dim ->
+                playerState.setApiDimension(dim.width, dim.height)
+            }
             
             //  同步视频信息到小窗管理器（为小窗模式做准备）
             com.android.purebilibili.core.util.Logger.d("VideoDetailScreen", " miniPlayerManager=${if (miniPlayerManager != null) "存在" else "null"}, bvid=$bvid")
@@ -330,6 +347,11 @@ fun VideoDetailScreen(
     BackHandler(enabled = isLandscape) {
         toggleOrientation()
     }
+    
+    // 📱 拦截系统返回键：如果是竖屏全屏模式，则先退出竖屏全屏
+    BackHandler(enabled = isPortraitFullscreen) {
+        playerState.setPortraitFullscreen(false)
+    }
 
     // 沉浸式状态栏控制
     val backgroundColor = MaterialTheme.colorScheme.background
@@ -367,10 +389,10 @@ fun VideoDetailScreen(
         AnimatedContent(
             targetState = isLandscape,
             transitionSpec = {
-                (fadeIn(animationSpec = tween(300)) + 
+                (fadeIn(animationSpec = tween(300)) +
                  scaleIn(initialScale = 0.92f, animationSpec = tween(300)))
                     .togetherWith(
-                        fadeOut(animationSpec = tween(200)) + 
+                        fadeOut(animationSpec = tween(200)) +
                         scaleOut(targetScale = 1.08f, animationSpec = tween(200))
                     )
             },
@@ -530,7 +552,11 @@ fun VideoDetailScreen(
                                 videoshotData = (uiState as? PlayerUiState.Success)?.videoshotData,
                                 
                                 // 📖 [新增] 视频章节数据
-                                viewPoints = viewPoints
+                                viewPoints = viewPoints,
+                                
+                                // 📱 [新增] 竖屏全屏模式
+                                isVerticalVideo = isVerticalVideo,
+                                onPortraitFullscreen = { playerState.setPortraitFullscreen(true) }
                                 //  空降助手 - 已由插件系统自动处理
                                 // sponsorSegment = sponsorSegment,
                                 // showSponsorSkipButton = showSponsorSkipButton,
@@ -760,6 +786,217 @@ fun VideoDetailScreen(
             }
         }
         
+        // 📱 [新增] 竖屏全屏覆盖层
+        if (isPortraitFullscreen && !isLandscape && uiState is PlayerUiState.Success) {
+            val success = uiState as PlayerUiState.Success
+            
+            // 监听播放器进度
+            val progressState by produceState(
+                initialValue = PlayerProgress(),
+                key1 = playerState.player,
+                key2 = isPortraitFullscreen
+            ) {
+                while (isPortraitFullscreen) {
+                    val duration = if (playerState.player.duration < 0) 0L else playerState.player.duration
+                    value = PlayerProgress(
+                        current = playerState.player.currentPosition,
+                        duration = duration,
+                        buffered = playerState.player.bufferedPosition
+                    )
+                    kotlinx.coroutines.delay(200L)
+                }
+            }
+            
+            var isPlaying by remember { mutableStateOf(playerState.player.isPlaying) }
+            LaunchedEffect(playerState.player.isPlaying) {
+                isPlaying = playerState.player.isPlaying
+            }
+            
+            // 弹幕开关状态
+            val danmakuEnabled by com.android.purebilibili.core.store.SettingsManager
+                .getDanmakuEnabled(context)
+                .collectAsState(initial = true)
+            val scope = rememberCoroutineScope()
+            
+            // 状态栏隐藏控制
+            var isStatusBarHidden by remember { mutableStateOf(false) }
+            
+            // 📱 [修复] 沉浸式全屏效果
+            val activity = context.findActivity()
+            
+            // 📱 [新增] 进入竖屏全屏时设置沉浸式模式
+            LaunchedEffect(Unit) {
+                activity?.let { act ->
+                    val window = act.window
+                    // 启用边到边模式，让内容延伸到系统栏区域
+                    androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+                    // 状态栏透明
+                    window.statusBarColor = android.graphics.Color.TRANSPARENT
+                }
+            }
+            
+            // 📱 [修复] 控制状态栏显示/隐藏
+            LaunchedEffect(isStatusBarHidden) {
+                activity?.let { act ->
+                    val window = act.window
+                    val insetsController = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                    
+                    if (isStatusBarHidden) {
+                        // 隐藏状态栏，实现完全沉浸模式
+                        insetsController.hide(androidx.core.view.WindowInsetsCompat.Type.statusBars())
+                        insetsController.systemBarsBehavior = 
+                            androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    } else {
+                        // 显示状态栏（但保持透明）
+                        insetsController.show(androidx.core.view.WindowInsetsCompat.Type.statusBars())
+                    }
+                }
+            }
+            
+            // 📱 [修复] 退出竖屏全屏时恢复正常模式
+            DisposableEffect(Unit) {
+                onDispose {
+                    activity?.let { act ->
+                        val window = act.window
+                        val insetsController = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                        // 恢复状态栏
+                        insetsController.show(androidx.core.view.WindowInsetsCompat.Type.statusBars())
+                        // 恢复边到边设置（由外层管理）
+                    }
+                }
+            }
+            
+            // 控制选项状态
+            var showSpeedMenu by remember { mutableStateOf(false) }
+            var showQualityMenu by remember { mutableStateOf(false) }
+            var showRatioMenu by remember { mutableStateOf(false) }
+            var currentSpeed by remember { mutableFloatStateOf(playerState.player.playbackParameters.speed) }
+            var currentRatio by remember { mutableStateOf(VideoAspectRatio.FIT) }
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(androidx.compose.ui.graphics.Color.Black)
+            ) {
+                // 视频播放器
+                androidx.compose.ui.viewinterop.AndroidView(
+                    factory = { ctx ->
+                        androidx.media3.ui.PlayerView(ctx).apply {
+                            player = playerState.player
+                            useController = false
+                            setShowBuffering(androidx.media3.ui.PlayerView.SHOW_BUFFERING_ALWAYS)
+                        }
+                    },
+                    update = { view ->
+                        view.player = playerState.player
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+                
+                // 竖屏全屏控件覆盖层
+                PortraitFullscreenOverlay(
+                    title = success.info.title,
+                    isPlaying = isPlaying,
+                    progress = progressState,
+                    
+                    // 互动状态
+                    isLiked = success.isLiked,
+                    isCoined = success.coinCount > 0,
+                    isFavorited = success.isFavorited,
+                    onLikeClick = { viewModel.toggleLike() },
+                    onCoinClick = { viewModel.openCoinDialog() },
+                    onFavoriteClick = { viewModel.toggleFavorite() },
+                    
+                    // 控制状态
+                    currentSpeed = currentSpeed,
+                    currentQualityLabel = success.qualityLabels.getOrNull(
+                        success.qualityIds.indexOf(success.currentQuality)
+                    ) ?: "自动",
+                    currentRatio = currentRatio,
+                    danmakuEnabled = danmakuEnabled,
+                    isStatusBarHidden = isStatusBarHidden,
+                    
+                    // 回调
+                    onBack = { playerState.setPortraitFullscreen(false) },
+                    onPlayPause = {
+                        if (isPlaying) playerState.player.pause() else playerState.player.play()
+                        isPlaying = !isPlaying
+                    },
+                    onSeek = { playerState.player.seekTo(it) },
+                    onSpeedClick = { showSpeedMenu = true },
+                    onQualityClick = { showQualityMenu = true },
+                    onRatioClick = { showRatioMenu = true },
+                    onDanmakuToggle = {
+                        scope.launch {
+                            com.android.purebilibili.core.store.SettingsManager
+                                .setDanmakuEnabled(context, !danmakuEnabled)
+                        }
+                    },
+                    onDanmakuInputClick = { /* TODO: 弹幕输入 */ },
+                    onToggleStatusBar = { isStatusBarHidden = !isStatusBarHidden }
+                )
+                
+                // 倍速选择菜单
+                if (showSpeedMenu) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f))
+                            .clickable { showSpeedMenu = false },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        com.android.purebilibili.feature.video.ui.components.SpeedSelectionMenu(
+                            currentSpeed = currentSpeed,
+                            onSpeedSelected = { speed ->
+                                currentSpeed = speed
+                                playerState.player.setPlaybackSpeed(speed)
+                                showSpeedMenu = false
+                            },
+                            onDismiss = { showSpeedMenu = false }
+                        )
+                    }
+                }
+                
+                // 画质选择菜单
+                if (showQualityMenu) {
+                    com.android.purebilibili.feature.video.ui.components.QualitySelectionMenu(
+                        qualities = success.qualityLabels,
+                        qualityIds = success.qualityIds,
+                        currentQuality = success.qualityLabels.getOrNull(
+                            success.qualityIds.indexOf(success.currentQuality)
+                        ) ?: "自动",
+                        isLoggedIn = success.isLoggedIn,
+                        isVip = success.isVip,
+                        onQualitySelected = { index ->
+                            val id = success.qualityIds.getOrNull(index) ?: 0
+                            viewModel.changeQuality(id, playerState.player.currentPosition)
+                            showQualityMenu = false
+                        },
+                        onDismiss = { showQualityMenu = false }
+                    )
+                }
+                
+                // 画面比例选择菜单
+                if (showRatioMenu) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.5f))
+                            .clickable { showRatioMenu = false },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        com.android.purebilibili.feature.video.ui.components.AspectRatioMenu(
+                            currentRatio = currentRatio,
+                            onRatioSelected = { ratio ->
+                                currentRatio = ratio
+                                showRatioMenu = false
+                            },
+                            onDismiss = { showRatioMenu = false }
+                        )
+                    }
+                }
+            }
+        }
         //  [新增] 投币对话框
         val coinDialogVisible by viewModel.coinDialogVisible.collectAsState()
         val currentCoinCount = (uiState as? PlayerUiState.Success)?.coinCount ?: 0

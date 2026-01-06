@@ -1098,6 +1098,19 @@ class PlayerViewModel : ViewModel() {
     private fun startHeartbeat() {
         heartbeatJob?.cancel()
         heartbeatJob = viewModelScope.launch {
+            // [修复] 立即上报一次心跳，确保进入历史记录
+            // 短时间观看也应该被记录
+            if (currentBvid.isNotEmpty() && currentCid > 0) {
+                try { 
+                    VideoRepository.reportPlayHeartbeat(currentBvid, currentCid, 0)
+                    Logger.d("PlayerVM", " Initial heartbeat reported for $currentBvid")
+                }
+                catch (e: Exception) {
+                    Logger.d("PlayerVM", " Initial heartbeat failed: ${e.message}")
+                }
+            }
+            
+            // 之后每30秒上报一次
             while (true) {
                 delay(30_000)
                 if (exoPlayer?.isPlaying == true && currentBvid.isNotEmpty() && currentCid > 0) {

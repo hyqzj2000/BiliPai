@@ -66,30 +66,7 @@ fun DynamicSidebar(
             contentPadding = PaddingValues(vertical = 8.dp),
             modifier = Modifier.fillMaxSize()
         ) {
-            //  展开/收起按钮
-            item {
-                IconButton(
-                    onClick = onToggleExpand,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    //  [新增] 旋转动画
-                    val rotation by animateFloatAsState(
-                        targetValue = if (isExpanded) 0f else 180f,
-                        animationSpec = androidx.compose.animation.core.spring(
-                            dampingRatio = 0.6f,
-                            stiffness = 300f
-                        ),
-                        label = "chevronRotation"
-                    )
-                    Icon(
-                        CupertinoIcons.Default.ChevronBackward,
-                        contentDescription = if (isExpanded) "收起" else "展开",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.graphicsLayer { rotationY = rotation }
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
+            //  [移除] 展开/收起按钮已删除，与顶栏返回按钮视觉重复
             
             //  [简化] 移除「全部」按钮，直接显示 UP 主列表
             // 关注的UP主列表 - 带瀑布入场动画

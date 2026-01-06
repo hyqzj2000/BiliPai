@@ -455,6 +455,45 @@ object SettingsManager {
         context.settingsDataStore.edit { preferences -> preferences[KEY_DOUBLE_TAP_LIKE] = value }
     }
     
+    // ========== 📱 竖屏全屏设置 ==========
+    
+    private val KEY_PORTRAIT_FULLSCREEN_ENABLED = booleanPreferencesKey("portrait_fullscreen_enabled")
+    private val KEY_AUTO_PORTRAIT_FULLSCREEN = booleanPreferencesKey("auto_portrait_fullscreen")
+    private val KEY_VERTICAL_VIDEO_RATIO = floatPreferencesKey("vertical_video_ratio")
+    
+    // --- 竖屏全屏功能开关 (默认开启) ---
+    fun getPortraitFullscreenEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences -> preferences[KEY_PORTRAIT_FULLSCREEN_ENABLED] ?: true }
+
+    suspend fun setPortraitFullscreenEnabled(context: Context, value: Boolean) {
+        context.settingsDataStore.edit { preferences -> preferences[KEY_PORTRAIT_FULLSCREEN_ENABLED] = value }
+    }
+    
+    // --- 竖屏视频自动进入全屏 (默认关闭) ---
+    fun getAutoPortraitFullscreen(context: Context): Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences -> preferences[KEY_AUTO_PORTRAIT_FULLSCREEN] ?: false }
+
+    suspend fun setAutoPortraitFullscreen(context: Context, value: Boolean) {
+        context.settingsDataStore.edit { preferences -> preferences[KEY_AUTO_PORTRAIT_FULLSCREEN] = value }
+    }
+    
+    // --- 竖屏视频判断比例 (高度/宽度 > ratio 视为竖屏，默认 1.0) ---
+    fun getVerticalVideoRatio(context: Context): Flow<Float> = context.settingsDataStore.data
+        .map { preferences -> preferences[KEY_VERTICAL_VIDEO_RATIO] ?: 1.0f }
+
+    suspend fun setVerticalVideoRatio(context: Context, value: Float) {
+        context.settingsDataStore.edit { preferences -> 
+            preferences[KEY_VERTICAL_VIDEO_RATIO] = value.coerceIn(0.8f, 1.5f)  // 合理范围
+        }
+    }
+    
+    //  同步读取竖屏全屏设置
+    fun isPortraitFullscreenEnabledSync(context: Context): Boolean {
+        // 使用默认值 true（与 Flow 版本一致）
+        val prefs = context.getSharedPreferences("portrait_fullscreen_cache", Context.MODE_PRIVATE)
+        return prefs.getBoolean("enabled", true)
+    }
+    
     // ========== 🌐 网络感知画质设置 ==========
     
     private val KEY_WIFI_QUALITY = intPreferencesKey("wifi_default_quality")

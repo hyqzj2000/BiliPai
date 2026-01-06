@@ -72,6 +72,9 @@ fun BottomControlBar(
     viewPoints: List<com.android.purebilibili.data.model.response.ViewPoint> = emptyList(),
     currentChapter: String? = null,
     onChapterClick: () -> Unit = {},
+    // 📱 [新增] 竖屏全屏模式
+    isVerticalVideo: Boolean = false,
+    onPortraitFullscreen: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -182,39 +185,45 @@ fun BottomControlBar(
                         )
                     }
                     
-                    //  清晰度选择 - 优化布局确保完整显示
-                    if (currentQualityLabel.isNotEmpty()) {
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Surface(
-                            onClick = onQualityClick,
-                            color = Color.White.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                text = currentQualityLabel,
-                                color = Color.White,
-                                fontSize = 10.sp,  //  统一字体大小
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp),
-                                maxLines = 1,  //  确保单行显示
-                                softWrap = false  //  禁止换行
-                            )
-                        }
-                    }
+                    // 📱 清晰度已移到顶部左上角，此处不再显示
                 }
             }
             
-            //  右侧：全屏按钮 - 始终显示，不会被挤出
-            IconButton(
-                onClick = onToggleFullscreen,
-                modifier = Modifier.size(36.dp)  //  缩小按钮
+            // 📱 右侧：全屏按钮
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Icon(
-                    if (isFullscreen) CupertinoIcons.Default.ArrowDownRightAndArrowUpLeft else CupertinoIcons.Default.ArrowUpLeftAndArrowDownRight,
-                    null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)  //  缩小图标
-                )
+                // 竖屏视频：显示"竖屏"文字按钮 + 横屏全屏图标
+                if (isVerticalVideo && !isFullscreen) {
+                    // 📱 竖屏全屏文字按钮 - 风格与倍速/比例按钮一致
+                    Surface(
+                        onClick = onPortraitFullscreen,
+                        color = Color.White.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = "竖屏",
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+                
+                //  横屏全屏按钮 - 始终显示
+                IconButton(
+                    onClick = onToggleFullscreen,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        if (isFullscreen) CupertinoIcons.Default.ArrowDownRightAndArrowUpLeft else CupertinoIcons.Default.ArrowUpLeftAndArrowDownRight,
+                        null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }

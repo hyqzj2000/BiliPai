@@ -204,6 +204,18 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
             //  [重构] 使用基类方法加载空降片段
             episode.bvid?.let { loadSponsorSegments(it) }
             
+            //  [新增] 上报播放心跳，记录到历史记录
+            episode.bvid?.let { bvid ->
+                viewModelScope.launch {
+                    try {
+                        com.android.purebilibili.data.repository.VideoRepository.reportPlayHeartbeat(bvid, episode.cid, 0)
+                        com.android.purebilibili.core.util.Logger.d("BangumiPlayerVM", " Heartbeat reported for bangumi: $bvid cid=${episode.cid}")
+                    } catch (e: Exception) {
+                        com.android.purebilibili.core.util.Logger.d("BangumiPlayerVM", " Heartbeat failed: ${e.message}")
+                    }
+                }
+            }
+            
         }.onFailure { e ->
             val isVip = e.message?.contains("大会员") == true
             val isLogin = e.message?.contains("登录") == true

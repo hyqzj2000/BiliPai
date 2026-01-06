@@ -116,7 +116,25 @@ private fun SpaceContent(
     //  当前选中的 Tab（目前只实现投稿页）
     var selectedTab by remember { mutableIntStateOf(2) }  // 默认投稿
     
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    
+    //  自动加载更多：当滚动接近底部时触发
+    val shouldLoadMore by remember {
+        derivedStateOf {
+            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            val totalItems = listState.layoutInfo.totalItemsCount
+            lastVisibleItem >= totalItems - 3 && !state.isLoadingMore && state.hasMoreVideos && selectedTab == 2
+        }
+    }
+    
+    LaunchedEffect(shouldLoadMore) {
+        if (shouldLoadMore) {
+            onLoadMore()
+        }
+    }
+    
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize()
     ) {
         // 用户头部信息
@@ -176,24 +194,19 @@ private fun SpaceContent(
                     SpaceVideoItem(video = video, onClick = { onVideoClick(video.bvid) })
                 }
                 
-                // 加载更多
-                if (state.hasMoreVideos || state.isLoadingMore) {
+                // 加载中指示器
+                if (state.isLoadingMore) {
                     item {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable(enabled = !state.isLoadingMore) { onLoadMore() }
                                 .padding(16.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (state.isLoadingMore) {
-                                CupertinoActivityIndicator()
-                            } else {
-                                Text("加载更多", color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
-                            }
+                            CupertinoActivityIndicator()
                         }
                     }
-                } else if (state.videos.isNotEmpty()) {
+                } else if (!state.hasMoreVideos && state.videos.isNotEmpty()) {
                     item {
                         Box(
                             modifier = Modifier.fillMaxWidth().padding(16.dp),

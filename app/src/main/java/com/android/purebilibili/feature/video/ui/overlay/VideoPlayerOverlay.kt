@@ -104,7 +104,10 @@ fun VideoPlayerOverlay(
     // 🖼️ [新增] 视频预览图数据
     videoshotData: com.android.purebilibili.data.model.response.VideoshotData? = null,
     // 📖 [新增] 视频章节数据
-    viewPoints: List<ViewPoint> = emptyList()
+    viewPoints: List<ViewPoint> = emptyList(),
+    // 📱 [新增] 竖屏全屏模式
+    isVerticalVideo: Boolean = false,
+    onPortraitFullscreen: () -> Unit = {}
 ) {
     var showQualityMenu by remember { mutableStateOf(false) }
     var showSpeedMenu by remember { mutableStateOf(false) }
@@ -233,7 +236,7 @@ fun VideoPlayerOverlay(
                         modifier = Modifier.align(Alignment.TopCenter)
                     )
                 } else {
-                    //  [新增] 竖屏模式顶部栏（返回 + 设置 + 分享按钮）
+                    //  [新增] 竖屏模式顶部栏（返回 + 画质 + 设置 + 分享按钮）
                     val context = LocalContext.current
                     PortraitTopBar(
                         onBack = onBack,
@@ -245,6 +248,9 @@ fun VideoPlayerOverlay(
                         },
                         onAudioMode = onAudioOnlyToggle,
                         isAudioOnly = isAudioOnly,
+                        // 📱 [新增] 画质选择移到左上角
+                        currentQualityLabel = currentQualityLabel,
+                        onQualityClick = { showQualityMenu = true },
                         modifier = Modifier.align(Alignment.TopStart)
                     )
                 }
@@ -275,6 +281,9 @@ fun VideoPlayerOverlay(
                     viewPoints = viewPoints,
                     currentChapter = currentChapter,
                     onChapterClick = { showChapterList = true },
+                    // 📱 [新增] 竖屏全屏模式
+                    isVerticalVideo = isVerticalVideo,
+                    onPortraitFullscreen = onPortraitFullscreen,
                     //  [修复] 传入 modifier 确保在底部
                     modifier = Modifier.align(Alignment.BottomStart)
                 )
@@ -483,7 +492,7 @@ fun VideoPlayerOverlay(
 /**
  *  竖屏模式顶部控制栏
  * 
- * 包含返回首页按钮、设置按钮和分享按钮
+ * 包含返回首页按钮、画质选择、设置按钮和分享按钮
  */
 @Composable
 private fun PortraitTopBar(
@@ -492,6 +501,9 @@ private fun PortraitTopBar(
     onShare: () -> Unit,
     onAudioMode: () -> Unit,
     isAudioOnly: Boolean,
+    // 📱 [新增] 画质选择 - 移到左上角
+    currentQualityLabel: String = "",
+    onQualityClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -501,17 +513,40 @@ private fun PortraitTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 返回按钮 - 简洁无背景
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier.size(32.dp)
+        // 左侧：返回按钮 + 画质选择
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = CupertinoIcons.Default.ChevronBackward,
-                contentDescription = "返回",
-                tint = Color.White,
-                modifier = Modifier.size(20.dp)
-            )
+            // 返回按钮 - 简洁无背景
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = CupertinoIcons.Default.ChevronBackward,
+                    contentDescription = "返回",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            
+            // 📱 画质选择按钮 - 移到左上角
+            if (currentQualityLabel.isNotEmpty()) {
+                Surface(
+                    onClick = onQualityClick,
+                    color = Color.White.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = currentQualityLabel,
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
         }
         
         // 右侧按钮组

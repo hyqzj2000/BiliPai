@@ -27,6 +27,7 @@ import com.android.purebilibili.data.model.response.ArchiveMajor
 
 /**
  *  大尺寸视频卡片
+ *  🎨 [优化] 更大圆角、渐变遮罩、更好的信息展示
  */
 @Composable
 fun VideoCardLarge(
@@ -48,7 +49,7 @@ fun VideoCardLarge(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(12.dp))  //  [优化] 更大圆角 8dp → 12dp
             .clickable(onClick = onClick)
     ) {
         // 视频封面 - 16:9
@@ -56,7 +57,7 @@ fun VideoCardLarge(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(12.dp))  //  [优化] 封面也使用 12dp 圆角
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             if (coverUrl.isNotEmpty()) {
@@ -72,43 +73,60 @@ fun VideoCardLarge(
                 )
             }
             
-            // 时长标签
+            //  [新增] 底部渐变遮罩 - 增加信息可读性
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.7f)
+                            )
+                        )
+                    )
+            )
+            
+            // 时长标签 - 右下角
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(8.dp)
-                    .background(Color.Black.copy(0.7f), RoundedCornerShape(4.dp))
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                    .background(Color.Black.copy(0.6f), RoundedCornerShape(6.dp))  //  [优化] 更大圆角
+                    .padding(horizontal = 8.dp, vertical = 3.dp)
             ) {
-                Text(archive.duration_text, fontSize = 12.sp, color = Color.White)
+                Text(archive.duration_text, fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Medium)
             }
             
-            // 播放量和弹幕
+            // 播放量和弹幕 - 左下角
             Row(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(8.dp)
-                    .background(Color.Black.copy(0.5f), RoundedCornerShape(4.dp))
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                    .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(CupertinoIcons.Default.Play, null, modifier = Modifier.size(14.dp), tint = Color.White)
-                Spacer(modifier = Modifier.width(2.dp))
-                Text(archive.stat.play, fontSize = 11.sp, color = Color.White)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("弹幕 ${archive.stat.danmaku}", fontSize = 11.sp, color = Color.White)
+                Spacer(modifier = Modifier.width(3.dp))
+                Text(archive.stat.play, fontSize = 12.sp, color = Color.White)
+                Spacer(modifier = Modifier.width(12.dp))
+                Icon(CupertinoIcons.Default.Message, null, modifier = Modifier.size(13.dp), tint = Color.White)  //  弹幕图标
+                Spacer(modifier = Modifier.width(3.dp))
+                Text(archive.stat.danmaku, fontSize = 12.sp, color = Color.White)
             }
         }
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))  //  [优化] 增加间距
         
         // 视频标题
         Text(
             archive.title,
-            fontSize = 14.sp,
+            fontSize = 15.sp,  //  [优化] 稍大字体
             fontWeight = FontWeight.Medium,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
+            lineHeight = 20.sp,  //  [优化] 行高
             color = MaterialTheme.colorScheme.onSurface
         )
     }

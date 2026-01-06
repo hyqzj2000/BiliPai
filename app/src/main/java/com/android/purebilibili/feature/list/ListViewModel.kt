@@ -60,10 +60,21 @@ class HistoryViewModel(application: Application) : BaseListViewModel(application
     private val _hasMoreState = MutableStateFlow(true)
     val hasMoreState = _hasMoreState.asStateFlow()
     
+    // [新增] 保存完整的历史记录项（包含导航信息）
+    private val _historyItemsMap = mutableMapOf<String, com.android.purebilibili.data.model.response.HistoryItem>()
+    
+    /**
+     * 根据 bvid 获取历史记录项的导航信息
+     */
+    fun getHistoryItem(bvid: String): com.android.purebilibili.data.model.response.HistoryItem? {
+        return _historyItemsMap[bvid]
+    }
+    
     override suspend fun fetchItems(): List<VideoItem> {
         // 重置游标
         cursorMax = 0
         cursorViewAt = 0
+        _historyItemsMap.clear()
         
         val result = com.android.purebilibili.data.repository.HistoryRepository.getHistoryList(
             ps = 30,
@@ -88,9 +99,15 @@ class HistoryViewModel(application: Application) : BaseListViewModel(application
         hasMore = historyResult.list.isNotEmpty() && historyResult.cursor != null && historyResult.cursor.max > 0
         _hasMoreState.value = hasMore
         
+        // 保存历史记录项并转换为 VideoItem
+        val historyItems = historyResult.list.map { it.toHistoryItem() }
+        historyItems.forEach { item ->
+            _historyItemsMap[item.videoItem.bvid] = item
+        }
+        
         com.android.purebilibili.core.util.Logger.d("HistoryVM", " First page: ${historyResult.list.size} items, hasMore=$hasMore, nextMax=$cursorMax")
         
-        return historyResult.list.map { it.toVideoItem() }
+        return historyItems.map { it.videoItem }
     }
     
     //  加载更多
@@ -127,7 +144,13 @@ class HistoryViewModel(application: Application) : BaseListViewModel(application
                 hasMore = historyResult.cursor != null && historyResult.cursor.max > 0
                 _hasMoreState.value = hasMore
                 
-                val newItems = historyResult.list.map { it.toVideoItem() }
+                // 保存历史记录项并转换为 VideoItem
+                val historyItems = historyResult.list.map { it.toHistoryItem() }
+                historyItems.forEach { item ->
+                    _historyItemsMap[item.videoItem.bvid] = item
+                }
+                
+                val newItems = historyItems.map { it.videoItem }
                 com.android.purebilibili.core.util.Logger.d("HistoryVM", " Loaded ${newItems.size} more items, hasMore=$hasMore")
                 
                 if (newItems.isNotEmpty()) {

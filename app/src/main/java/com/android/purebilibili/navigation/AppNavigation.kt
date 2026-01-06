@@ -324,7 +324,40 @@ fun AppNavigation(
             CommonListScreen(
                 viewModel = historyViewModel,
                 onBack = { navController.popBackStack() },
-                onVideoClick = { bvid, cid -> navigateToVideo(bvid, cid, "") }
+                onVideoClick = { bvid, cid ->
+                    // [修复] 根据历史记录类型导航到不同页面
+                    val historyItem = historyViewModel.getHistoryItem(bvid)
+                    when (historyItem?.business) {
+                        com.android.purebilibili.data.model.response.HistoryBusiness.PGC -> {
+                            // 番剧: 导航到番剧播放页
+                            if (historyItem.epid > 0 && historyItem.seasonId > 0) {
+                                navController.navigate(ScreenRoutes.BangumiPlayer.createRoute(historyItem.seasonId, historyItem.epid))
+                            } else if (historyItem.seasonId > 0) {
+                                // 有 seasonId 但没有 epid，先进详情页
+                                navController.navigate(ScreenRoutes.BangumiDetail.createRoute(historyItem.seasonId))
+                            } else {
+                                // 异常情况，尝试普通视频方式
+                                navigateToVideo(bvid, cid, "")
+                            }
+                        }
+                        com.android.purebilibili.data.model.response.HistoryBusiness.LIVE -> {
+                            // 直播: 导航到直播页
+                            if (historyItem.roomId > 0) {
+                                navController.navigate(ScreenRoutes.Live.createRoute(
+                                    historyItem.roomId,
+                                    historyItem.videoItem.title,
+                                    historyItem.videoItem.owner.name
+                                ))
+                            } else {
+                                navigateToVideo(bvid, cid, "")
+                            }
+                        }
+                        else -> {
+                            // 普通视频 (archive) 或未知类型
+                            navigateToVideo(bvid, cid, "")
+                        }
+                    }
+                }
             )
         }
 

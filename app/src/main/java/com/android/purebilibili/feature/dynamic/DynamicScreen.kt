@@ -352,12 +352,8 @@ private fun DynamicList(
                 onLikeClick = onLikeClick,
                 isLiked = likedDynamics.contains(item.id_str)
             )
-            // 分隔线 - 增加间距
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-            )
+            //  [优化] 移除分隔线，卡片式设计使用留白分隔
+            Spacer(modifier = Modifier.height(2.dp))
         }
         
         // 加载中

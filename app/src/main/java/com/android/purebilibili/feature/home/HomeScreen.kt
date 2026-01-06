@@ -468,12 +468,13 @@ fun HomeScreen(
     var targetDragOffset by remember { mutableFloatStateOf(0f) }  // 目标偏移量
     var isDragging by remember { mutableStateOf(false) }  // 是否正在拖拽
     
-    //  使用 spring 动画实现平滑弹回效果（可被打断）
+    //  [优化] 使用 spring 动画实现平滑跟手效果
+    // 拖拽时使用较高刚度实现即时响应，释放时使用较低刚度实现柔和弹回
     val animatedDragOffset by androidx.compose.animation.core.animateFloatAsState(
         targetValue = targetDragOffset,
         animationSpec = androidx.compose.animation.core.spring(
-            dampingRatio = if (isDragging) 1f else 0.7f,  // 拖拽时无弹性，释放时有弹性
-            stiffness = if (isDragging) 10000f else 400f  // 拖拽时立即响应，释放时平滑
+            dampingRatio = if (isDragging) 1f else 0.8f,    // 拖拽时无弹性，释放时轻微弹性
+            stiffness = if (isDragging) 1500f else 350f    // [优化] 拖拽响应更平滑(1500)，释放更柔和(350)
         ),
         label = "dragOffset"
     )
@@ -649,7 +650,7 @@ fun HomeScreen(
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(gridColumns),
                     contentPadding = PaddingValues(
-                        top = 140.dp,
+                        top = 128.dp,  //  [优化] 确保卡片圆角完全显示
                         //  [修复] 动态底部 padding
                         bottom = when {
                             isBottomBarFloating -> 100.dp
@@ -702,7 +703,7 @@ fun HomeScreen(
                             isRefreshing = isRefreshing,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 100.dp)  //  刷新提示位置
+                                .padding(top = 70.dp)  //  [修复] 调整刷新提示位置 100→70
                         )
                     }
                 ) {
@@ -710,7 +711,7 @@ fun HomeScreen(
                     state = gridState,
                     columns = GridCells.Fixed(gridColumns),
                     contentPadding = PaddingValues(
-                        top = 140.dp,  //  Header 高度
+                        top = 128.dp,  //  [优化] 确保卡片圆角完全显示
                         //  [修复] 底栏隐藏时减少底部 padding，避免白色填充
                         bottom = when {
                             isBottomBarFloating -> 100.dp

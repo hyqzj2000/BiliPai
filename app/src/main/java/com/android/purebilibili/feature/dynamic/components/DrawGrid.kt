@@ -22,9 +22,12 @@ import androidx.compose.ui.unit.dp
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import com.android.purebilibili.data.model.response.DrawItem
+import androidx.compose.material3.Text
+import androidx.compose.ui.unit.sp
 
 /**
  *  图片九宫格V2（支持GIF + 点击预览）
+ *  🎨 [优化] 更大圆角、单图大尺寸、多图角标
  */
 @Composable
 fun DrawGridV2(
@@ -35,6 +38,7 @@ fun DrawGridV2(
     if (items.isEmpty()) return
     
     val context = LocalContext.current
+    val totalCount = items.size  //  保存总图片数
     val displayItems = items.take(9)
     val columns = when {
         displayItems.size == 1 -> 1
@@ -42,18 +46,19 @@ fun DrawGridV2(
         else -> 3
     }
     
+    //  [优化] 单图时保持原始比例，但限制最大高度
     val singleImageRatio = if (displayItems.size == 1 && displayItems[0].width > 0 && displayItems[0].height > 0) {
-        displayItems[0].width.toFloat() / displayItems[0].height.toFloat()
+        (displayItems[0].width.toFloat() / displayItems[0].height.toFloat()).coerceIn(0.6f, 2f)
     } else {
-        1f
+        1.33f  //  默认 4:3 比例
     }
     
     var globalIndex = 0
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {  //  [优化] 增加间距
         displayItems.chunked(columns).forEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)  //  [优化] 增加间距
             ) {
                 row.forEach { item ->
                     val currentIndex = globalIndex++
@@ -68,14 +73,20 @@ fun DrawGridV2(
                         }
                     }
                     
+                    //  [优化] 单图使用原始比例，多图使用正方形
                     val aspectRatio = if (displayItems.size == 1) singleImageRatio else 1f
                     val isGif = imageUrl.endsWith(".gif", ignoreCase = true)
+                    //  [优化] 单图占满宽度，多图均分
+                    val imageModifier = if (displayItems.size == 1) {
+                        Modifier.fillMaxWidth()
+                    } else {
+                        Modifier.weight(1f)
+                    }
                     
                     Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(aspectRatio.coerceIn(0.5f, 2f))
-                            .clip(RoundedCornerShape(8.dp))
+                        modifier = imageModifier
+                            .aspectRatio(aspectRatio)
+                            .clip(RoundedCornerShape(12.dp))  //  [优化] 更大圆角 8dp → 12dp
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .clickable { onImageClick(currentIndex) },  //  点击预览
                         contentAlignment = Alignment.Center
@@ -100,6 +111,23 @@ fun DrawGridV2(
                                 tint = Color.Gray.copy(0.5f)
                             )
                         }
+                        
+                        //  [新增] 最后一张图片显示多图角标（如 +3）
+                        if (currentIndex == displayItems.size - 1 && totalCount > 9) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.5f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "+${totalCount - 9}",
+                                    color = Color.White,
+                                    fontSize = 20.sp,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                )
+                            }
+                        }
                     }
                 }
                 repeat(columns - row.size) {
@@ -109,3 +137,4 @@ fun DrawGridV2(
         }
     }
 }
+

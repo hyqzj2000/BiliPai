@@ -38,6 +38,9 @@ import com.android.purebilibili.core.util.FormatUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 private const val NOTIFICATION_ID = 1001
@@ -52,6 +55,117 @@ class VideoPlayerState(
     //  性能优化：传入受管理的 CoroutineScope，避免内存泄漏
     private val scope: CoroutineScope
 ) {
+    // 📱 竖屏视频状态 - 双重验证机制
+    // 来源1: API dimension 字段（预判断，快速可用）
+    // 来源2: 播放器 onVideoSizeChanged（精确验证，需要等待加载）
+    
+    private val _isVerticalVideo = MutableStateFlow(false)
+    val isVerticalVideo: StateFlow<Boolean> = _isVerticalVideo.asStateFlow()
+    
+    // 📐 视频尺寸（来自播放器回调，精确值）
+    private val _videoSize = MutableStateFlow(Pair(0, 0))
+    val videoSize: StateFlow<Pair<Int, Int>> = _videoSize.asStateFlow()
+    
+    // 🎯 API 预判断值（用于视频加载前的 UI 显示）
+    private val _apiDimension = MutableStateFlow<Pair<Int, Int>?>(null)
+    val apiDimension: StateFlow<Pair<Int, Int>?> = _apiDimension.asStateFlow()
+    
+    // 📱 竖屏全屏模式状态
+    private val _isPortraitFullscreen = MutableStateFlow(false)
+    val isPortraitFullscreen: StateFlow<Boolean> = _isPortraitFullscreen.asStateFlow()
+    
+    // 🔍 验证来源标记
+    enum class VerticalVideoSource {
+        UNKNOWN,  // 未知
+        API,      // 来自 API dimension 字段
+        PLAYER    // 来自播放器回调（精确）
+    }
+    private val _verticalVideoSource = MutableStateFlow(VerticalVideoSource.UNKNOWN)
+    val verticalVideoSource: StateFlow<VerticalVideoSource> = _verticalVideoSource.asStateFlow()
+    
+    private val videoSizeListener = object : Player.Listener {
+        override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+            if (videoSize.width > 0 && videoSize.height > 0) {
+                _videoSize.value = Pair(videoSize.width, videoSize.height)
+                val isVertical = videoSize.height > videoSize.width
+                _isVerticalVideo.value = isVertical
+                _verticalVideoSource.value = VerticalVideoSource.PLAYER
+                
+                // 🔍 双重验证：检查是否与 API 预判断一致
+                val apiSize = _apiDimension.value
+                if (apiSize != null) {
+                    val apiVertical = apiSize.second > apiSize.first
+                    if (apiVertical != isVertical) {
+                        com.android.purebilibili.core.util.Logger.w(
+                            "VideoPlayerState",
+                            "⚠️ 竖屏判断不一致! API: ${apiSize.first}x${apiSize.second}=$apiVertical, 播放器: ${videoSize.width}x${videoSize.height}=$isVertical"
+                        )
+                    }
+                }
+                
+                com.android.purebilibili.core.util.Logger.d(
+                    "VideoPlayerState",
+                    "📱 VideoSize(PLAYER): ${videoSize.width}x${videoSize.height}, isVertical=$isVertical"
+                )
+            }
+        }
+    }
+    
+    init {
+        player.addListener(videoSizeListener)
+        // 初始检查
+        val size = player.videoSize
+        if (size.width > 0 && size.height > 0) {
+            _videoSize.value = Pair(size.width, size.height)
+            _isVerticalVideo.value = size.height > size.width
+            _verticalVideoSource.value = VerticalVideoSource.PLAYER
+        }
+    }
+    
+    /**
+     * 📱 从 API dimension 字段设置预判断值
+     * 在视频加载完成但播放器还未解析时调用
+     */
+    fun setApiDimension(width: Int, height: Int) {
+        if (width > 0 && height > 0) {
+            _apiDimension.value = Pair(width, height)
+            // 只有在播放器还没提供精确值时才使用 API 值
+            if (_verticalVideoSource.value != VerticalVideoSource.PLAYER) {
+                _isVerticalVideo.value = height > width
+                _verticalVideoSource.value = VerticalVideoSource.API
+                com.android.purebilibili.core.util.Logger.d(
+                    "VideoPlayerState",
+                    "📱 VideoSize(API): ${width}x${height}, isVertical=${height > width}"
+                )
+            }
+        }
+    }
+    
+    /**
+     * 📱 进入/退出竖屏全屏模式
+     */
+    fun setPortraitFullscreen(enabled: Boolean) {
+        _isPortraitFullscreen.value = enabled
+        com.android.purebilibili.core.util.Logger.d(
+            "VideoPlayerState",
+            "📱 PortraitFullscreen: $enabled"
+        )
+    }
+    
+    /**
+     * 🔄 重置视频尺寸状态（切换视频时调用）
+     */
+    fun resetVideoSize() {
+        _videoSize.value = Pair(0, 0)
+        _apiDimension.value = null
+        _isVerticalVideo.value = false
+        _verticalVideoSource.value = VerticalVideoSource.UNKNOWN
+        _isPortraitFullscreen.value = false
+    }
+    
+    fun release() {
+        player.removeListener(videoSizeListener)
+    }
     fun updateMediaMetadata(title: String, artist: String, coverUrl: String) {
         val currentItem = player.currentMediaItem ?: return
 
@@ -284,6 +398,7 @@ fun rememberVideoPlayerState(
                 com.android.purebilibili.core.util.Logger.d("VideoPlayerState", " 释放所有资源")
                 //  [修复2] 清除外部播放器引用，防止状态混乱
                 miniPlayerManager.resetExternalPlayer()
+                holder.release()  // 📱 释放视频尺寸监听器
                 mediaSession.release()
                 player.release()
             }

@@ -1,10 +1,12 @@
 // 文件路径: feature/dynamic/components/DynamicCard.kt
 package com.android.purebilibili.feature.dynamic.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 //  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
@@ -51,11 +53,23 @@ fun DynamicCardV2(
     val stat = item.modules.module_stat
     val type = DynamicType.fromApiValue(item.type)
 
+    //  [优化] 卡片式设计：圆角 + 微阴影 + 更好的间距
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),  // 卡片外部间距
+        shape = RoundedCornerShape(16.dp),  // iOS 风格大圆角
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 1.dp,  // 微阴影增加层次感
+        border = BorderStroke(
+            width = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+        )
+    ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(16.dp)
+            .padding(16.dp)  // 卡片内部间距
     ) {
         //  [新增] 更多菜单状态
         var showMoreMenu by remember { mutableStateOf(false) }
@@ -253,6 +267,7 @@ fun DynamicCardV2(
             }
         }
     }
+    }  //  关闭 Surface
 }
 
 /**

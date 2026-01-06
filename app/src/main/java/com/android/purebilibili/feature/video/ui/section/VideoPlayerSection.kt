@@ -94,7 +94,11 @@ fun VideoPlayerSection(
     videoshotData: com.android.purebilibili.data.model.response.VideoshotData? = null,
     
     // 📖 [新增] 视频章节数据
-    viewPoints: List<ViewPoint> = emptyList()
+    viewPoints: List<ViewPoint> = emptyList(),
+    
+    // 📱 [新增] 竖屏全屏模式
+    isVerticalVideo: Boolean = false,
+    onPortraitFullscreen: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
@@ -110,8 +114,7 @@ fun VideoPlayerSection(
         .getGestureSensitivity(context)
         .collectAsState(initial = 1.0f)
 
-    // --- 新增：存储真实分辨率 ---
-    var realResolution by remember { mutableStateOf("") }
+    // 📱 [优化] realResolution 现在从 playerState.videoSize 计算（见下方）
     
     //  读取双击点赞设置 (从 DataStore 读取)
     val doubleTapLikeEnabled by com.android.purebilibili.core.store.SettingsManager
@@ -138,26 +141,12 @@ fun VideoPlayerSection(
     var originalSpeed by remember { mutableFloatStateOf(1.0f) }
     var longPressSpeedFeedbackVisible by remember { mutableStateOf(false) }
 
-    // --- 新增：监听 ExoPlayer 分辨率变化 ---
-    DisposableEffect(playerState.player) {
-        val listener = object : Player.Listener {
-            override fun onVideoSizeChanged(videoSize: VideoSize) {
-                // 当视频流尺寸改变时更新
-                if (videoSize.width > 0 && videoSize.height > 0) {
-                    realResolution = "${videoSize.width} x ${videoSize.height}"
-                }
-            }
-        }
-        playerState.player.addListener(listener)
-        // 初始化获取一次
-        val size = playerState.player.videoSize
-        if (size.width > 0) {
-            realResolution = "${size.width} x ${size.height}"
-        }
-
-        onDispose {
-            playerState.player.removeListener(listener)
-        }
+    // 📱 [优化] 复用 VideoPlayerState 中的视频尺寸状态，避免重复监听
+    val videoSizeState by playerState.videoSize.collectAsState()
+    val realResolution = if (videoSizeState.first > 0 && videoSizeState.second > 0) {
+        "${videoSizeState.first} x ${videoSizeState.second}"
+    } else {
+        ""
     }
 
     // 控制器显示状态
@@ -736,7 +725,11 @@ fun VideoPlayerSection(
                 videoshotData = videoshotData,
                 
                 // 📖 [新增] 视频章节数据
-                viewPoints = viewPoints
+                viewPoints = viewPoints,
+                
+                // 📱 [新增] 竖屏全屏模式
+                isVerticalVideo = isVerticalVideo,
+                onPortraitFullscreen = onPortraitFullscreen
             )
         }
         
