@@ -1,6 +1,6 @@
-// 文件路径: feature/home/components/cards/VideoCard.kt
 package com.android.purebilibili.feature.home.components.cards
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -33,15 +33,17 @@ import com.android.purebilibili.data.model.response.VideoItem
 import com.android.purebilibili.core.theme.iOSSystemGray
 import com.android.purebilibili.core.theme.LocalCornerRadiusScale
 import com.android.purebilibili.core.theme.iOSCornerRadius
-import com.android.purebilibili.core.util.iOSCardTapEffect
 import com.android.purebilibili.core.util.HapticType
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
-//  共享元素过渡
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.core.spring
 import com.android.purebilibili.core.ui.LocalSharedTransitionScope
 import com.android.purebilibili.core.ui.LocalAnimatedVisibilityScope
+//  [预览播放] 相关引用已移除
+
+// 显式导入 collectAsState 以避免 ambiguity 或 missing reference
+import androidx.compose.runtime.collectAsState
 
 /**
  *  官方 B 站风格视频卡片
@@ -67,6 +69,7 @@ fun ElegantVideoCard(
     onClick: (String, Long) -> Unit
 ) {
     val haptic = rememberHapticFeedback()
+    val scope = rememberCoroutineScope()
     
     //  [新增] 获取圆角缩放比例
     val cornerRadiusScale = LocalCornerRadiusScale.current
@@ -103,37 +106,8 @@ fun ElegantVideoCard(
             .onGloballyPositioned { coordinates ->
                 cardBounds = coordinates.boundsInRoot()
             }
-            //  [新增] 长按手势检测
-            .pointerInput(onDismiss) {
-                if (onDismiss != null) {
-                    detectTapGestures(
-                        onLongPress = {
-                            haptic(HapticType.HEAVY)
-                            showDismissMenu = true
-                        },
-                        onTap = {
-                            cardBounds?.let { bounds ->
-                                CardPositionManager.recordCardPosition(bounds, screenWidthPx, screenHeightPx, density = densityValue)
-                            }
-                            onClick(video.bvid, 0)
-                        }
-                    )
-                }
-            }
-            .then(
-                if (onDismiss == null) {
-                    Modifier.iOSCardTapEffect(
-                        pressScale = 0.96f,
-                        pressTranslationY = 6f,
-                        hapticEnabled = true
-                    ) {
-                        cardBounds?.let { bounds ->
-                            CardPositionManager.recordCardPosition(bounds, screenWidthPx, screenHeightPx, density = densityValue)
-                        }
-                        onClick(video.bvid, 0)
-                    }
-                } else Modifier
-            )
+            //  [修改] 父级容器仅处理点击跳转 (或者点击由子 View 分别处理)
+            //  为了避免冲突，我们将手势下放到子 View
             .padding(bottom = 12.dp)
     ) {
         //  尝试获取共享元素作用域
@@ -175,6 +149,13 @@ fun ElegantVideoCard(
                 )
                 .clip(RoundedCornerShape(cardCornerRadius))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
+                //  [交互优化] 封面区域：点击跳转
+                .clickable {
+                    cardBounds?.let { bounds ->
+                        CardPositionManager.recordCardPosition(bounds, screenWidthPx, screenHeightPx, density = densityValue)
+                    }
+                    onClick(video.bvid, 0)
+                }
         ) {
             // 🚀 [性能优化] 使用从父级传入的 isDataSaverActive，避免每个卡片重复计算
             val imageWidth = if (isDataSaverActive) 240 else 360
@@ -193,6 +174,8 @@ fun ElegantVideoCard(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
+            
+
             
             //  底部渐变遮罩
             Box(
@@ -276,7 +259,6 @@ fun ElegantVideoCard(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        //  标题 - 2行，官方风格
         Text(
             text = video.title,
             maxLines = 2,
@@ -287,7 +269,35 @@ fun ElegantVideoCard(
                 fontSize = 13.sp,
                 lineHeight = 18.sp,
                 color = MaterialTheme.colorScheme.onSurface
-            )
+            ),
+            modifier = Modifier
+                //  [交互优化] 标题区域：长按弹出惨淡，点击跳转
+                .pointerInput(onDismiss) {
+                    if (onDismiss != null) {
+                        detectTapGestures(
+                            onLongPress = {
+                                haptic(HapticType.HEAVY)
+                                showDismissMenu = true
+                            },
+                            onTap = {
+                                cardBounds?.let { bounds ->
+                                    CardPositionManager.recordCardPosition(bounds, screenWidthPx, screenHeightPx, density = densityValue)
+                                }
+                                onClick(video.bvid, 0)
+                            }
+                        )
+                    } else {
+                        // 如果没有 onDismiss 回调，则只处理点击
+                        detectTapGestures(
+                            onTap = {
+                                cardBounds?.let { bounds ->
+                                    CardPositionManager.recordCardPosition(bounds, screenWidthPx, screenHeightPx, density = densityValue)
+                                }
+                                onClick(video.bvid, 0)
+                            }
+                        )
+                    }
+                }
         )
         
         Spacer(modifier = Modifier.height(6.dp))

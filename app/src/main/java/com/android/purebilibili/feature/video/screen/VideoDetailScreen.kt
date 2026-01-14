@@ -407,7 +407,16 @@ fun VideoDetailScreen(
         if (activity != null) {
             if (useTabletLayout) {
                 // 🖥️ 平板：仅切换 UI 状态，不改变屏幕方向
+                // [修复] 如果退出全屏且是手机（sw < 600），强制转回竖屏
+                val wasFullscreen = userRequestedFullscreen
                 userRequestedFullscreen = !userRequestedFullscreen
+                
+                if (wasFullscreen && !userRequestedFullscreen) {
+                    // check if it is a phone
+                    if (configuration.smallestScreenWidthDp < 600) {
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    }
+                }
             } else {
                 // 📱 手机：通过旋转屏幕触发全屏
                 if (isLandscape) {
