@@ -172,7 +172,8 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
             if (playData.dash != null) {
                 // DASH 格式
                 val dash = playData.dash
-                val video = dash.getBestVideo(playData.quality)
+                //  [修复] 优先使用 AVC 编码，确保所有设备都能解码
+                val video = dash.getBestVideo(playData.quality, preferCodec = "avc1")
                 val audio = dash.getBestAudio()
                 
                 com.android.purebilibili.core.util.Logger.d("BangumiPlayerVM", "📹 DASH videos: ${dash.video.size}, audios: ${dash.audio?.size ?: 0}")
@@ -299,7 +300,8 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
                 val audioUrl: String?
                 
                 if (playData.dash != null) {
-                    val video = playData.dash.getBestVideo(qualityId)
+                    //  [修复] 优先使用 AVC 编码，确保所有设备都能解码
+                    val video = playData.dash.getBestVideo(qualityId, preferCodec = "avc1")
                     val audio = playData.dash.getBestAudio()
                     videoUrl = video?.getValidUrl()
                     audioUrl = audio?.getValidUrl()

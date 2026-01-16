@@ -6,11 +6,12 @@ import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import com.android.purebilibili.core.util.Logger
 import android.util.Rational
+import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -25,33 +26,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.foundation.Image
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.animation.doOnEnd
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.media3.ui.PlayerView
+import coil.compose.AsyncImage
 import com.android.purebilibili.core.store.SettingsManager
 import com.android.purebilibili.core.theme.BiliPink
 import com.android.purebilibili.core.theme.PureBiliBiliTheme
-import com.android.purebilibili.feature.settings.AppThemeMode
-import com.android.purebilibili.navigation.AppNavigation
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.launch
-
-import com.android.purebilibili.feature.video.player.MiniPlayerManager
-import com.android.purebilibili.feature.video.ui.overlay.MiniPlayerOverlay
-import com.android.purebilibili.feature.video.ui.overlay.FullscreenPlayerOverlay
 import com.android.purebilibili.core.ui.SharedTransitionProvider
+import com.android.purebilibili.core.util.Logger
 import com.android.purebilibili.feature.plugin.EyeProtectionOverlay
-import coil.compose.AsyncImage
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.animation.doOnEnd
-import android.widget.ImageView
+import com.android.purebilibili.feature.settings.AppThemeMode
+import com.android.purebilibili.feature.video.player.MiniPlayerManager
+import com.android.purebilibili.feature.video.ui.overlay.FullscreenPlayerOverlay
+import com.android.purebilibili.feature.video.ui.overlay.MiniPlayerOverlay
+import com.android.purebilibili.navigation.AppNavigation
 import dev.chrisbanes.haze.haze
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 private const val TAG = "MainActivity"
 private const val PREFS_NAME = "app_welcome"
@@ -203,19 +204,21 @@ class MainActivity : ComponentActivity() {
                     //  小窗全屏状态
                     var showFullscreen by remember { mutableStateOf(false) }
                     
-                    //  小窗播放器覆盖层
-                    MiniPlayerOverlay(
-                        miniPlayerManager = miniPlayerManager,
-                        onExpandClick = {
-                            //  [修改] 导航回详情页，而不是只显示全屏播放器
-                            miniPlayerManager.currentBvid?.let { bvid ->
-                                val cid = miniPlayerManager.currentCid
-                                navController.navigate("video/$bvid?cid=$cid&cover=") {
-                                    launchSingleTop = true
+                    //  小窗播放器覆盖层 (非 PiP 模式下显示)
+                    if (!isInPipMode) {
+                        MiniPlayerOverlay(
+                            miniPlayerManager = miniPlayerManager,
+                            onExpandClick = {
+                                //  [修改] 导航回详情页，而不是只显示全屏播放器
+                                miniPlayerManager.currentBvid?.let { bvid ->
+                                    val cid = miniPlayerManager.currentCid
+                                    navController.navigate("video/$bvid?cid=$cid&cover=") {
+                                        launchSingleTop = true
+                                    }
                                 }
                             }
-                        }
-                    )
+                        )
+                    }
                     
                     //  全屏播放器覆盖层（包含亮度、音量、进度调节）
                     if (showFullscreen) {
@@ -241,6 +244,11 @@ class MainActivity : ComponentActivity() {
                     
                     //  护眼模式覆盖层（最顶层，应用于所有内容）
                     EyeProtectionOverlay()
+
+                    // PiP 模式专用播放器 (只在 PiP 模式下显示，覆盖所有内容)
+                    if (isInPipMode) {
+                        PiPVideoPlayer(miniPlayerManager = miniPlayerManager)
+                    }
                 }
                 }  // 📐 CompositionLocalProvider 结束
             }
@@ -384,6 +392,48 @@ class MainActivity : ComponentActivity() {
                 Logger.w(TAG, "⚠️ 无法解析短链接: $shortUrl")
             }
         }
+    }
+}
+
+/**
+ * PiP 模式专用播放器 Composable
+ */
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+@Composable
+fun PiPVideoPlayer(miniPlayerManager: MiniPlayerManager) {
+    val player = miniPlayerManager.player
+    
+    if (player != null) {
+        AndroidView(
+            factory = { context ->
+                PlayerView(context).apply {
+                    this.player = player
+                    useController = false // 隐藏控制器，由系统 PiP 窗口接管
+                    layoutParams = android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    // 确保视频填充窗口
+                    resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
+                }
+            },
+            update = { view ->
+                // 每次重组确保 player 是最新的
+                if (view.player != player) {
+                    view.player = player
+                }
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        )
+    } else {
+        // 如果没有播放器，显示黑屏
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        )
     }
 }
 

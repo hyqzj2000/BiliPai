@@ -7,6 +7,7 @@ import com.android.purebilibili.feature.video.viewmodel.PlayerViewModel
 import com.android.purebilibili.feature.video.viewmodel.PlayerUiState
 
 import android.app.NotificationChannel
+import android.support.v4.media.session.PlaybackStateCompat
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
@@ -83,7 +84,12 @@ class VideoPlayerState(
     private val _verticalVideoSource = MutableStateFlow(VerticalVideoSource.UNKNOWN)
     val verticalVideoSource: StateFlow<VerticalVideoSource> = _verticalVideoSource.asStateFlow()
     
-    private val videoSizeListener = object : Player.Listener {
+    // 🎵 缓存元数据用于状态更新
+    private var currentTitle: String = ""
+    private var currentArtist: String = ""
+    private var currentBitmap: Bitmap? = null
+
+    private val playerListener = object : Player.Listener {
         override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
             if (videoSize.width > 0 && videoSize.height > 0) {
                 _videoSize.value = Pair(videoSize.width, videoSize.height)
@@ -109,10 +115,19 @@ class VideoPlayerState(
                 )
             }
         }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            // 当播放状态改变时，更新通知栏（主要是播放/暂停按钮）
+            if (currentTitle.isNotEmpty()) {
+                scope.launch(Dispatchers.Main) {
+                    pushMediaNotification()
+                }
+            }
+        }
     }
     
     init {
-        player.addListener(videoSizeListener)
+        player.addListener(playerListener) // 使用统一的 listener
         // 初始检查
         val size = player.videoSize
         if (size.width > 0 && size.height > 0) {
@@ -164,9 +179,14 @@ class VideoPlayerState(
     }
     
     fun release() {
-        player.removeListener(videoSizeListener)
+        player.removeListener(playerListener)
     }
+
     fun updateMediaMetadata(title: String, artist: String, coverUrl: String) {
+        // 缓存元数据
+        currentTitle = title
+        currentArtist = artist
+        
         val currentItem = player.currentMediaItem ?: return
 
         // 1. 更新 Player 内部元数据
@@ -181,16 +201,20 @@ class VideoPlayerState(
         val newItem = currentItem.buildUpon()
             .setMediaMetadata(metadata)
             .build()
-
-        player.replaceMediaItem(player.currentMediaItemIndex, newItem)
+        
+        // 避免在此处不必要地重置 mediaItem，这可能导致播放中断
+        if (currentItem.mediaMetadata.title != title) {
+            player.replaceMediaItem(player.currentMediaItemIndex, newItem)
+        }
 
         // 2.  性能优化：使用传入的 scope 而非裸创建的 CoroutineScope
         scope.launch(Dispatchers.IO) {
             val bitmap = loadBitmap(context, coverUrl)
+            currentBitmap = bitmap // 更新缓存
 
             // 切回主线程操作 Player 和发送通知
             launch(Dispatchers.Main) {
-                pushMediaNotification(title, artist, bitmap)
+                pushMediaNotification()
             }
         }
     }
@@ -214,7 +238,7 @@ class VideoPlayerState(
         }
     }
 
-    private fun pushMediaNotification(title: String, artist: String, bitmap: Bitmap?) {
+    private fun pushMediaNotification() {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // 确保渠道存在
@@ -228,24 +252,58 @@ class VideoPlayerState(
                 notificationManager.createNotificationChannel(channel)
             }
         }
+        
+        val isPlaying = player.isPlaying
+        
+        // 创建播放/暂停 Intent
+        // 注意：MediaSession 通常会自动处理这些，但为了通知栏按钮生效，我们显式添加 Action
+        // 更好的方式是直接利用 MediaStyle 的自动行为，但 Media3 下有时需要手动添加 Action 到 NotificationCompat
+        
+        // 我们使用 MediaSession 的 PendingIntent 或 BroadcastReceiver 来处理
+        // 简单起见，这里复用 `mediaSession.sessionActivity` 点击跳转，
+        // 按钮操作由 System UI 通过 sessionToken 直接控制 Session，
+        // 但我们需要在 Notification UI 上画出这些按钮。
+        
+        // 对于 Android MediaStyle，必须 addAction 才能显示按钮
+        val pauseAction = NotificationCompat.Action(
+            android.R.drawable.ic_media_pause, "Pause",
+            androidx.media.session.MediaButtonReceiver.buildMediaButtonPendingIntent(
+                context,
+                PlaybackStateCompat.ACTION_PAUSE
+            )
+        )
+        
+        val playAction = NotificationCompat.Action(
+            android.R.drawable.ic_media_play, "Play",
+            androidx.media.session.MediaButtonReceiver.buildMediaButtonPendingIntent(
+                context,
+                PlaybackStateCompat.ACTION_PLAY
+            )
+        )
 
         val style = androidx.media.app.NotificationCompat.MediaStyle()
             .setMediaSession(mediaSession.sessionCompatToken)
-            .setShowActionsInCompactView(0)
+            .setShowActionsInCompactView(0) // 显示第1个 Action (索引0)
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(title)
-            .setContentText(artist)
-            .setLargeIcon(bitmap)
+            .setContentTitle(currentTitle)
+            .setContentText(currentArtist)
+            .setLargeIcon(currentBitmap)
             .setStyle(style)
             .setColor(THEME_COLOR)
             .setColorized(true)
-            .setOngoing(player.isPlaying)
+            .setOngoing(isPlaying) // 播放时常驻，暂停时可清除
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
-            //  修复点：直接使用 sessionActivity
             .setContentIntent(mediaSession.sessionActivity)
+
+        // 添加 Play/Pause 按钮
+        if (isPlaying) {
+            builder.addAction(pauseAction)
+        } else {
+            builder.addAction(playAction)
+        }
 
         try {
             notificationManager.notify(NOTIFICATION_ID, builder.build())
@@ -381,20 +439,21 @@ fun rememberVideoPlayerState(
             //  [新增] 保存播放进度到 ViewModel 缓存
             viewModel.saveCurrentPosition()
             
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.cancel(NOTIFICATION_ID)
-
             //  检查是否有小窗在使用这个 player
             val miniPlayerManager = MiniPlayerManager.getInstance(context)
             //  [修复] 使用 isActive 和 hasExternalPlayer 来判断是否保留 player
             // isMiniMode 可能还没有被设置（AppNavigation.onDispose 可能在之后执行）
             // 但如果 isActive 为 true 且当前 player 是被引用的外部 player，则不释放
             val shouldKeepPlayer = miniPlayerManager.isActive && miniPlayerManager.hasExternalPlayer
+            
             if (shouldKeepPlayer) {
                 // 小窗模式下不释放 player，只释放其他资源
                 com.android.purebilibili.core.util.Logger.d("VideoPlayerState", " 小窗正在使用此 player，不释放")
             } else {
                 // 正常释放所有资源
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.cancel(NOTIFICATION_ID)
+                
                 com.android.purebilibili.core.util.Logger.d("VideoPlayerState", " 释放所有资源")
                 //  [修复2] 清除外部播放器引用，防止状态混乱
                 miniPlayerManager.resetExternalPlayer()

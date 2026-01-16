@@ -204,7 +204,12 @@ abstract class BasePlayerViewModel : ViewModel() {
         val dataSourceFactory = OkHttpDataSource.Factory(NetworkModule.okHttpClient)
             .setDefaultRequestProperties(headers)
         
-        val mediaSourceFactory = ProgressiveMediaSource.Factory(dataSourceFactory)
+        //  [修复] 使用 DefaultExtractorsFactory 支持 B站的 fMP4/m4s 格式
+        //  B站的 DASH 视频是 fragmented MP4 (.m4s)，需要正确的 extractor
+        val extractorsFactory = androidx.media3.extractor.DefaultExtractorsFactory()
+            .setConstantBitrateSeekingEnabled(true)  // 启用恒定比特率 seeking
+        
+        val mediaSourceFactory = ProgressiveMediaSource.Factory(dataSourceFactory, extractorsFactory)
         
         val videoSource = mediaSourceFactory.createMediaSource(MediaItem.fromUri(videoUrl))
         

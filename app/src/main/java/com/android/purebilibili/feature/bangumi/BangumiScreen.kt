@@ -45,6 +45,14 @@ import com.android.purebilibili.data.model.response.BangumiFilter
 import com.android.purebilibili.data.model.response.BangumiItem
 import com.android.purebilibili.data.model.response.BangumiSearchItem
 import com.android.purebilibili.data.model.response.BangumiType
+// [重构] 使用提取的可复用组件
+import com.android.purebilibili.feature.bangumi.ui.components.BangumiModeTabs
+import com.android.purebilibili.feature.bangumi.ui.components.BangumiFilterPanel
+import com.android.purebilibili.feature.bangumi.ui.list.BangumiCard
+import com.android.purebilibili.feature.bangumi.ui.list.BangumiGrid
+import com.android.purebilibili.feature.bangumi.ui.list.BangumiSearchCard
+import com.android.purebilibili.feature.bangumi.ui.list.BangumiSearchCardGrid
+import com.android.purebilibili.feature.bangumi.ui.components.FilterChip
 
 /**
  * 番剧主页面
@@ -242,42 +250,6 @@ fun BangumiScreen(
     }
 }
 
-/**
- * 模式切换 Tabs
- */
-@Composable
-private fun BangumiModeTabs(
-    currentMode: BangumiDisplayMode,
-    onModeChange: (BangumiDisplayMode) -> Unit
-) {
-    val modes = listOf(
-        BangumiDisplayMode.LIST to "索引",
-        BangumiDisplayMode.TIMELINE to "时间表",
-        BangumiDisplayMode.MY_FOLLOW to "我的追番"
-    )
-    
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(modes) { (mode, label) ->
-            val isSelected = currentMode == mode
-            Surface(
-                onClick = { onModeChange(mode) },
-                shape = RoundedCornerShape(20.dp),
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-            ) {
-                Text(
-                    text = label,
-                    fontSize = 13.sp,
-                    fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-        }
-    }
-}
 
 /**
  * 搜索顶栏
@@ -389,148 +361,6 @@ private fun BangumiSearchBar(
 }
 
 /**
- * 筛选器面板
- */
-@Composable
-private fun BangumiFilterPanel(
-    filter: BangumiFilter,
-    onFilterChange: (BangumiFilter) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var showOrderMenu by remember { mutableStateOf(false) }
-    var showAreaMenu by remember { mutableStateOf(false) }
-    var showStatusMenu by remember { mutableStateOf(false) }
-    var showYearMenu by remember { mutableStateOf(false) }
-    
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // 排序
-                FilterChip(
-                    label = BangumiFilter.ORDER_OPTIONS.find { it.first == filter.order }?.second ?: "排序",
-                    isActive = filter.order != 2,
-                    onClick = { showOrderMenu = true },
-                    expanded = showOrderMenu,
-                    options = BangumiFilter.ORDER_OPTIONS.map { it.second },
-                    onOptionSelected = { index ->
-                        onFilterChange(filter.copy(order = BangumiFilter.ORDER_OPTIONS[index].first))
-                        showOrderMenu = false
-                    },
-                    onDismiss = { showOrderMenu = false }
-                )
-                
-                // 地区
-                FilterChip(
-                    label = BangumiFilter.AREA_OPTIONS.find { it.first == filter.area }?.second ?: "地区",
-                    isActive = filter.area != -1,
-                    onClick = { showAreaMenu = true },
-                    expanded = showAreaMenu,
-                    options = BangumiFilter.AREA_OPTIONS.map { it.second },
-                    onOptionSelected = { index ->
-                        onFilterChange(filter.copy(area = BangumiFilter.AREA_OPTIONS[index].first))
-                        showAreaMenu = false
-                    },
-                    onDismiss = { showAreaMenu = false }
-                )
-                
-                // 状态
-                FilterChip(
-                    label = BangumiFilter.STATUS_OPTIONS.find { it.first == filter.isFinish }?.second ?: "状态",
-                    isActive = filter.isFinish != -1,
-                    onClick = { showStatusMenu = true },
-                    expanded = showStatusMenu,
-                    options = BangumiFilter.STATUS_OPTIONS.map { it.second },
-                    onOptionSelected = { index ->
-                        onFilterChange(filter.copy(isFinish = BangumiFilter.STATUS_OPTIONS[index].first))
-                        showStatusMenu = false
-                    },
-                    onDismiss = { showStatusMenu = false }
-                )
-                
-                // 年份
-                FilterChip(
-                    label = BangumiFilter.YEAR_OPTIONS.find { it.first == filter.year }?.second ?: "年份",
-                    isActive = filter.year != "-1",
-                    onClick = { showYearMenu = true },
-                    expanded = showYearMenu,
-                    options = BangumiFilter.YEAR_OPTIONS.map { it.second },
-                    onOptionSelected = { index ->
-                        onFilterChange(filter.copy(year = BangumiFilter.YEAR_OPTIONS[index].first))
-                        showYearMenu = false
-                    },
-                    onDismiss = { showYearMenu = false }
-                )
-            }
-            
-            // 重置按钮
-            if (filter != BangumiFilter()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                TextButton(
-                    onClick = { onFilterChange(BangumiFilter()) }
-                ) {
-                    Text("重置筛选", color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FilterChip(
-    label: String,
-    isActive: Boolean,
-    onClick: () -> Unit,
-    expanded: Boolean,
-    options: List<String>,
-    onOptionSelected: (Int) -> Unit,
-    onDismiss: () -> Unit
-) {
-    Box {
-        Surface(
-            onClick = onClick,
-            color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = label,
-                    fontSize = 12.sp,
-                    color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.width(2.dp))
-                Icon(
-                    CupertinoIcons.Default.ChevronDown,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = onDismiss
-        ) {
-            options.forEachIndexed { index, option ->
-                DropdownMenuItem(
-                    text = { Text(option, fontSize = 14.sp) },
-                    onClick = { onOptionSelected(index) }
-                )
-            }
-        }
-    }
-}
-
-/**
  * 番剧列表内容
  */
 @Composable
@@ -574,170 +404,6 @@ private fun BangumiListContent(
                 onItemClick = { onItemClick(it.seasonId) }
             )
         }
-    }
-}
-
-/**
- * 番剧网格列表
- */
-@Composable
-private fun BangumiGrid(
-    items: List<BangumiItem>,
-    hasMore: Boolean,
-    onLoadMore: () -> Unit,
-    onItemClick: (BangumiItem) -> Unit
-) {
-    val gridState = rememberLazyGridState()
-    
-    // 加载更多检测
-    LaunchedEffect(gridState) {
-        snapshotFlow {
-            val layoutInfo = gridState.layoutInfo
-            val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            lastVisibleItem >= layoutInfo.totalItemsCount - 6
-        }.collect { shouldLoad ->
-            if (shouldLoad && hasMore) {
-                onLoadMore()
-            }
-        }
-    }
-    
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 100.dp),
-        state = gridState,
-        contentPadding = PaddingValues(
-            start = 12.dp,
-            top = 12.dp,
-            end = 12.dp,
-            bottom = 12.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        ),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxSize()
-    ) {
-        items(items) { item ->
-            BangumiCard(
-                item = item,
-                onClick = { onItemClick(item) }
-            )
-        }
-        
-        // 加载更多指示器
-        if (hasMore) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * 番剧卡片
- */
-@Composable
-private fun BangumiCard(
-    item: BangumiItem,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-    ) {
-        // 封面
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(0.75f)  // 3:4 比例
-                .clip(RoundedCornerShape(8.dp))
-        ) {
-            AsyncImage(
-                model = FormatUtils.fixImageUrl(item.cover),
-                contentDescription = item.title,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-            
-            // 渐变遮罩
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
-                            startY = 100f
-                        )
-                    )
-            )
-            
-            // 角标（会员专享等）
-            if (item.badge.isNotEmpty()) {
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp),
-                    color = when {
-                        item.badge.contains("会员") -> MaterialTheme.colorScheme.primary
-                        item.badge.contains("独家") -> MaterialTheme.colorScheme.primary
-                        else -> MaterialTheme.colorScheme.primary
-                    },
-                    shape = RoundedCornerShape(4.dp)
-                ) {
-                    Text(
-                        text = item.badge,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        color = Color.White,
-                        fontSize = 10.sp
-                    )
-                }
-            }
-            
-            // 底部信息
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(8.dp)
-            ) {
-                // 评分
-                if (item.score.isNotEmpty() && item.score != "0") {
-                    Text(
-                        text = item.score,
-                        color = iOSYellow,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                
-                // 更新状态
-                item.newEp?.indexShow?.let { indexShow ->
-                    Text(
-                        text = indexShow,
-                        color = Color.White,
-                        fontSize = 10.sp
-                    )
-                }
-            }
-        }
-        
-        // 标题
-        Text(
-            text = item.title,
-            modifier = Modifier.padding(top = 6.dp),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            fontSize = 12.sp,
-            lineHeight = 16.sp
-        )
     }
 }
 
@@ -849,7 +515,7 @@ private fun BangumiSearchGrid(
             items = items,
             key = { it.seasonId }
         ) { item ->
-            BangumiSearchCard(
+            BangumiSearchCardGrid(
                 item = item,
                 onClick = { onItemClick(item.seasonId) }
             )
@@ -870,97 +536,5 @@ private fun BangumiSearchGrid(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun BangumiSearchCard(
-    item: BangumiSearchItem,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(0.75f)
-                .clip(RoundedCornerShape(8.dp))
-        ) {
-            AsyncImage(
-                model = FormatUtils.fixImageUrl(item.cover),
-                contentDescription = item.title,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-            
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
-                            startY = 100f
-                        )
-                    )
-            )
-            
-            // 角标
-            item.badges?.firstOrNull()?.let { badge ->
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(4.dp)
-                ) {
-                    Text(
-                        text = badge.text,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        color = Color.White,
-                        fontSize = 10.sp
-                    )
-                }
-            }
-            
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(8.dp)
-            ) {
-                // 评分
-                item.mediaScore?.let { score ->
-                    if (score.score > 0) {
-                        Text(
-                            text = String.format("%.1f", score.score),
-                            color = iOSYellow,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                
-                // 集数
-                if (item.indexShow.isNotEmpty()) {
-                    Text(
-                        text = item.indexShow,
-                        color = Color.White,
-                        fontSize = 10.sp
-                    )
-                }
-            }
-        }
-        
-        // 标题 (移除高亮标签)
-        Text(
-            text = item.title.replace(Regex("<[^>]+>"), ""),
-            modifier = Modifier.padding(top = 6.dp),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            fontSize = 12.sp,
-            lineHeight = 16.sp
-        )
     }
 }

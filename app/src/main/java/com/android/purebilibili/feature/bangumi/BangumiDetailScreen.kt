@@ -38,6 +38,10 @@ import com.android.purebilibili.data.model.response.BangumiEpisode
 import com.android.purebilibili.core.util.LocalWindowSizeClass
 import androidx.compose.ui.platform.LocalConfiguration
 import com.android.purebilibili.core.util.responsiveContentWidth
+// [重构] 使用提取的可复用组件
+import com.android.purebilibili.feature.bangumi.ui.detail.RatingRow
+import com.android.purebilibili.feature.bangumi.ui.detail.FollowButton
+import com.android.purebilibili.feature.bangumi.ui.detail.SeasonSelector
 
 /**
  * 番剧详情页面

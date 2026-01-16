@@ -578,6 +578,18 @@ class MiniPlayerManager private constructor(private val context: Context) :
         currentOwner = owner
         currentCid = cid  //  保存 cid
         entryFromLeft = fromLeft  //  保存入场方向
+        
+        // 🛑 [修复] 如果存在旧的外部播放器且不同于新的（切换视频场景），必须释放旧的防止泄漏/重音
+        if (_externalPlayer != null && _externalPlayer != externalPlayer) {
+            Logger.d(TAG, "🛑 Releasing old external player: ${_externalPlayer.hashCode()} -> ${externalPlayer.hashCode()}")
+            try {
+                _externalPlayer?.stop()
+                _externalPlayer?.release()
+            } catch (e: Exception) {
+                Logger.e(TAG, "Failed to release old external player", e)
+            }
+        }
+        
         _externalPlayer = externalPlayer
         isActive = true
         isMiniMode = false

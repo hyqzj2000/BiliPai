@@ -23,17 +23,11 @@
   <a href="https://x.com/YangY_0x00"><img src="https://img.shields.io/badge/X-Follow-000000?style=flat-square&logo=x" alt="X"></a>
 </p>
 
-
-
 ## 📸 应用预览
 
 <p align="center">
-  <img src="docs/images/screenshot_1_home.png" alt="首页" height="500">
-  <img src="docs/images/screenshot_2_live.png" alt="直播" height="500">
-  <img src="docs/images/screenshot_3_video.png" alt="视频详情" height="500">
-  <img src="docs/images/screenshot_4_settings.png" alt="设置" height="500">
-  <img src="docs/images/screenshot_5_appearance.png" alt="外观设置" height="500">
-  <img src="docs/images/screenshot_6_permissions.png" alt="权限管理" height="500">
+  <img src="docs/images/screenshot_1_home_pip.png" alt="首页 (画中画)" height="500">
+  <img src="docs/images/screenshot_2_media_controls.png" alt="媒体控制" height="500">
 </p>
 
 ---
@@ -330,7 +324,7 @@ app/src/main/java/com/android/purebilibili/
 ### 🚧 开发中
 
 - [ ] 弹幕发送功能
-- [ ] 平板/折叠屏适配
+- [x] 平板/折叠屏适配 (基本完成)
 - [ ] 应用内更新检测
 
 ### 📋 计划中

@@ -307,51 +307,51 @@ fun BangumiPlayerScreen(
         //  获取清晰度数据
         val successState = uiState as? BangumiPlayerState.Success
         
-    //  [修复] 使用 movableContentOf 保持播放器实例跨布局移动时不被销毁
-    val playerContent = remember(successState, danmakuEnabled, currentSpeed, danmakuOpacity, danmakuFontScale, danmakuSpeed, danmakuDisplayArea) {
-        movableContentOf { isFullscreenMode: Boolean ->
-            BangumiPlayerView(
-                exoPlayer = exoPlayer,
-                danmakuManager = danmakuManager,
-                danmakuEnabled = danmakuEnabled,
-                onDanmakuToggle = {
-                    scope.launch {
-                        com.android.purebilibili.core.store.SettingsManager.setDanmakuEnabled(context, !danmakuEnabled)
-                    }
-                },
-                modifier = Modifier.fillMaxSize(),
-                isFullscreen = isFullscreenMode,
-                currentQuality = successState?.quality ?: 0,
-                acceptQuality = successState?.acceptQuality ?: emptyList(),
-                acceptDescription = successState?.acceptDescription ?: emptyList(),
-                onQualityChange = { viewModel.changeQuality(it) },
-                onBack = if (isFullscreenMode) { { toggleOrientation() } } else onBack,
-                onToggleFullscreen = { toggleOrientation() },
-                sponsorSegment = sponsorSegment,
-                showSponsorSkipButton = showSponsorSkipButton,
-                onSponsorSkip = { viewModel.skipCurrentSponsorSegment() },
-                onSponsorDismiss = { viewModel.dismissSponsorSkipButton() },
-                //  倍速控制
-                currentSpeed = currentSpeed,
-                onSpeedChange = { currentSpeed = it },
-                //  弹幕设置
-                danmakuOpacity = danmakuOpacity,
-                danmakuFontScale = danmakuFontScale,
-                danmakuSpeed = danmakuSpeed,
-                danmakuDisplayArea = danmakuDisplayArea,
-                onDanmakuOpacityChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuOpacity(context, it) } },
-                onDanmakuFontScaleChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuFontScale(context, it) } },
-                onDanmakuSpeedChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuSpeed(context, it) } },
-                onDanmakuDisplayAreaChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuArea(context, it) } }
-            )
+        //  [修复] 直接渲染 BangumiPlayerView，使用 key() 保持同一实例
+        //  移除 movableContentOf，它会导致切换全屏时 Surface 丢失
+        @Composable
+        fun playerContentView(isFullscreenMode: Boolean) {
+            key(exoPlayer) { // 使用 exoPlayer 作为 key 确保 AndroidView 不被重建
+                BangumiPlayerView(
+                    exoPlayer = exoPlayer,
+                    danmakuManager = danmakuManager,
+                    danmakuEnabled = danmakuEnabled,
+                    onDanmakuToggle = {
+                        scope.launch {
+                            com.android.purebilibili.core.store.SettingsManager.setDanmakuEnabled(context, !danmakuEnabled)
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                    isFullscreen = isFullscreenMode,
+                    currentQuality = successState?.quality ?: 0,
+                    acceptQuality = successState?.acceptQuality ?: emptyList(),
+                    acceptDescription = successState?.acceptDescription ?: emptyList(),
+                    onQualityChange = { viewModel.changeQuality(it) },
+                    onBack = if (isFullscreenMode) { { toggleOrientation() } } else onBack,
+                    onToggleFullscreen = { toggleOrientation() },
+                    sponsorSegment = sponsorSegment,
+                    showSponsorSkipButton = showSponsorSkipButton,
+                    onSponsorSkip = { viewModel.skipCurrentSponsorSegment() },
+                    onSponsorDismiss = { viewModel.dismissSponsorSkipButton() },
+                    //  倍速控制
+                    currentSpeed = currentSpeed,
+                    onSpeedChange = { currentSpeed = it },
+                    //  弹幕设置
+                    danmakuOpacity = danmakuOpacity,
+                    danmakuFontScale = danmakuFontScale,
+                    danmakuSpeed = danmakuSpeed,
+                    danmakuDisplayArea = danmakuDisplayArea,
+                    onDanmakuOpacityChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuOpacity(context, it) } },
+                    onDanmakuFontScaleChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuFontScale(context, it) } },
+                    onDanmakuSpeedChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuSpeed(context, it) } },
+                    onDanmakuDisplayAreaChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuArea(context, it) } }
+                )
+            }
         }
-    }
-
-
         
         if (isLandscape) {
             // 全屏播放
-            playerContent(true)
+            playerContentView(true)
         } else {
             // 竖屏：播放器 + 内容
             Column(modifier = Modifier.fillMaxSize()) {
@@ -365,7 +365,7 @@ fun BangumiPlayerScreen(
                         .height(playerHeight)
                         .background(Color.Black)
                 ) {
-                    playerContent(false)
+                    playerContentView(false)
                 }
                 
                 // 内容区域（进度条已集成到播放器控制层内）

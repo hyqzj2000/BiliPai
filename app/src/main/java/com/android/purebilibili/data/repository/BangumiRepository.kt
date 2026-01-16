@@ -172,10 +172,13 @@ object BangumiRepository {
         qn: Int = 80
     ): Result<BangumiVideoInfo> = withContext(Dispatchers.IO) {
         try {
+            android.util.Log.d("BangumiRepo", "📡 getBangumiPlayUrl: epId=$epId, qn=$qn")
             val response = api.getBangumiPlayUrl(epId = epId, qn = qn)
-            android.util.Log.d("BangumiRepo", "getBangumiPlayUrl response code: ${response.code}, has result: ${response.result != null}")
+            android.util.Log.d("BangumiRepo", "📡 getBangumiPlayUrl response: code=${response.code}, msg=${response.message}, hasResult=${response.result != null}")
             
             if (response.code == 0 && response.result != null) {
+                val result = response.result
+                android.util.Log.d("BangumiRepo", "📹 PlayUrl: quality=${result.quality}, hasDash=${result.dash != null}, hasDurl=${!result.durl.isNullOrEmpty()}")
                 Result.success(response.result)
             } else {
                 val errorMsg = when (response.code) {

@@ -228,18 +228,22 @@ fun BangumiPlayerView(
         //  [修复] 在 factory 和 update 中都设置 player，确保 PlayerView 正确附加到 ExoPlayer
         AndroidView(
             factory = { ctx ->
-                android.util.Log.d("BangumiPlayer", "🎬 PlayerView factory: creating new view, player=${exoPlayer.hashCode()}")
+                android.util.Log.w("BangumiPlayer", "🎬 PlayerView FACTORY: creating new view, player=${exoPlayer.hashCode()}, isFullscreen=$isFullscreen")
                 PlayerView(ctx).apply {
                     player = exoPlayer  // [关键] 在 factory 中也设置 player
                     useController = false
                     keepScreenOn = true
                     setShowBuffering(PlayerView.SHOW_BUFFERING_NEVER)  // 禁用系统缓冲指示器
                     setBackgroundColor(android.graphics.Color.BLACK)
+                    
+                    // 添加视频尺寸日志
+                    android.util.Log.w("BangumiPlayer", "🎬 PlayerView: videoSize=${exoPlayer.videoSize.width}x${exoPlayer.videoSize.height}")
                 }
             },
             update = { view ->
                 //  [关键] 无条件设置 player，确保 MediaSource 变化后 PlayerView 能正确刷新
-                android.util.Log.d("BangumiPlayer", "🔗 PlayerView update: player=${exoPlayer.hashCode()}, hasMediaItems=${exoPlayer.mediaItemCount > 0}")
+                val videoSize = exoPlayer.videoSize
+                android.util.Log.w("BangumiPlayer", "🔗 PlayerView UPDATE: player=${exoPlayer.hashCode()}, mediaItems=${exoPlayer.mediaItemCount}, videoSize=${videoSize.width}x${videoSize.height}, isFullscreen=$isFullscreen, viewSize=${view.width}x${view.height}")
                 view.player = exoPlayer
             },
             modifier = Modifier.fillMaxSize()
