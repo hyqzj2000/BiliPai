@@ -72,6 +72,13 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
+            
+            <!-- 🚀 App Shortcuts Deep Links -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="bilipai" />
+            </intent-filter>
         </activity>
 
         <!-- Yuki 比心少女 (可在设置中切换) -->
@@ -83,11 +90,11 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:label="@string/app_name"
             android:targetActivity=".MainActivity">
-            <!-- 🔥 高优先级：启动器显示此图标 -->
             <intent-filter android:priority="1">
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity-alias>
 
         <!-- Anime TV Girl (蓝发少女小电视) -->
@@ -103,6 +110,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity-alias>
 
         <!-- TV Girl (双马尾坐电视) -->
@@ -118,6 +126,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity-alias>
 
         <!-- Headphone Girl (耳机少女) -->
@@ -144,10 +153,14 @@
             android:roundIcon="@mipmap/ic_launcher_3d_round"
             android:label="@string/app_name"
             android:targetActivity=".MainActivity">
-            <intent-filter android:priority="1">
+        <intent-filter android:priority="1">
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- 🚀 App Shortcuts -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
 
         <activity-alias

@@ -68,6 +68,12 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi  //  共享过
 import com.android.purebilibili.core.ui.LocalSetBottomBarVisible
 import com.android.purebilibili.core.ui.LocalBottomBarVisible
 
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
+
+// [新增] 全局回顶事件通道
+val LocalHomeScrollChannel = compositionLocalOf<Channel<Unit>?> { null }
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -109,6 +115,16 @@ fun HomeScreen(
     val staggeredGridState = rememberLazyStaggeredGridState()  // 🌊 瀑布流状态
     val hazeState = remember { HazeState() }
     val coroutineScope = rememberCoroutineScope()  //  用于双击回顶动画
+    
+    // [新增] 监听全局回顶事件
+    val scrollChannel = LocalHomeScrollChannel.current
+    LaunchedEffect(scrollChannel) {
+        scrollChannel?.receiveAsFlow()?.collect {
+            launch {
+                gridStates[state.currentCategory]?.animateScrollToItem(0)
+            }
+        }
+    }
 
     // [Refactor] Hoist PagerState to be available for both Content and Header
     // 确保 pagerState 在所有作用域均可见，以便传给 iOSHomeHeader

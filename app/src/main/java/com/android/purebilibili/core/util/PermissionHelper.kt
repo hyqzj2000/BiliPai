@@ -217,8 +217,16 @@ private fun checkPermission(context: Context, permission: String): Boolean {
 }
 
 private fun shouldShowRationale(context: Context, permission: String): Boolean {
-    val activity = context as? androidx.activity.ComponentActivity ?: return false
-    return androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
+    // 🔧 [修复] 遍历 ContextWrapper 链安全获取 Activity
+    // 在 Dialog 等环境中 Context 可能被多层包装
+    var ctx: Context = context
+    while (ctx is android.content.ContextWrapper) {
+        if (ctx is android.app.Activity) {
+            return androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(ctx, permission)
+        }
+        ctx = ctx.baseContext
+    }
+    return false
 }
 
 private fun openAppSettings(context: Context) {

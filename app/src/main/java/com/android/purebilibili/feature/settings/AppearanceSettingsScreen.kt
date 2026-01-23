@@ -371,15 +371,100 @@ fun AppearanceSettingsContent(
         item {
             IOSGroup {
                 val isSplashEnabled by com.android.purebilibili.core.store.SettingsManager.isSplashEnabled(context).collectAsState(initial = false)
+                val splashWallpaperUri by com.android.purebilibili.core.store.SettingsManager.getSplashWallpaperUri(context).collectAsState(initial = null)
                 
+                // 开关项
                 IOSSwitchItem(
                     icon = CupertinoIcons.Default.Photo,
                     title = "使用开屏壁纸",
-                    subtitle = "应用启动时显示所选官方壁纸，替代默认图标遮罩",
+                    subtitle = "应用启动时显示所选官方壁纸",
                     checked = isSplashEnabled,
                     onCheckedChange = { viewModel.toggleSplashEnabled(it) },
                     iconTint = com.android.purebilibili.core.theme.iOSBlue
                 )
+                
+                // 当开启时，显示选择壁纸入口
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = isSplashEnabled,
+                    enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                    exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
+                ) {
+                    Column {
+                        Divider()
+                        
+                        var showWallpaperPicker by remember { mutableStateOf(false) }
+                        
+                        // 选择壁纸按钮
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showWallpaperPicker = true }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // 壁纸缩略图预览
+                            Box(
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                if (splashWallpaperUri != null) {
+                                    AsyncImage(
+                                        model = coil.request.ImageRequest.Builder(context)
+                                            .data(splashWallpaperUri)
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = null,
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            CupertinoIcons.Default.Photo,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.width(16.dp))
+                            
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "选择开屏壁纸",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (splashWallpaperUri != null) "已设置自定义壁纸" else "从官方壁纸库中选择",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            
+                            Icon(
+                                CupertinoIcons.Default.ChevronForward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        
+                        // 壁纸选择 Sheet
+                        if (showWallpaperPicker) {
+                            com.android.purebilibili.feature.profile.SplashWallpaperPickerSheet(
+                                onDismiss = { showWallpaperPicker = false }
+                            )
+                        }
+                    }
+                }
             }
         }
         

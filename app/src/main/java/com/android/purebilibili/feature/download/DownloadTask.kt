@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 /**
  * 下载任务状态
  */
+@Serializable
 enum class DownloadStatus {
     PENDING,        // 等待下载
     DOWNLOADING,    // 下载中
@@ -38,7 +39,8 @@ data class DownloadTask(
     val fileSize: Long = 0,      // 文件大小（字节）
     val downloadedSize: Long = 0,
     val createdAt: Long = System.currentTimeMillis(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val localCoverPath: String? = null  // 🖼️ [新增] 本地缓存的封面路径
 ) {
     val id: String get() = "${bvid}_${cid}_$quality"
     

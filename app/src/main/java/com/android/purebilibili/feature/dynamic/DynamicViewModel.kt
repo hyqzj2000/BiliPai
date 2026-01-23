@@ -498,6 +498,10 @@ class DynamicViewModel(application: Application) : AndroidViewModel(application)
     private val _comments = MutableStateFlow<List<com.android.purebilibili.data.model.response.ReplyItem>>(emptyList())
     val comments: StateFlow<List<com.android.purebilibili.data.model.response.ReplyItem>> = _comments.asStateFlow()
     
+    // [新增] 动态评论总数 (从评论接口获取实时数据)
+    private val _commentTotalCount = MutableStateFlow(0)
+    val commentTotalCount: StateFlow<Int> = _commentTotalCount.asStateFlow()
+    
     private val _commentsLoading = MutableStateFlow(false)
     val commentsLoading: StateFlow<Boolean> = _commentsLoading.asStateFlow()
     
@@ -507,43 +511,92 @@ class DynamicViewModel(application: Application) : AndroidViewModel(application)
     
     /**
      *  [修复] 根据动态类型获取评论 oid 和 type
-     * - 视频动态: type=1, oid=aid
-     * - 图片动态: type=11, oid=draw.id 或 id_str
-     * - 文字动态: type=17, oid=id_str
-     * - 转发动态: 使用原动态的信息
-     * - 其他/未知: type=17, oid=id_str (动态评论通用类型)
+     * 
+     * 方案1 (推荐): 使用 API 返回的 basic.comment_id_str 和 basic.comment_type
+     * 方案2 (备用): 根据动态类型手动推断
+     * 
+     * 评论区类型参考: https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/comment/readme.md
+     * - type=1, oid=aid → 视频
+     * - type=11, oid=相簿id → 图片动态 (DRAW)
+     * - type=17, oid=动态id → 纯文字/图文动态 (WORD/OPUS)
      */
     private fun getCommentParams(item: DynamicItem): Pair<Long, Int>? {
+        // [方案1] 优先使用 API 返回的 basic 参数 - 这是最可靠的方式
+        val basic = item.basic
+        if (basic != null && basic.comment_id_str.isNotEmpty() && basic.comment_type > 0) {
+            val oid = basic.comment_id_str.toLongOrNull()
+            if (oid != null) {
+                com.android.purebilibili.core.util.Logger.d("DynamicVM", 
+                    "使用 basic 参数: oid=$oid, type=${basic.comment_type}")
+                return Pair(oid, basic.comment_type)
+            }
+        }
+        
+        // [方案2] 备用: 根据 major.type 和 item.type 推断
+        val major = item.modules.module_dynamic?.major
+        val majorType = major?.type ?: ""
+        
+        com.android.purebilibili.core.util.Logger.d("DynamicVM", 
+            "getCommentParams fallback: id_str=${item.id_str}, item.type=${item.type}, major.type=$majorType")
+        
+        // MAJOR_TYPE_OPUS 是 B站新版图文动态格式，统一使用 type=17
+        if (majorType == "MAJOR_TYPE_OPUS") {
+            val oid = item.id_str.toLongOrNull()
+            com.android.purebilibili.core.util.Logger.d("DynamicVM", "OPUS 动态: oid=$oid, type=17")
+            return if (oid != null) Pair(oid, 17) else null
+        }
+        
+        // MAJOR_TYPE_ARCHIVE 是视频
+        if (majorType == "MAJOR_TYPE_ARCHIVE") {
+            val aid = major?.archive?.aid?.toLongOrNull()
+            com.android.purebilibili.core.util.Logger.d("DynamicVM", "视频动态: aid=$aid, type=1")
+            return if (aid != null) Pair(aid, 1) else null
+        }
+        
+        // MAJOR_TYPE_DRAW 是旧版图片动态（相簿）
+        if (majorType == "MAJOR_TYPE_DRAW") {
+            val drawId = major?.draw?.id
+            if (drawId != null && drawId > 0) {
+                com.android.purebilibili.core.util.Logger.d("DynamicVM", "图片动态: drawId=$drawId, type=11")
+                return Pair(drawId, 11)
+            }
+        }
+        
+        // 根据 item.type 判断（兼容旧逻辑）
         val dynamicType = com.android.purebilibili.data.model.response.DynamicType.fromApiValue(item.type)
         return when (dynamicType) {
             com.android.purebilibili.data.model.response.DynamicType.VIDEO -> {
-                // 视频动态: type=1, oid=aid
-                val aid = item.modules.module_dynamic?.major?.archive?.aid?.toLongOrNull()
+                val aid = major?.archive?.aid?.toLongOrNull()
+                com.android.purebilibili.core.util.Logger.d("DynamicVM", "VIDEO 类型: aid=$aid")
                 if (aid != null) Pair(aid, 1) else null
             }
             com.android.purebilibili.data.model.response.DynamicType.DRAW -> {
-                // 图片动态: type=11, oid=draw.id，如果没有则用 id_str
-                val drawId = item.modules.module_dynamic?.major?.draw?.id
+                // 图片动态: 优先用 draw.id，没有则用 id_str + type=17
+                val drawId = major?.draw?.id
                 if (drawId != null && drawId > 0) {
+                    com.android.purebilibili.core.util.Logger.d("DynamicVM", "DRAW 类型: drawId=$drawId, type=11")
                     Pair(drawId, 11)
                 } else {
-                    // 使用 id_str 作为 fallback
-                    item.id_str.toLongOrNull()?.let { Pair(it, 17) }
+                    // OPUS 或其他没有 draw.id 的情况
+                    val oid = item.id_str.toLongOrNull()
+                    com.android.purebilibili.core.util.Logger.d("DynamicVM", "DRAW fallback: oid=$oid, type=17")
+                    oid?.let { Pair(it, 17) }
                 }
             }
             com.android.purebilibili.data.model.response.DynamicType.WORD -> {
-                // 纯文字动态: type=17, oid=id_str
                 val oid = item.id_str.toLongOrNull()
+                com.android.purebilibili.core.util.Logger.d("DynamicVM", "WORD 类型: oid=$oid, type=17")
                 if (oid != null) Pair(oid, 17) else null
             }
             com.android.purebilibili.data.model.response.DynamicType.FORWARD -> {
-                // 转发动态: 使用原动态的信息
+                com.android.purebilibili.core.util.Logger.d("DynamicVM", "FORWARD 类型: 递归获取原动态参数")
                 item.orig?.let { getCommentParams(it) }
             }
             else -> {
-                //  [修复] 未知类型: 统一使用 type=17 (动态评论), oid=id_str
-                com.android.purebilibili.core.util.Logger.w("DynamicVM", "未知动态类型: ${item.type}, 使用 id_str 作为 oid")
-                item.id_str.toLongOrNull()?.let { Pair(it, 17) }
+                // 未知类型: 统一使用 type=17 (动态评论)
+                val oid = item.id_str.toLongOrNull()
+                com.android.purebilibili.core.util.Logger.w("DynamicVM", "未知动态类型: ${item.type}, oid=$oid, type=17")
+                oid?.let { Pair(it, 17) }
             }
         }
     }
@@ -575,6 +628,8 @@ class DynamicViewModel(application: Application) : AndroidViewModel(application)
     fun closeCommentSheet() {
         _selectedDynamic.value = null
         _comments.value = emptyList()
+        // [新增] 清空计数
+        _commentTotalCount.value = 0
     }
     
     /**
@@ -583,6 +638,9 @@ class DynamicViewModel(application: Application) : AndroidViewModel(application)
     private fun loadCommentsForDynamic(item: DynamicItem) {
         viewModelScope.launch {
             _commentsLoading.value = true
+            // [新增] 默认先使用动态列表里的计数作为初始值
+            _commentTotalCount.value = item.modules.module_stat?.comment?.count ?: 0
+            
             try {
                 val params = getCommentParams(item)
                 if (params == null) {
@@ -596,6 +654,11 @@ class DynamicViewModel(application: Application) : AndroidViewModel(application)
                 com.android.purebilibili.core.util.Logger.d("DynamicVM", "评论响应: code=${response.code}, message=${response.message}, replies=${response.data?.replies?.size}")
                 if (response.code == 0 && response.data != null) {
                     _comments.value = response.data.replies ?: emptyList()
+                    // [新增] 更新评论总数 (优先使用 page.count 或 acount)
+                    val realCount = response.data.page.count
+                    if (realCount > 0) {
+                        _commentTotalCount.value = realCount
+                    }
                 } else {
                     com.android.purebilibili.core.util.Logger.e("DynamicVM", "评论加载失败: code=${response.code}, msg=${response.message}")
                 }

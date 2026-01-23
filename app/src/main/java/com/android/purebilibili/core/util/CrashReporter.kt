@@ -131,26 +131,26 @@ object CrashReporter {
     
     /**
      * 🌐 上报 API/网络错误
-     * @param endpoint API 端点 (如 "playurl", "video_info", "danmaku")
-     * @param httpCode HTTP 状态码 (如 412, 403, 500)
+     * 🔒 隐私保护：不记录视频ID
+     * @param endpoint API 端点
+     * @param httpCode HTTP 状态码
      * @param errorMessage 错误详情
-     * @param bvid 可选的视频 BV 号
      */
     fun reportApiError(
         endpoint: String,
         httpCode: Int,
         errorMessage: String,
-        bvid: String? = null
+        bvid: String? = null  // 不再使用
     ) {
         try {
             Firebase.crashlytics.setCustomKey("api_endpoint", endpoint)
             Firebase.crashlytics.setCustomKey("api_http_code", httpCode)
-            bvid?.let { Firebase.crashlytics.setCustomKey("api_bvid", it) }
+            // 🔒 不记录 bvid
             
             Firebase.crashlytics.log("🌐 API Error: [$httpCode] $endpoint - $errorMessage")
             Firebase.crashlytics.recordException(ApiException(endpoint, httpCode, errorMessage))
             
-            Logger.e(TAG, " API error reported: [$httpCode] $endpoint - $errorMessage")
+            Logger.e(TAG, "🌐 API error: [$httpCode] $endpoint - $errorMessage")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to report API error", e)
         }

@@ -134,6 +134,24 @@ class MainActivity : ComponentActivity() {
                 }
             }
             
+            // 🚀 [新增] 监听 pendingRoute 并导航到对应页面 (App Shortcuts)
+            LaunchedEffect(pendingRoute) {
+                pendingRoute?.let { route ->
+                    Logger.d(TAG, "🚀 导航到快捷入口: $route")
+                    val targetRoute = when (route) {
+                        "search" -> com.android.purebilibili.navigation.ScreenRoutes.Search.route
+                        "dynamic" -> com.android.purebilibili.navigation.ScreenRoutes.Dynamic.route
+                        "favorite" -> com.android.purebilibili.navigation.ScreenRoutes.Favorite.route
+                        "history" -> com.android.purebilibili.navigation.ScreenRoutes.History.route
+                        else -> null
+                    }
+                    targetRoute?.let { 
+                        navController.navigate(it) { launchSingleTop = true }
+                    }
+                    pendingRoute = null  // 清除，避免重复导航
+                }
+            }
+            
             //  首次启动检测已移交 AppNavigation 处理
             // val prefs = remember { context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
             // var showWelcome by remember { mutableStateOf(!prefs.getBoolean(KEY_FIRST_LAUNCH, false)) }
@@ -376,6 +394,7 @@ class MainActivity : ComponentActivity() {
     
     //  待导航的视频 ID（用于在 Compose 中触发导航）
     var pendingVideoId by mutableStateOf<String?>(null)
+    var pendingRoute by mutableStateOf<String?>(null)  // 🚀 App Shortcuts: pending route
         private set
     
     /**
@@ -391,10 +410,16 @@ class MainActivity : ComponentActivity() {
                 // 点击链接打开
                 val uri = intent.data
                 if (uri != null) {
+                    val scheme = uri.scheme ?: ""
                     val host = uri.host ?: ""
                     
+                    // 🚀 App Shortcuts: bilipai:// scheme
+                    if (scheme == "bilipai") {
+                        pendingRoute = host  // e.g., "search", "dynamic", "favorite", "history"
+                        Logger.d(TAG, "🚀 App Shortcut detected: $host")
+                    }
                     // b23.tv 短链接需要重定向
-                    if (host.contains("b23.tv")) {
+                    else if (host.contains("b23.tv")) {
                         resolveShortLinkAndNavigate(uri.toString())
                     } else {
                         // bilibili.com 直接解析

@@ -101,109 +101,104 @@ fun BottomControlBar(
             onChapterClick = onChapterClick
         )
 
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 0.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            //  使用 SpaceBetween 确保两端元素始终可见
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(top = 4.dp) // Maintain some padding
         ) {
             // 左侧：播放按钮和时间
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f, fill = false)
+                modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 IconButton(
                     onClick = onPlayPauseClick,
-                    modifier = Modifier.size(36.dp)  //  缩小按钮
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
                         if (isPlaying) CupertinoIcons.Default.Pause else CupertinoIcons.Default.Play,
                         null,
                         tint = Color.White,
-                        modifier = Modifier.size(24.dp)  //  缩小图标
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
                 Text(
                     text = "${FormatUtils.formatDuration((progress.current / 1000).toInt())} / ${FormatUtils.formatDuration((progress.duration / 1000).toInt())}",
                     color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 11.sp,  //  缩小字体
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1
                 )
             }
             
-            // 中间：功能按钮（自适应空间）
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End,
-                modifier = Modifier.weight(1f)
-            ) {
-                // [问题13修复] 倍速和比例按钮仅在全屏时显示
-                if (isFullscreen) {
-                    // Speed button
-                    Surface(
-                        onClick = onSpeedClick,
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            text = if (currentSpeed == 1.0f) "倍速" else "${currentSpeed}x",
-                            color = if (currentSpeed != 1.0f) MaterialTheme.colorScheme.primary else Color.White,
-                            fontSize = 10.sp,  //  缩小字体
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp)  //  缩小 padding
-                        )
+            // 中间：功能按钮（居中显示）
+            if (isFullscreen || currentSpeed != 1.0f) { // 仅在全屏或有状态时显示中间区域，避免遮挡
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.align(Alignment.Center)
+                ) {
+                    // 🎛️ 倍速按钮
+                    if (isFullscreen || currentSpeed != 1.0f) {
+                        Surface(
+                            onClick = onSpeedClick,
+                            color = Color.White.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = if (currentSpeed == 1.0f) "倍速" else "${currentSpeed}x",
+                                color = if (currentSpeed != 1.0f) MaterialTheme.colorScheme.primary else Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp)
+                            )
+                        }
                     }
                     
-                    Spacer(modifier = Modifier.width(3.dp))  //  缩小间距
-                    
-                    //  Aspect Ratio button
-                    Surface(
-                        onClick = onRatioClick,
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            text = currentRatio.displayName,
-                            color = if (currentRatio != VideoAspectRatio.FIT) MaterialTheme.colorScheme.primary else Color.White,
-                            fontSize = 10.sp,  //  缩小字体
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp)  //  缩小 padding
-                        )
+                    // 📺 Aspect Ratio button - 仅全屏时显示
+                    if (isFullscreen) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            onClick = onRatioClick,
+                            color = Color.White.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = currentRatio.displayName,
+                                color = if (currentRatio != VideoAspectRatio.FIT) MaterialTheme.colorScheme.primary else Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp)
+                            )
+                        }
                     }
                 }
-                
-                //  [新增] 竖屏模式弹幕开关和清晰度
+            }
+            
+            // 右侧：全屏按钮和其他控制
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp), // 增加间距
+                modifier = Modifier.align(Alignment.CenterEnd)
+            ) {
+                 //  [新增] 竖屏模式弹幕开关 (非全屏时显示在右侧)
                 if (!isFullscreen) {
-                    Spacer(modifier = Modifier.width(2.dp))  //  缩小间距
-                    
                     IconButton(
                         onClick = onDanmakuToggle,
-                        modifier = Modifier.size(26.dp)  //  缩小按钮
+                        modifier = Modifier.size(26.dp)
                     ) {
                         Icon(
                             if (danmakuEnabled) CupertinoIcons.Default.TextBubble else CupertinoIcons.Outlined.TextBubble,
                             contentDescription = if (danmakuEnabled) "关闭弹幕" else "开启弹幕",
                             tint = if (danmakuEnabled) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.7f),
-                            modifier = Modifier.size(16.dp)  //  缩小图标
+                            modifier = Modifier.size(16.dp)
                         )
                     }
-                    
-                    // 📱 清晰度已移到顶部左上角，此处不再显示
                 }
-            }
             
-            // 📱 右侧：全屏按钮
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                // 竖屏视频：显示"竖屏"文字按钮 + 横屏全屏图标
+                // 竖屏视频：显示"竖屏"文字按钮
                 if (isVerticalVideo && !isFullscreen) {
-                    // 📱 竖屏全屏文字按钮 - 风格与倍速/比例按钮一致
                     Surface(
                         onClick = onPortraitFullscreen,
                         color = Color.White.copy(alpha = 0.2f),
@@ -219,7 +214,7 @@ fun BottomControlBar(
                     }
                 }
                 
-                // 📲 [新增] 小窗按钮 - 仅竖屏非全屏时显示
+                // 📲 小窗按钮 - 仅竖屏非全屏时显示
                 if (!isFullscreen) {
                     IconButton(
                         onClick = onPipClick,
@@ -234,17 +229,21 @@ fun BottomControlBar(
                     }
                 }
                 
-                //  横屏全屏按钮 - 始终显示
-                IconButton(
+                // 📺 [增强] 横屏全屏按钮 - 始终显示
+                Surface(
                     onClick = onToggleFullscreen,
-                    modifier = Modifier.size(36.dp)
+                    color = if (!isFullscreen) MaterialTheme.colorScheme.primary.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.size(40.dp)
                 ) {
-                    Icon(
-                        if (isFullscreen) CupertinoIcons.Default.ArrowDownRightAndArrowUpLeft else CupertinoIcons.Default.ArrowUpLeftAndArrowDownRight,
-                        null,
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            if (isFullscreen) CupertinoIcons.Default.ArrowDownRightAndArrowUpLeft else CupertinoIcons.Default.ArrowUpLeftAndArrowDownRight,
+                            contentDescription = if (isFullscreen) "退出全屏" else "全屏",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
             }
         }

@@ -224,6 +224,39 @@ object LogCollector {
             }
         }
         
+        // ========== 🎬 视频内容脱敏（保护用户观看记录隐私） ==========
+        // 视频 BVID
+        sanitized = sanitized.replace(Regex("BV[0-9A-Za-z]{10}"), "BV***")
+        // 视频 AID/AV 号
+        sanitized = sanitized.replace(Regex("\\bav\\d{4,}\\b", RegexOption.IGNORE_CASE), "av***")
+        sanitized = sanitized.replace(Regex("\"aid\":\\s*\\d+"), "\"aid\":***")
+        // CID
+        sanitized = sanitized.replace(Regex("\\bcid[=:]\\s*\\d+"), "cid=***")
+        sanitized = sanitized.replace(Regex("\"cid\":\\s*\\d+"), "\"cid\":***")
+        // 直播房间号
+        sanitized = sanitized.replace(Regex("room_id[=:]\\s*\\d+"), "room_id=***")
+        sanitized = sanitized.replace(Regex("roomId[=:]\\s*\\d+"), "roomId=***")
+        // Season ID (番剧)
+        sanitized = sanitized.replace(Regex("season_id[=:]\\s*\\d+"), "season_id=***")
+        sanitized = sanitized.replace(Regex("ep_id[=:]\\s*\\d+"), "ep_id=***")
+        
+        // ========== 🔍 搜索关键词脱敏 ==========
+        sanitized = sanitized.replace(Regex("keyword=[^&\\s]+"), "keyword=***")
+        sanitized = sanitized.replace(Regex("\"keyword\":\"[^\"]+\""), "\"keyword\":\"***\"")
+        sanitized = sanitized.replace(Regex("Search:\\s*[^\\n]+"), "Search: ***")
+        
+        // ========== 📝 视频标题脱敏（仅保留前两个字符） ==========
+        sanitized = sanitized.replace(Regex("video_title=[^&\\s]{3,}")) { 
+            val title = it.value.substringAfter("=")
+            "video_title=${title.take(2)}***"
+        }
+        sanitized = sanitized.replace(Regex("\"title\":\"[^\"]{3,}\"")) {
+            val content = it.value
+            val titleStart = content.indexOf(":\"") + 2
+            val title = content.substring(titleStart, content.length - 1)
+            "\"title\":\"${title.take(2)}***\""
+        }
+        
         return sanitized
     }
     

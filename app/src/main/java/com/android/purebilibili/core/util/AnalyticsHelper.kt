@@ -96,14 +96,10 @@ object AnalyticsHelper {
         }
     }
     
-    // ==========  视频播放追踪 ==========
-    
     /**
      * 记录视频播放开始
-     * @param videoId 视频 BVID 或 AID
-     * @param title 视频标题
-     * @param author 视频作者
-     * @param duration 视频时长 (秒)
+     * 🔒 隐私保护：不记录视频ID、标题、作者等可识别用户观看内容的信息
+     * 仅记录事件发生次数用于统计
      */
     fun logVideoPlay(
         videoId: String,
@@ -114,12 +110,18 @@ object AnalyticsHelper {
         if (!isEnabled) return
         try {
             analytics?.logEvent("video_play") {
-                param("video_id", videoId)
-                param("video_title", title.take(100)) // 限制长度
-                author?.let { param("video_author", it.take(50)) }
-                duration?.let { param("video_duration_sec", it) }
+                // 🔒 不记录 video_id 和 title，仅记录时长范围用于分析
+                duration?.let { 
+                    val durationRange = when {
+                        it < 60 -> "under_1min"
+                        it < 300 -> "1_5min"
+                        it < 600 -> "5_10min"
+                        it < 1800 -> "10_30min"
+                        else -> "over_30min"
+                    }
+                    param("duration_range", durationRange)
+                }
             }
-            Logger.d(TAG, " Video play: $videoId")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to log video play", e)
         }
@@ -167,19 +169,22 @@ object AnalyticsHelper {
         }
     }
     
-    // ========== 🔍 搜索追踪 ==========
-    
     /**
      * 记录搜索事件
-     * @param query 搜索关键词
+     * 🔒 隐私保护：不记录搜索关键词，仅记录搜索行为
      */
     fun logSearch(query: String) {
         if (!isEnabled) return
         try {
             analytics?.logEvent(FirebaseAnalytics.Event.SEARCH) {
-                param(FirebaseAnalytics.Param.SEARCH_TERM, query.take(100))
+                // 🔒 不记录具体搜索词，仅记录搜索词长度范围
+                val lengthRange = when {
+                    query.length <= 2 -> "short"
+                    query.length <= 10 -> "medium"
+                    else -> "long"
+                }
+                param("query_length", lengthRange)
             }
-            Logger.d(TAG, " Search: $query")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to log search", e)
         }
@@ -187,13 +192,13 @@ object AnalyticsHelper {
     
     /**
      * 记录搜索结果点击
+     * 🔒 隐私保护：不记录搜索词和视频ID
      */
     fun logSearchResultClick(query: String, videoId: String, position: Int) {
         if (!isEnabled) return
         try {
             analytics?.logEvent("search_result_click") {
-                param(FirebaseAnalytics.Param.SEARCH_TERM, query.take(100))
-                param("video_id", videoId)
+                // 🔒 仅记录点击位置用于分析搜索结果质量
                 param("position", position.toLong())
             }
         } catch (e: Exception) {
@@ -557,9 +562,7 @@ object AnalyticsHelper {
     }
     
     /**
-     * 记录首页视频点击 (含分区信息，用于分析用户偏好)
-     * @param videoId 视频 ID
-     * @param title 视频标题
+     * 记录首页视频点击 (仅记录分区统计，不记录视频ID等隐私信息)
      * @param tid 分区 ID
      * @param tname 分区名称
      * @param position 在列表中的位置
@@ -574,9 +577,7 @@ object AnalyticsHelper {
         if (!isEnabled) return
         try {
             analytics?.logEvent("video_click") {
-                param("video_id", videoId)
-                param("video_title", title.take(100))
-                tid?.let { param("category_id", it.toLong()) }
+                // 🔒 隐私保护：不记录 video_id 和 title
                 tname?.let { param("category_name", it) }
                 position?.let { param("list_position", it.toLong()) }
             }

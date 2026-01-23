@@ -214,7 +214,7 @@ fun ProfileScreen(
                 ) {
                     // 错误图标
                     Icon(
-                        CupertinoIcons.Default.WifiSlash,
+                        CupertinoIcons.Default.ExclamationmarkTriangle,
                         contentDescription = null,
                         modifier = Modifier.size(64.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -581,12 +581,13 @@ fun MobileProfileContent(
 
                         Spacer(modifier = Modifier.width(10.dp))
 
+                        // 🖼️ 本地相册说明弹窗状态
+                        var showPhotoPickerDialog by remember { mutableStateOf(false) }
+                        
                         // 本地相册
                         Row(
                             modifier = glassyModifier.clickable {
-                                photoPickerLauncher.launch(
-                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                )
+                                showPhotoPickerDialog = true
                             },
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -602,6 +603,49 @@ fun MobileProfileContent(
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Medium,
                                 color = Color.White
+                            )
+                        }
+                        
+                        // 📋 本地相册说明弹窗
+                        if (showPhotoPickerDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showPhotoPickerDialog = false },
+                                icon = {
+                                    Icon(
+                                        CupertinoIcons.Default.Photo,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                },
+                                title = {
+                                    Text("选择照片", fontWeight = FontWeight.Bold)
+                                },
+                                text = {
+                                    Text(
+                                        "将打开系统相册选择一张照片作为背景。\n\n" +
+                                        "📸 仅获取您选中照片的访问权限\n" +
+                                        "🔒 不会访问您的其他照片",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                },
+                                confirmButton = {
+                                    Button(
+                                        onClick = {
+                                            showPhotoPickerDialog = false
+                                            photoPickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
+                                        }
+                                    ) {
+                                        Text("选择照片")
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showPhotoPickerDialog = false }) {
+                                        Text("取消")
+                                    }
+                                }
                             )
                         }
                     }

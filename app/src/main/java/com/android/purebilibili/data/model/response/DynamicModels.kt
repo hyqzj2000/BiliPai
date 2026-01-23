@@ -33,7 +33,16 @@ data class DynamicItem(
     val type: String = "", // DYNAMIC_TYPE_AV, DYNAMIC_TYPE_DRAW, DYNAMIC_TYPE_WORD, DYNAMIC_TYPE_FORWARD
     val visible: Boolean = true,
     val modules: DynamicModules = DynamicModules(),
-    val orig: DynamicItem? = null  //  转发动态的原始内容
+    val orig: DynamicItem? = null,  //  转发动态的原始内容
+    val basic: DynamicBasic? = null  //  [新增] 评论区参数
+)
+
+//  [新增] 动态基础信息 - 包含评论区参数
+@Serializable
+data class DynamicBasic(
+    val comment_id_str: String = "",   // 评论区 oid
+    val comment_type: Int = 0,         // 评论区 type (1=视频, 11=图片, 17=动态)
+    val rid_str: String = ""           // 资源 id
 )
 
 // --- 动态模块集合 ---

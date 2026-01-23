@@ -46,30 +46,41 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             try {
                 // 0. [New] 始终并行读取本地自定义背景设置 (即使未登录也需要背景)
                 // 使用 first() 获取当前值
-                val customBgUriDeferred = async { SettingsManager.getProfileBgUri(getApplication()).first() ?: "" }
+                val customBgUri = try {
+                    SettingsManager.getProfileBgUri(getApplication()).first() ?: ""
+                } catch (e: Exception) { "" }
 
                 // 1. 检查本地是否有 Token
                 if (TokenManager.sessDataCache.isNullOrEmpty()) {
-                    val bgUri = customBgUriDeferred.await()
-                    _uiState.value = ProfileUiState.LoggedOut(topPhoto = bgUri)
+                    _uiState.value = ProfileUiState.LoggedOut(topPhoto = customBgUri)
                     return@launch
                 }
 
                 _uiState.value = ProfileUiState.Loading
 
-                // 2. 并行请求：基本信息 + 统计信息
-                val navDeferred = async { NetworkModule.api.getNavInfo() }
-                val statDeferred = async { NetworkModule.api.getNavStat() }
-                
-                // wait for background
-                val customBgUri = customBgUriDeferred.await()
+                // 2. 使用 supervisorScope 进行并行请求，确保一个失败不会取消整个 scope
+                // 这样可以在 await() 时捕获异常
+                val (navResult, statResult) = kotlinx.coroutines.supervisorScope {
+                    val navDeferred = async { runCatching { NetworkModule.api.getNavInfo() } }
+                    val statDeferred = async { runCatching { NetworkModule.api.getNavStat() } }
+                    Pair(navDeferred.await(), statDeferred.await())
+                }
 
-                val navResp = navDeferred.await()
-                val statResp = statDeferred.await()
-                // val customBgUri = customBgDeferred.await() // Moved up
+                // 检查网络请求结果
+                val navResp = navResult.getOrElse { e ->
+                    // 网络失败
+                    if (isNetworkError(e as Exception)) {
+                        _uiState.value = ProfileUiState.Error("网络不可用，请检查网络连接")
+                    } else {
+                        _uiState.value = ProfileUiState.Error("加载失败，点击重试")
+                    }
+                    return@launch
+                }
+                
+                val statResp = statResult.getOrNull() // 统计信息失败不影响主流程
 
                 val data = navResp.data
-                val statData = statResp.data
+                val statData = statResp?.data
 
                 // 3. 判断是否登录有效
                 if (data != null && data.isLogin) {
@@ -116,10 +127,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                     // 有 Token 但其他错误 → 也显示错误，不清除登录
                     _uiState.value = ProfileUiState.Error("加载失败，点击重试")
                 } else {
-                    // 无 Token → 显示未登录 (尝试获取背景)
-                    // 在异常块中很难获取 deferred，这里降级为空或者再次因异常无法获取
-                    // 简单起见，异常状态下未登录可能无法显示背景，或者我们可以预加载
-                    // 但这里为避免异常嵌套，暂传空。实际上前面已尝试 await，如果 await 抛出异常会走这里。
+                    // 无 Token → 显示未登录
                     _uiState.value = ProfileUiState.LoggedOut(topPhoto = "") 
                 }
             }

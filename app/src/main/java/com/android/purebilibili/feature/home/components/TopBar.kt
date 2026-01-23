@@ -33,6 +33,7 @@ import io.github.alexzhirkevich.cupertino.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
+import androidx.compose.foundation.ExperimentalFoundationApi // [Added]
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -56,6 +57,7 @@ import androidx.compose.ui.platform.LocalDensity
 import kotlinx.coroutines.flow.map
 import com.android.purebilibili.core.ui.animation.rememberDampedDragAnimationState
 import com.android.purebilibili.core.ui.animation.horizontalDragGesture
+import androidx.compose.foundation.combinedClickable // [Added]
 
 /**
  * Q弹点击效果
@@ -213,6 +215,7 @@ fun CategoryTabRow(
 
     //  [交互优化] 触觉反馈
     val haptic = com.android.purebilibili.core.util.rememberHapticFeedback()
+    val scrollChannel = com.android.purebilibili.feature.home.LocalHomeScrollChannel.current // [Added]
 
     // [Refactor] 回退到 Row 布局，增加间距以避免"露半字"的尴尬截断
     Row(
@@ -310,7 +313,13 @@ fun CategoryTabRow(
                                 currentPositionState = remember { derivedStateOf { currentPosition } },
                                 primaryColor = primaryColor,
                                 unselectedColor = unselectedColor,
-                                onClick = { onCategorySelected(index); haptic(com.android.purebilibili.core.util.HapticType.LIGHT) }
+                                onClick = { onCategorySelected(index); haptic(com.android.purebilibili.core.util.HapticType.LIGHT) },
+                                onDoubleTap = {
+                                    // [新增] 双击回顶
+                                    if (selectedIndex == index) {
+                                        scrollChannel?.trySend(Unit)
+                                    }
+                                }
                             )
                         }
                     }
@@ -352,7 +361,8 @@ fun CategoryTabItem(
     currentPositionState: State<Float>,
     primaryColor: Color,
     unselectedColor: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDoubleTap: () -> Unit = {}
 ) {
      // [Optimized] Calculate fraction from the passed state inside derivedStateOf
      val selectionFraction by remember {
@@ -376,13 +386,18 @@ fun CategoryTabItem(
 
      val fontWeight = if (selectionFraction > 0.6f) FontWeight.SemiBold else FontWeight.Medium
 
+     val haptic = com.android.purebilibili.core.util.rememberHapticFeedback()
+
      Box(
          modifier = Modifier
              .clip(RoundedCornerShape(16.dp)) 
-             .clickable(
+             // [Modified] Use combinedClickable for double tap detection
+             .combinedClickable(
                  interactionSource = remember { MutableInteractionSource() },
-                 indication = null
-             ) { onClick() }
+                 indication = null,
+                 onClick = { onClick() },
+                 onDoubleClick = onDoubleTap
+             )
              .padding(horizontal = 10.dp, vertical = 6.dp), 
          contentAlignment = Alignment.Center
      ) {

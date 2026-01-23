@@ -179,6 +179,16 @@ object DownloadManager {
         val videoFile = getVideoFile(task.id)
         val audioFile = getAudioFile(task.id)
         val outputFile = getOutputFile(task.id)
+        val coverFile = getCoverFile(task.id)
+        
+        // 🖼️ 0. 下载封面图片（用于离线显示）
+        try {
+            downloadCoverImage(task.cover, coverFile)
+            updateTask(task.id) { it.copy(localCoverPath = coverFile.absolutePath) }
+            com.android.purebilibili.core.util.Logger.d("DownloadManager", "🖼️ Cover downloaded: ${coverFile.name}")
+        } catch (e: Exception) {
+            com.android.purebilibili.core.util.Logger.w("DownloadManager", "⚠️ Cover download failed, will use network URL", e)
+        }
         
         // 1. 下载视频流
         downloadFile(task.videoUrl, videoFile, task.id) { progress ->
@@ -208,7 +218,7 @@ object DownloadManager {
             ) 
         }
         
-        com.android.purebilibili.core.util.Logger.d("DownloadManager", " Download completed: ${task.title}")
+        com.android.purebilibili.core.util.Logger.d("DownloadManager", "✅ Download completed: ${task.title}")
     }
     
     /**
@@ -503,6 +513,33 @@ object DownloadManager {
     private fun getVideoFile(taskId: String) = File(getDownloadDir(), "${taskId}_video.m4s")
     private fun getAudioFile(taskId: String) = File(getDownloadDir(), "${taskId}_audio.m4s")
     private fun getOutputFile(taskId: String) = File(getDownloadDir(), "${taskId}.mp4")
+    private fun getCoverFile(taskId: String) = File(getDownloadDir(), "${taskId}_cover.jpg")
+    
+    /**
+     * 🖼️ [新增] 下载封面图片
+     */
+    private suspend fun downloadCoverImage(coverUrl: String, file: File) = withContext(Dispatchers.IO) {
+        val url = coverUrl.let {
+            if (it.startsWith("http://")) it.replace("http://", "https://") else it
+        }
+        
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+            .header("Referer", "https://www.bilibili.com")
+            .build()
+        
+        val response = client.newCall(request).execute()
+        if (!response.isSuccessful) {
+            throw Exception("HTTP ${response.code}")
+        }
+        
+        response.body?.byteStream()?.use { input ->
+            FileOutputStream(file).use { output ->
+                input.copyTo(output)
+            }
+        } ?: throw Exception("Empty response body")
+    }
     
     private fun updateTask(taskId: String, update: (DownloadTask) -> DownloadTask) {
         val current = _tasks.value[taskId] ?: return

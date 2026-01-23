@@ -161,17 +161,26 @@ private fun DownloadTaskItem(
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                //  确保使用 HTTPS 并添加 Referer
-                val coverUrl = task.cover.let { url ->
-                    if (url.startsWith("http://")) url.replace("http://", "https://")
-                    else url
-                }
-                AsyncImage(
-                    model = coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                // 🖼️ [修复] 优先使用本地封面（无网络时也能显示）
+                val localCoverFile = task.localCoverPath?.let { java.io.File(it) }
+                val coverSource = if (localCoverFile?.exists() == true) {
+                    // 使用本地缓存的封面
+                    localCoverFile
+                } else {
+                    // Fallback 到网络URL
+                    val coverUrl = task.cover.let { url ->
+                        if (url.startsWith("http://")) url.replace("http://", "https://")
+                        else url
+                    }
+                    coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
                         .data(coverUrl)
                         .addHeader("Referer", "https://www.bilibili.com")
                         .crossfade(true)
-                        .build(),
+                        .build()
+                }
+                
+                AsyncImage(
+                    model = coverSource,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()

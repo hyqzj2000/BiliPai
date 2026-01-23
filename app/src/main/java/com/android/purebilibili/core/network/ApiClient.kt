@@ -609,11 +609,11 @@ interface DynamicApi {
         @retrofit2.http.Field("csrf") csrf: String
     ): SimpleApiResponse
     
-    //  [新增] 点赞动态
+    //  [修复] 点赞动态 - 使用新版 API
     @retrofit2.http.FormUrlEncoded
-    @retrofit2.http.POST("x/dynamic/like")
+    @retrofit2.http.POST("x/dynamic/feed/dyn/thumb")
     suspend fun likeDynamic(
-        @retrofit2.http.Field("dynamic_id") dynamicId: String,
+        @retrofit2.http.Field("dyn_id_str") dynamicId: String,  // 使用 dyn_id_str 参数
         @retrofit2.http.Field("up") up: Int,  // 1=点赞, 2=取消
         @retrofit2.http.Field("csrf") csrf: String
     ): SimpleApiResponse

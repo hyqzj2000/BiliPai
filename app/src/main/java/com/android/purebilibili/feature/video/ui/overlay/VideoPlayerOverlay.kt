@@ -60,6 +60,9 @@ fun VideoPlayerOverlay(
     onQualitySelected: (Int) -> Unit,
     onBack: () -> Unit,
     onToggleFullscreen: () -> Unit,
+    // 🔒 [新增] 屏幕锁定
+    isScreenLocked: Boolean = false,
+    onLockToggle: () -> Unit = {},
     showStats: Boolean = false,
     realResolution: String = "",
     isQualitySwitching: Boolean = false,
@@ -222,9 +225,9 @@ fun VideoPlayerOverlay(
             )
         }
 
-        // --- 3. 控制栏内容 ---
+        // --- 3. 控制栏内容 (锁定时隐藏) ---
         AnimatedVisibility(
-            visible = isVisible,
+            visible = isVisible && !isScreenLocked,  // 🔒 锁定时隐藏控制栏
             enter = fadeIn(tween(300)),
             exit = fadeOut(tween(300)),
             //  [修复] 确保 AnimatedVisibility 填充整个父容器
@@ -315,6 +318,34 @@ fun VideoPlayerOverlay(
                     //  [修复] 传入 modifier 确保在底部
                     modifier = Modifier.align(Alignment.BottomStart)
                 )
+            }
+        }
+        
+        // --- 3.5 🔒 [新增] 屏幕锁定按钮 (仅全屏模式) ---
+        if (isFullscreen) {
+            AnimatedVisibility(
+                visible = isVisible || isScreenLocked,  // 锁定时始终显示解锁按钮
+                enter = fadeIn(tween(200)),
+                exit = fadeOut(tween(200)),
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 16.dp)
+            ) {
+                Surface(
+                    onClick = onLockToggle,
+                    color = Color.Black.copy(alpha = 0.6f),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            if (isScreenLocked) CupertinoIcons.Default.LockOpen else CupertinoIcons.Default.Lock,
+                            contentDescription = if (isScreenLocked) "解锁" else "锁定",
+                            tint = if (isScreenLocked) MaterialTheme.colorScheme.primary else Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
             }
         }
 

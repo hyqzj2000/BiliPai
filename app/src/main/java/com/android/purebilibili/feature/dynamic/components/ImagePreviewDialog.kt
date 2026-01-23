@@ -277,7 +277,11 @@ fun ImagePreviewDialog(
                             normalizeImageUrl(images.getOrNull(page) ?: "")
                         }
                         
-                        AsyncImage(
+                        //  [新增] 使用 ZoomableImage 替换 AsyncImage
+                        //  维护当前页面的缩放状态，用于控制 Pager 是否允许滑动
+                        var currentScale by remember { mutableFloatStateOf(1f) }
+                        
+                        ZoomableImage(
                             model = ImageRequest.Builder(context)
                                 .data(imageUrl)
                                 .size(coil.size.Size.ORIGINAL)  //  强制加载原图，避免模糊
@@ -287,7 +291,13 @@ fun ImagePreviewDialog(
                             contentDescription = null,
                             imageLoader = gifImageLoader,  //  使用 GIF 加载器
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Fit
+                            onZoomChange = { scale ->
+                                currentScale = scale
+                                // 当放大时，我们希望禁止 Pager 滑动（但这需要提升状态到 Pager 层级）
+                                // 由于这是在 Item 内部，我们不能直接控制 Pager 的 userScrollEnabled
+                                // 但 ZoomableImage 内部的手势监听会消费触摸事件，从而自然阻止 Pager 滑动
+                                // 只要 pointerInput 的处理得当
+                            }
                         )
                     }
                 }

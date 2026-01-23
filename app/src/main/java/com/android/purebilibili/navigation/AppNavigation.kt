@@ -222,9 +222,13 @@ fun AppNavigation(
 
         val setBottomBarVisible: (Boolean) -> Unit = remember { { visible -> isBottomBarVisible = visible } }
 
+        // [新增] 首页回顶事件通道 (Channel based event bus)
+        val homeScrollChannel = remember { kotlinx.coroutines.channels.Channel<Unit>(kotlinx.coroutines.channels.Channel.CONFLATED) }
+
         CompositionLocalProvider(
             LocalSetBottomBarVisible provides setBottomBarVisible,
-            LocalBottomBarVisible provides finalBottomBarVisible
+            LocalBottomBarVisible provides finalBottomBarVisible,
+            com.android.purebilibili.feature.home.LocalHomeScrollChannel provides homeScrollChannel  // [新增] 提供回顶通道
         ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // ===== 内容层 (hazeSource) =====
@@ -1013,7 +1017,7 @@ fun AppNavigation(
                                 FrostedBottomBar(
                                     currentItem = currentBottomNavItem,
                                     onItemClick = { item -> navigateTo(item.route) },
-                                    onHomeDoubleTap = { /* TODO: Scroll Home to Top */ },
+                                    onHomeDoubleTap = { homeScrollChannel.trySend(Unit) },
                                     hazeState = if (isBottomBarBlurEnabled) mainHazeState else null,
                                     isFloating = true,
                                     labelMode = bottomBarLabelMode,
@@ -1026,7 +1030,7 @@ fun AppNavigation(
                             FrostedBottomBar(
                                 currentItem = currentBottomNavItem,
                                 onItemClick = { item -> navigateTo(item.route) },
-                                onHomeDoubleTap = { /* TODO: Scroll Home to Top */ },
+                                onHomeDoubleTap = { homeScrollChannel.trySend(Unit) },
                                 hazeState = if (isBottomBarBlurEnabled) mainHazeState else null,
                                 isFloating = false,
                                 labelMode = bottomBarLabelMode,

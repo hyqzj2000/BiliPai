@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.android.purebilibili.data.model.response.ReplyItem
+import com.android.purebilibili.feature.video.ui.components.RichCommentText
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 
@@ -29,6 +30,7 @@ import io.github.alexzhirkevich.cupertino.icons.outlined.*
 @Composable
 fun DynamicCommentSheet(
     comments: List<ReplyItem>,
+    totalCount: Int,  //  [新增] 总评论数
     isLoading: Boolean,
     onDismiss: () -> Unit,
     onPostComment: (String) -> Unit
@@ -55,7 +57,7 @@ fun DynamicCommentSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "评论 ${if (comments.isNotEmpty()) "(${comments.size})" else ""}",
+                    text = "评论 ${if (totalCount > 0) "($totalCount)" else ""}",  //  [修改] 使用 totalCount
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -201,12 +203,15 @@ private fun CommentItem(reply: ReplyItem) {
             
             Spacer(modifier = Modifier.height(4.dp))
             
-            // 评论内容
-            Text(
+            // 评论内容 - 使用 RichCommentText 渲染表情
+            val emoteMap = remember(reply.content.emote) {
+                reply.content.emote?.mapValues { it.value.url } ?: emptyMap()
+            }
+            RichCommentText(
                 text = reply.content.message,
                 fontSize = 14.sp,
-                lineHeight = 20.sp,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                emoteMap = emoteMap
             )
             
             Spacer(modifier = Modifier.height(8.dp))

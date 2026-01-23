@@ -356,8 +356,18 @@ fun DynamicScreen(
     
     //  [新增] 评论弹窗
     selectedDynamicId?.let { dynamicId ->
+        //  [修复] 获取动态的总评论数 (使用 ViewModel 中的实时数据)
+        val viewModelCount by viewModel.commentTotalCount.collectAsState()
+        //  作为 fallback (如果 viewModelCount 为 0)，先显示 item 里的旧数据
+        val dynamicItem = remember(dynamicId, state.items, state.userItems) {
+            state.items.find { it.id_str == dynamicId } ?: state.userItems.find { it.id_str == dynamicId }
+        }
+        val staticCount = dynamicItem?.modules?.module_stat?.comment?.count ?: 0
+        val totalCount = if (viewModelCount > 0) viewModelCount else staticCount
+        
         DynamicCommentSheet(
             comments = comments,
+            totalCount = totalCount, 
             isLoading = commentsLoading,
             onDismiss = { viewModel.closeCommentSheet() },
             onPostComment = { message ->

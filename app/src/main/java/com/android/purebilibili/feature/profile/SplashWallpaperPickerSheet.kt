@@ -1,5 +1,6 @@
 package com.android.purebilibili.feature.profile
 
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,48 +16,53 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
-import androidx.compose.ui.draw.scale
-import android.widget.Toast
 
 /**
- * 修复壁纸图片 URL (不添加缩放后缀，保持原图质量)
+ * 修复壁纸图片 URL
  */
 private fun fixWallpaperUrl(url: String?): String {
     if (url.isNullOrEmpty()) return ""
     var newUrl = url
-    // 修复无协议头的链接 (//i0.hdslb.com...)
     if (newUrl.startsWith("//")) {
         newUrl = "https:$newUrl"
     }
-    // 修复 http 链接
     if (newUrl.startsWith("http://")) {
         newUrl = newUrl.replace("http://", "https://")
     }
     return newUrl
 }
 
+/**
+ * 🖼️ 开屏壁纸选择器 (用于设置页)
+ * 仅用于选择开屏壁纸，简化的单一用途组件
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OfficialWallpaperSheet(
-    viewModel: ProfileViewModel,
+fun SplashWallpaperPickerSheet(
+    viewModel: ProfileViewModel = viewModel(),
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     val officialWallpapers by viewModel.officialWallpapers.collectAsState()
     val isLoading by viewModel.officialWallpapersLoading.collectAsState()
     val error by viewModel.officialWallpapersError.collectAsState()
+    val saveState by viewModel.splashSaveState.collectAsState()
 
     var selectedUrl by remember { mutableStateOf<String?>(null) }
-    
+    var saveToGallery by remember { mutableStateOf(false) }
+
     // 初始化加载
     LaunchedEffect(Unit) {
         if (officialWallpapers.isEmpty()) {
@@ -64,17 +70,16 @@ fun OfficialWallpaperSheet(
         }
     }
 
-    // ModalBottomSheet 容器
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = MaterialTheme.colorScheme.background,
-        dragHandle = null // 自定义头部
+        dragHandle = null
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .navigationBarsPadding() // 适配底部
+                .navigationBarsPadding()
         ) {
             // 1. 顶部栏
             Box(
@@ -88,20 +93,19 @@ fun OfficialWallpaperSheet(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(onClick = onDismiss) {
-                        Icon(CupertinoIcons.Default.Xmark, contentDescription = "Close")
+                        Icon(CupertinoIcons.Default.Xmark, contentDescription = "关闭")
                     }
-                    
+
                     Text(
-                        text = "开屏壁纸设置",
+                        text = "选择开屏壁纸",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    
-                    // 占位，保持标题居中
+
                     Spacer(modifier = Modifier.size(48.dp))
                 }
             }
-            
+
             // 2. 内容区
             when {
                 isLoading && officialWallpapers.isEmpty() -> {
@@ -137,10 +141,9 @@ fun OfficialWallpaperSheet(
                     ) {
                         items(officialWallpapers) { item ->
                             val isSelected = selectedUrl == item.thumb || selectedUrl == item.image
-                            // 优先使用 thumb, 假如没有则 image，并修复 URL
                             val rawUrl = item.thumb.ifEmpty { item.image }
                             val imageUrl = fixWallpaperUrl(rawUrl)
-                            
+
                             Column(
                                 modifier = Modifier
                                     .clickable { selectedUrl = rawUrl }
@@ -164,8 +167,7 @@ fun OfficialWallpaperSheet(
                                                 shape = RoundedCornerShape(8.dp)
                                             )
                                     )
-                                    
-                                    // 选中标记 (右上角)
+
                                     if (isSelected) {
                                         Icon(
                                             imageVector = CupertinoIcons.Default.CheckmarkCircle,
@@ -179,133 +181,81 @@ fun OfficialWallpaperSheet(
                                         )
                                     }
                                 }
-                                
+
                                 Spacer(modifier = Modifier.height(6.dp))
-                                
+
                                 Text(
                                     text = item.title.ifEmpty { "未命名" },
                                     style = MaterialTheme.typography.bodySmall,
                                     maxLines = 1,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface 
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
                     }
                 }
             }
-            
-            // 3. 底部保存栏
+
+            // 3. 底部操作栏
             Surface(
                 shadowElevation = 8.dp,
                 color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // [New] Observe save state
-                    val saveState by viewModel.wallpaperSaveState.collectAsState()
-                    val splashSaveState by viewModel.splashSaveState.collectAsState()
-                    
-                    val isSaving = saveState is WallpaperSaveState.Loading || splashSaveState is WallpaperSaveState.Loading
-                    var saveToGallery by remember { mutableStateOf(false) }
+                    val isSaving = saveState is WallpaperSaveState.Loading
 
-                    // Switch for Save to Album
+                    // 保存到相册开关
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 12.dp)
-                            .clickable { saveToGallery = !saveToGallery }, // Make row clickable
+                            .clickable { saveToGallery = !saveToGallery },
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "保存到系统相册",
+                            text = "同时保存到相册",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface 
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Switch(
                             checked = saveToGallery,
                             onCheckedChange = { saveToGallery = it },
-                            modifier = Modifier.scale(0.8f) 
+                            modifier = Modifier.scale(0.8f)
                         )
                     }
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    // 确认按钮
+                    Button(
+                        onClick = {
+                            selectedUrl?.let { url ->
+                                viewModel.setAsSplashWallpaper(url, saveToGallery) {
+                                    onDismiss()
+                                    Toast.makeText(context, "开屏壁纸设置成功", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        enabled = selectedUrl != null && !isSaving,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(25.dp)
                     ) {
-                        // Set as Profile Background
-                        val context = LocalContext.current
-                        Button(
-                            onClick = { 
-                                selectedUrl?.let { url ->
-                                    viewModel.saveWallpaper(url) {
-                                        onDismiss()
-                                        Toast.makeText(context, "背景设置成功", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            },
-                            enabled = selectedUrl != null && !isSaving,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(50.dp),
-                            shape = RoundedCornerShape(25.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        if (isSaving) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
                             )
-                        ) {
-                            if (saveState is WallpaperSaveState.Loading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text("设为背景", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                        
-                        // Set as Splash Screen
-                        Button(
-                            onClick = { 
-                                selectedUrl?.let { url ->
-                                    viewModel.setAsSplashWallpaper(url, saveToGallery) {
-                                        onDismiss()
-                                        Toast.makeText(context, "开屏壁纸设置成功", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            },
-                            enabled = selectedUrl != null && !isSaving,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(50.dp),
-                            shape = RoundedCornerShape(25.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            if (splashSaveState is WallpaperSaveState.Loading) {
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text("设为开屏", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            }
+                        } else {
+                            Text("设为开屏壁纸", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
-                    
+
                     if (saveState is WallpaperSaveState.Error) {
                         Text(
                             text = (saveState as WallpaperSaveState.Error).message,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally)
-                        )
-                    }
-                    if (splashSaveState is WallpaperSaveState.Error) {
-                         Text(
-                            text = (splashSaveState as WallpaperSaveState.Error).message,
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally)

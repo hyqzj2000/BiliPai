@@ -48,6 +48,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.ui.PlayerView
@@ -182,6 +184,9 @@ fun VideoPlayerSection(
 
     // 控制器显示状态
         var showControls by remember { mutableStateOf(true) }
+    
+    // 🔒 [新增] 屏幕锁定状态（全屏时防误触）
+    var isScreenLocked by remember { mutableStateOf(false) }
 
     var gestureMode by remember { mutableStateOf<VideoGestureMode>(VideoGestureMode.None) }
     var gestureIcon by remember { mutableStateOf<ImageVector?>(null) }
@@ -246,12 +251,17 @@ fun VideoPlayerSection(
                 }
             }
             //  先处理拖拽手势 (音量/亮度/进度)
-            .pointerInput(isInPipMode) {
+            .pointerInput(isInPipMode, isScreenLocked) {
                 if (!isInPipMode) {
                     detectDragGestures(
                         onDragStart = { offset ->
                             // [新增] 如果处于缩放状态，禁用常规拖拽手势，优先处理平移
                             if (scale > 1.01f) {  // 留一点浮点数buffer
+                                return@detectDragGestures
+                            }
+                            
+                            // 🔒 锁定时禁用拖拽手势
+                            if (isScreenLocked) {
                                 return@detectDragGestures
                             }
                             
@@ -377,10 +387,19 @@ fun VideoPlayerSection(
                 }
             }
             //  点击/双击/长按手势在拖拽之后处理
-            .pointerInput(seekForwardSeconds, seekBackwardSeconds, longPressSpeed) {
+            .pointerInput(seekForwardSeconds, seekBackwardSeconds, longPressSpeed, isScreenLocked) {
                 detectTapGestures(
-                    onTap = { showControls = !showControls },
+                    onTap = { 
+                        // 🔒 锁定时点击只显示解锁按钮
+                        if (isScreenLocked) {
+                            showControls = !showControls  // 显示/隐藏解锁按钮
+                        } else {
+                            showControls = !showControls
+                        }
+                    },
                     onLongPress = {
+                        // 🔒 锁定时禁用长按倍速
+                        if (isScreenLocked) return@detectTapGestures
                         //  长按开始：保存原速度并应用长按倍速
                         val player = playerState.player
                         originalSpeed = player.playbackParameters.speed
@@ -390,6 +409,9 @@ fun VideoPlayerSection(
                         com.android.purebilibili.core.util.Logger.d("VideoPlayerSection", "⏩ LongPress: speed ${longPressSpeed}x")
                     },
                     onDoubleTap = { offset ->
+                        // 🔒 锁定时禁用双击
+                        if (isScreenLocked) return@detectTapGestures
+                        
                         val screenWidth = size.width
                         val player = playerState.player
                         
@@ -569,6 +591,28 @@ fun VideoPlayerSection(
             )
         }
         
+
+        
+        // 1.5 封面图 (Cover Image) - 仅在未播放或缓冲且在开头时显示
+        if (uiState is PlayerUiState.Success) {
+            val showCover = !playerState.player.isPlaying && playerState.player.playbackState != Player.STATE_READY && playerState.player.playbackState != Player.STATE_ENDED || (isBuffering && playerState.player.currentPosition < 1000)
+            
+            AnimatedVisibility(
+                visible = showCover,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                AsyncImage(
+                    model = uiState.info.pic, // [修复] 使用 pic 字段
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black)
+                )
+            }
+        }
+
         // 2. DanmakuView (使用 ByteDance DanmakuRenderEngine - 覆盖在 PlayerView 上方)
         android.util.Log.d("VideoPlayerSection", "🔍 DanmakuView check: isInPipMode=$isInPipMode, danmakuEnabled=$danmakuEnabled")
         if (!isInPipMode && danmakuEnabled && !isPortraitFullscreen) {
@@ -784,7 +828,10 @@ fun VideoPlayerSection(
                 },
                 onBack = onBack,
                 onToggleFullscreen = onToggleFullscreen,
-
+                
+                // 🔒 [新增] 屏幕锁定
+                isScreenLocked = isScreenLocked,
+                onLockToggle = { isScreenLocked = !isScreenLocked },
                 //  [关键] 传入设置状态和真实分辨率字符串
                 showStats = showStats,
                 realResolution = realResolution,
