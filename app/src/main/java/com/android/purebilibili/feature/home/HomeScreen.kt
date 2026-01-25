@@ -340,7 +340,14 @@ fun HomeScreen(
         when (item) {
             BottomNavItem.HOME -> {
                 coroutineScope.launch { 
-                    gridStates[state.currentCategory]?.animateScrollToItem(0) 
+                    val gridState = gridStates[state.currentCategory]
+                    val isAtTop = gridState == null || (gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset < 50)
+                    
+                    if (isAtTop) {
+                        viewModel.refresh()
+                    } else {
+                        gridState?.animateScrollToItem(0) 
+                    } 
                 }
             }
             BottomNavItem.DYNAMIC -> onDynamicClick()
