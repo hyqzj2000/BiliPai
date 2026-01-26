@@ -328,8 +328,8 @@ fun VideoPlayerOverlay(
                 enter = fadeIn(tween(200)),
                 exit = fadeOut(tween(200)),
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 16.dp)
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 24.dp)
             ) {
                 Surface(
                     onClick = onLockToggle,

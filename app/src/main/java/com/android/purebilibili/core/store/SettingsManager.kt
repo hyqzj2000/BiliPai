@@ -934,6 +934,18 @@ object SettingsManager {
                 preferences.remove(KEY_DOWNLOAD_PATH)
             }
         }
+        // [修复] 同步写入 SharedPreferences，供 DownloadManager 初始化时同步读取
+        context.getSharedPreferences("download_prefs", Context.MODE_PRIVATE)
+            .edit().putString("path", path).commit() // commit 确保立即写入
+    }
+    
+    /**
+     * [修复] 同步获取自定义下载路径
+     * 用于解决 DownloadManager 初始化竞态条件
+     */
+    fun getDownloadPathSync(context: Context): String? {
+        return context.getSharedPreferences("download_prefs", Context.MODE_PRIVATE)
+            .getString("path", null)
     }
     
     /**

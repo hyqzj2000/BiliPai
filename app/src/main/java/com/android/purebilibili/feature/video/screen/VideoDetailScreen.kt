@@ -1224,6 +1224,44 @@ fun VideoDetailScreen(
 
                 // 弹幕视图（覆盖在 PlayerView 上方）
                 if (danmakuEnabled) {
+                    // 计算视频实际显示区域 (用于修正弹幕位置)
+                    val videoSize by playerState.videoSize.collectAsState()
+                    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+                    val screenWidth = configuration.screenWidthDp.dp
+                    val screenHeight = configuration.screenHeightDp.dp
+                    
+                    // 计算顶部偏移量 (Letterboxing)
+                    val videoTopPadding = remember(videoSize, screenWidth, screenHeight) {
+                        if (videoSize.first > 0 && videoSize.second > 0) {
+                            val videoAspect = videoSize.first.toFloat() / videoSize.second.toFloat()
+                            val screenAspect = screenWidth.value / screenHeight.value
+                            
+                            if (videoAspect > screenAspect) {
+                                // 视频较宽，上下有黑边
+                                val displayedHeight = screenWidth.value / videoAspect
+                                (screenHeight.value - displayedHeight) / 2
+                            } else {
+                                // 视频较高，填满高度或左右有黑边 (通常竖屏全屏模式下视频宽度铺满，上下黑边，除非视频本身是竖屏)
+                                // 对于 16:9 视频在竖屏手机上，肯定是上下有黑边
+                                // PlayerView 默认是 FIT，所以逻辑同上
+                                val displayedHeight = screenWidth.value / videoAspect
+                                ((screenHeight.value - displayedHeight) / 2).coerceAtLeast(0f)
+                            }
+                        } else {
+                            0f
+                        }
+                    }
+                    
+                    // 计算视频实际高度
+                    val displayedVideoHeight = remember(videoSize, screenWidth) {
+                         if (videoSize.first > 0 && videoSize.second > 0) {
+                            val videoAspect = videoSize.first.toFloat() / videoSize.second.toFloat()
+                             screenWidth.value / videoAspect
+                         } else {
+                             0f
+                         }
+                    }
+
                     androidx.compose.ui.viewinterop.AndroidView(
                         factory = { ctx ->
                             com.bytedance.danmaku.render.engine.DanmakuView(ctx).apply {
@@ -1235,13 +1273,13 @@ fun VideoDetailScreen(
                         update = { view ->
                             if (view.width > 0 && view.height > 0) {
                                 danmakuManager.attachView(view)
-                                com.android.purebilibili.core.util.Logger.d(
-                                    "PortraitDanmaku",
-                                    " DanmakuView update: size=${view.width}x${view.height}"
-                                )
                             }
                         },
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = videoTopPadding.dp)
+                            // 限制高度以避免弹幕跑到底部黑边
+                            .height(if (displayedVideoHeight > 0) displayedVideoHeight.dp else screenHeight) 
                     )
                 }
                 
@@ -1402,11 +1440,16 @@ fun VideoDetailScreen(
             //  默认选中最高画质
             val highestQuality = sortedQualityOptions.firstOrNull()?.first ?: successForDownload.currentQuality
             
+            val defaultPath = remember { com.android.purebilibili.feature.download.DownloadManager.getDownloadDir().absolutePath }
+            
             com.android.purebilibili.feature.download.DownloadQualityDialog(
                 title = successForDownload.info.title,
                 qualityOptions = sortedQualityOptions,
                 currentQuality = highestQuality,  // 默认选中最高画质
-                onQualitySelected = { viewModel.downloadWithQuality(it) },
+                defaultPath = defaultPath,
+                onQualitySelected = { quality, path -> 
+                    viewModel.downloadWithQuality(quality, path) 
+                },
                 onDismiss = { viewModel.closeDownloadDialog() }
             )
         }

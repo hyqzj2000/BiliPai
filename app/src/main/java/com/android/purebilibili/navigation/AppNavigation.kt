@@ -133,7 +133,14 @@ fun AppNavigation(
         if (navController.currentDestination?.route == route) return
 
         navController.navigate(route) {
+            // [修复] 弹出到图表的起始目标，以避免在用户选择项目时
+            // 在返回堆栈上堆积大量的目标
+            popUpTo(navController.graph.startDestinationId) {
+                saveState = true
+            }
+            // 避免在重新选择同一项目时出现同一目标的多个副本
             launchSingleTop = true
+            // 重新选择以前选择的项目时恢复状态
             restoreState = true
         }
     }

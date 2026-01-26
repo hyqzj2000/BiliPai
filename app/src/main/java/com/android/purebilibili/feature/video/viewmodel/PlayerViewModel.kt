@@ -1339,7 +1339,7 @@ class PlayerViewModel : ViewModel() {
         _showDownloadDialog.value = false
     }
     
-    fun downloadWithQuality(qualityId: Int) {
+    fun downloadWithQuality(qualityId: Int, customPath: String? = null) {
         val current = _uiState.value as? PlayerUiState.Success ?: return
         _showDownloadDialog.value = false
         
@@ -1389,12 +1389,14 @@ class PlayerViewModel : ViewModel() {
                 quality = qualityId,
                 qualityDesc = qualityDesc,
                 videoUrl = videoUrl,
-                audioUrl = audioUrl ?: ""
+                audioUrl = audioUrl ?: "",
+                customSaveDir = customPath // 📂 [新增] 支持指定下载目录
             )
             
             val added = com.android.purebilibili.feature.download.DownloadManager.addTask(task)
             if (added) {
-                toast("开始下载: ${current.info.title} [$qualityDesc]")
+                val pathMsg = if (customPath != null) "至 $customPath" else ""
+                toast("开始下载: ${current.info.title} [$qualityDesc] $pathMsg")
                 // 开始监听下载进度
                 com.android.purebilibili.feature.download.DownloadManager.tasks.collect { tasks ->
                     val downloadTask = tasks[task.id]

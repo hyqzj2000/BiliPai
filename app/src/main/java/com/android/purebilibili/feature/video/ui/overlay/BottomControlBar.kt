@@ -198,7 +198,7 @@ fun BottomControlBar(
                 }
             
                 // 竖屏视频：显示"竖屏"文字按钮
-                if (isVerticalVideo && !isFullscreen) {
+                if (!isFullscreen) {
                     Surface(
                         onClick = onPortraitFullscreen,
                         color = Color.White.copy(alpha = 0.2f),

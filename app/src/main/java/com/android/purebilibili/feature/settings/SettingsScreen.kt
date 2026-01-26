@@ -77,6 +77,8 @@ fun SettingsScreen(
     var versionClickCount by remember { mutableIntStateOf(0) }
     var showEasterEggDialog by remember { mutableStateOf(false) }
     var showPathDialog by remember { mutableStateOf(false) }
+    // [新增] 权限引导弹窗状态
+    var showPermissionDialog by remember { mutableStateOf(false) }
     
     // Haze State for this screen
     val activeHazeState = mainHazeState ?: remember { dev.chrisbanes.haze.HazeState() }
@@ -200,7 +202,16 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                com.android.purebilibili.core.ui.IOSDialogAction(onClick = { showPathDialog = false; directoryPicker.launch(null) }) { Text("选择自定义目录") }
+                com.android.purebilibili.core.ui.IOSDialogAction(onClick = { 
+                    // [修复] 检查 MANAGE_EXTERNAL_STORAGE 权限
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !android.os.Environment.isExternalStorageManager()) {
+                        showPathDialog = false
+                        showPermissionDialog = true
+                    } else {
+                        showPathDialog = false
+                        directoryPicker.launch(null)
+                    }
+                }) { Text("选择自定义目录") }
             },
             dismissButton = { 
                 com.android.purebilibili.core.ui.IOSDialogAction(onClick = { 
@@ -208,6 +219,38 @@ fun SettingsScreen(
                     showPathDialog = false
                     Toast.makeText(context, "已重置为默认路径", Toast.LENGTH_SHORT).show()
                 }) { Text("使用默认") } 
+            }
+        )
+    }
+    
+    // [新增] 权限引导弹窗
+    if (showPermissionDialog) {
+        com.android.purebilibili.core.ui.IOSAlertDialog(
+            onDismissRequest = { showPermissionDialog = false },
+            title = { Text("需要权限", fontWeight = FontWeight.Bold) },
+            text = { 
+                Text("为了将视频下载到自定义目录（如 /Download/BiliPai），应用需要“管理所有文件”的权限。\n\n请在接下来的系统设置中允许此权限。")
+            },
+            confirmButton = {
+                com.android.purebilibili.core.ui.IOSDialogAction(onClick = {
+                    showPermissionDialog = false
+                    try {
+                        val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                            data = android.net.Uri.parse("package:${context.packageName}")
+                        }
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        try {
+                            val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "无法打开设置页面，请手动授权", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }) { Text("去授权", color = MaterialTheme.colorScheme.primary) }
+            },
+            dismissButton = {
+                com.android.purebilibili.core.ui.IOSDialogAction(onClick = { showPermissionDialog = false }) { Text("取消") }
             }
         )
     }

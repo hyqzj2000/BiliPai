@@ -42,7 +42,7 @@ class DanmakuConfig {
      * - config.scroll: ScrollLayerConfig (moveTime, lineHeight, lineMargin, margin)
      * - config.common: CommonConfig (alpha, bufferSize, bufferDiscardRule)
      */
-    fun applyTo(engineConfig: EngineConfig) {
+    fun applyTo(engineConfig: EngineConfig, viewHeight: Int = 0) {
         engineConfig.apply {
             // 通用配置 - 透明度 (0-255 Int)
             common.alpha = (opacity * 255).toInt()
@@ -67,10 +67,10 @@ class DanmakuConfig {
             
             //  [修复] 显示区域控制
             // 通过 lineCount 限制最大行数来实现显示区域控制
-            val maxLines = getMaxLines()
+            val maxLines = getMaxLines(viewHeight, text.size, text.strokeWidth)
             scroll.lineCount = maxLines
             
-            android.util.Log.w("DanmakuConfig", " Applied: opacity=$opacity, fontSize=${text.size}, moveTime=${scroll.moveTime}ms, displayArea=$displayAreaRatio, maxLines=$maxLines")
+            android.util.Log.w("DanmakuConfig", " Applied: opacity=$opacity, fontSize=${text.size}, moveTime=${scroll.moveTime}ms, displayArea=$displayAreaRatio, maxLines=$maxLines (h=$viewHeight)")
         }
     }
     
@@ -78,11 +78,33 @@ class DanmakuConfig {
      * 根据显示区域比例计算最大行数
      *  [修复] 不能返回 Int.MAX_VALUE，否则弹幕引擎会尝试为海量行分配内存导致 OOM
      */
-    private fun getMaxLines(): Int = when {
-        displayAreaRatio <= 0.25f -> 3
-        displayAreaRatio <= 0.5f -> 5
-        displayAreaRatio <= 0.75f -> 8
-        else -> 12  //  [修复] 最大 12 行，不能用 Int.MAX_VALUE
+    /**
+     * 根据显示区域比例计算最大行数
+     * [修复] 动态计算：基于视图高度和行高
+     */
+    private fun getMaxLines(viewHeight: Int, fontSize: Float, strokeWidth: Float): Int {
+        if (viewHeight <= 0) {
+             // 视图高度未知时的回退逻辑 (旧逻辑，稍微放宽一点)
+             return when {
+                displayAreaRatio <= 0.25f -> 4
+                displayAreaRatio <= 0.5f -> 8
+                displayAreaRatio <= 0.75f -> 12
+                else -> 16
+            }
+        }
+        
+        // 估算行高：字体大小 + 描边(上下各半? 通常加上 padding) + 行间距
+        // 引擎内部通常会有一定的 lineMargin (默认为 0 或很小)
+        // 假设行高约为 字体大小 + 描边 + 4dp 间距
+        val estimatedLineHeight = fontSize + (if (strokeEnabled) strokeWidth else 0f) + 12f // 12f 为估算的间距buffer
+        
+        val totalLines = (viewHeight / estimatedLineHeight).toInt()
+        val visibleLines = (totalLines * displayAreaRatio).toInt()
+        
+        // 至少显示 1 行
+        return visibleLines.coerceAtLeast(1).also {
+             android.util.Log.i("DanmakuConfig", "DisplayArea: height=$viewHeight, fontSize=$fontSize, ratio=$displayAreaRatio -> total=$totalLines, visible=$it")
+        }
     }
     
     companion object {

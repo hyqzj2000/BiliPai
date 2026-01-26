@@ -61,6 +61,10 @@ fun PureBiliBiliTheme(
     themeColorIndex: Int = 0, //  默认 0 = iOS 蓝色
     content: @Composable () -> Unit
 ) {
+    //  🚀 [修复] 强制监听配置变化 (如更换壁纸触发的资源刷新)
+    // 即使 Activity 不重建，Configuration 也会变化，触发重组从而获取最新的 dynamicColorScheme
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    
     //  获取自定义主题色 (默认 iOS 蓝)
     val customPrimaryColor = ThemeColors.getOrElse(themeColorIndex) { iOSSystemBlue }
     

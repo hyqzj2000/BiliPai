@@ -40,7 +40,8 @@ data class DownloadTask(
     val downloadedSize: Long = 0,
     val createdAt: Long = System.currentTimeMillis(),
     val errorMessage: String? = null,
-    val localCoverPath: String? = null  // 🖼️ [新增] 本地缓存的封面路径
+    val localCoverPath: String? = null, // 🖼️ [新增] 本地缓存的封面路径
+    val customSaveDir: String? = null   // 📂 [新增] 自定义保存目录（单视频独立路径）
 ) {
     val id: String get() = "${bvid}_${cid}_$quality"
     

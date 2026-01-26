@@ -153,7 +153,8 @@ class DanmakuManager private constructor(
      */
     private fun applyConfigToController(reason: String) {
         controller?.let { ctrl ->
-            config.applyTo(ctrl.config)
+            val viewHeight = danmakuView?.height ?: 0
+            config.applyTo(ctrl.config, viewHeight)
 
             // 记录设置后的基准滚动时间，供倍速同步使用
             originalMoveTime = ctrl.config.scroll.moveTime
@@ -163,9 +164,9 @@ class DanmakuManager private constructor(
                 ctrl.config.scroll.moveTime = (originalMoveTime / currentVideoSpeed).toLong()
             }
 
-            //  [关键修复] fontScale/displayArea 改变时，需要重新设置弹幕数据
+            //  [关键修复] fontScale/displayArea/viewHeight 改变时，需要重新设置弹幕数据
             // 因为引擎的 config.text.size 只对新弹幕生效，已显示的弹幕不会更新
-            if (reason == "fontScale" || reason == "displayArea" || reason == "batch") {
+            if (reason == "fontScale" || reason == "displayArea" || reason == "batch" || reason == "resize") {
                 cachedDanmakuList?.let { list ->
                     val currentPos = player?.currentPosition ?: 0L
                     Log.w(TAG, " Re-applying danmaku data after $reason change at ${currentPos}ms")
@@ -218,7 +219,8 @@ class DanmakuManager private constructor(
             Log.w(TAG, "📎 attachView: Same view but size changed (rotation?), re-applying danmaku data")
             lastAppliedWidth = view.width
             lastAppliedHeight = view.height
-            applyDanmakuDataToController()
+            // [修复] 尺寸变化时，重新应用配置（计算行数）和数据
+            applyConfigToController("resize")
             return
         }
         
@@ -242,7 +244,8 @@ class DanmakuManager private constructor(
             Log.w(TAG, "📎 View has valid size, setting data immediately")
             lastAppliedWidth = view.width
             lastAppliedHeight = view.height
-            applyDanmakuDataToController()
+            // [修复] 立即应用正确的配置（含高度）和数据
+            applyConfigToController("resize")
         } else {
             // View 尺寸为 0，等待布局完成
             Log.w(TAG, "📎 View size is 0, waiting for layout...")
@@ -257,7 +260,8 @@ class DanmakuManager private constructor(
                     if (danmakuView === view && view.width > 0 && view.height > 0) {
                         lastAppliedWidth = view.width
                         lastAppliedHeight = view.height
-                        applyDanmakuDataToController()
+                        // [修复] 布局完成后，重新应用配置（含高度）和数据
+                        applyConfigToController("resize")
                     } else if (danmakuView === view) {
                         //  [修复] 如果布局回调时尺寸仍为 0，延迟 100ms 再试一次
                         Log.w(TAG, " View still zero size, scheduling delayed retry...")
@@ -266,7 +270,7 @@ class DanmakuManager private constructor(
                                 Log.w(TAG, "📎 Delayed retry: width=${view.width}, height=${view.height}")
                                 lastAppliedWidth = view.width
                                 lastAppliedHeight = view.height
-                                applyDanmakuDataToController()
+                                applyConfigToController("resize")
                             } else {
                                 Log.w(TAG, " View still invalid after delay, skipping")
                             }

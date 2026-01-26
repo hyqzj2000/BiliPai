@@ -564,7 +564,8 @@ fun VideoPlayerSection(
         }
         
         // 1. PlayerView (底层) - key 触发 graphicsLayer 强制更新
-        key(isFlippedHorizontal, isFlippedVertical) {
+        //  [修复] 添加 isPortraitFullscreen 到 key，确保从全屏返回时重建 PlayerView 并重新绑定 Surface (解决黑屏问题)
+        key(isFlippedHorizontal, isFlippedVertical, isPortraitFullscreen) {
             AndroidView(
                 factory = { ctx ->
                     PlayerView(ctx).apply {
@@ -816,7 +817,8 @@ fun VideoPlayerSection(
             VideoPlayerOverlay(
                 player = playerState.player,
                 title = uiState.info.title,
-                isVisible = showControls,
+                // [修复] 竖屏全屏模式下隐藏底部 Overlay，避免进度状态冲突
+                isVisible = showControls && !isPortraitFullscreen,
                 onToggleVisible = { showControls = !showControls },
                 isFullscreen = isFullscreen,
                 currentQualityLabel = uiState.qualityLabels.getOrNull(uiState.qualityIds.indexOf(uiState.currentQuality)) ?: "自动",

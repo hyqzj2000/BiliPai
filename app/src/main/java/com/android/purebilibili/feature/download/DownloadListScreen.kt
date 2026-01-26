@@ -125,6 +125,31 @@ fun DownloadListScreen(
                         }
                     )
                 }
+                
+                // [新增] 显示当前存储路径
+                item {
+                    val currentDir = remember { DownloadManager.getDownloadDir().absolutePath }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "存储位置",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = currentDir,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            fontSize = 10.sp
+                        )
+                    }
+                }
             }
         }
     }

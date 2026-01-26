@@ -159,6 +159,22 @@ class MainActivity : ComponentActivity() {
             // 1. 获取存储的模式 (默认为跟随系统)
             val themeMode by SettingsManager.getThemeMode(context).collectAsState(initial = AppThemeMode.FOLLOW_SYSTEM)
 
+            //  检查并请求所有文件访问权限 (Android 11+)
+            LaunchedEffect(Unit) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    if (!android.os.Environment.isExternalStorageManager()) {
+                        try {
+                            val intent = android.content.Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                            intent.data = android.net.Uri.parse("package:${packageName}")
+                            val contextWrapper = context as? android.app.Activity
+                            contextWrapper?.startActivity(intent)
+                        } catch (e: Exception) {
+                            Logger.e(TAG, "Failed to launch manage storage settings", e)
+                        }
+                    }
+                }
+            }
+
             //  2. [新增] 获取动态取色设置 (默认为 true)
             val dynamicColor by SettingsManager.getDynamicColor(context).collectAsState(initial = true)
             

@@ -49,33 +49,23 @@ object DownloadManager {
         appContext = context.applicationContext
         
         // [Optim] Perform file IO on background thread
-        scope.launch {
-            // 默认路径
-            downloadDir = File(context.getExternalFilesDir(null), "downloads").apply { mkdirs() }
-            tasksFile = File(context.filesDir, "download_tasks.json")
-            loadTasks()
+            // [修复] 1. 同步初始化 (解决竞态条件)
+            val initialPath = com.android.purebilibili.core.store.SettingsManager.getDownloadPathSync(context)
+            downloadDir = resolveDownloadDir(context, initialPath)
             
-            // 监听路径变化
-            com.android.purebilibili.core.store.SettingsManager.getDownloadPath(context)
-                .collect { customPath ->
-                    downloadDir = if (customPath != null) {
-                        // 使用 SAF URI 转换为可写路径
-                        try {
-                            val uri = android.net.Uri.parse(customPath)
-                            val docFile = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)
-                            if (docFile?.canWrite() == true) {
-                                // SAF 路径需要特殊处理
-                                File(context.getExternalFilesDir(null), "downloads").apply { mkdirs() }
-                            } else {
-                                File(context.getExternalFilesDir(null), "downloads").apply { mkdirs() }
-                            }
-                        } catch (e: Exception) {
-                            File(context.getExternalFilesDir(null), "downloads").apply { mkdirs() }
-                        }
-                    } else {
-                        File(context.getExternalFilesDir(null), "downloads").apply { mkdirs() }
+            // [Optim] Perform file IO on background thread
+            scope.launch {
+                // 默认路径 (虽然上面已经设置了，但在协程里保留作为 fallback)
+                // downloadDir = ... (removed)
+                
+                tasksFile = File(context.filesDir, "download_tasks.json")
+                loadTasks()
+                
+                // 监听路径变化
+                com.android.purebilibili.core.store.SettingsManager.getDownloadPath(context)
+                    .collect { customPath ->
+                         downloadDir = resolveDownloadDir(context, customPath)
                     }
-                }
         }
     }
     
@@ -269,7 +259,7 @@ object DownloadManager {
         
         // 创建临时分段文件
         val segmentFiles = (0 until threadCount).map { 
-            File(getDownloadDir(), "${taskId}_seg$it.tmp") 
+            File(getTaskDir(taskId), "${taskId}_seg$it.tmp") 
         }
         
         try {
@@ -510,10 +500,18 @@ object DownloadManager {
         }
     }
     
-    private fun getVideoFile(taskId: String) = File(getDownloadDir(), "${taskId}_video.m4s")
-    private fun getAudioFile(taskId: String) = File(getDownloadDir(), "${taskId}_audio.m4s")
-    private fun getOutputFile(taskId: String) = File(getDownloadDir(), "${taskId}.mp4")
-    private fun getCoverFile(taskId: String) = File(getDownloadDir(), "${taskId}_cover.jpg")
+    private fun getTaskDir(taskId: String): File {
+        val task = _tasks.value[taskId]
+        // 优先使用任务指定的目录，否则使用默认目录
+        val dir = task?.customSaveDir?.let { File(it) } ?: getDownloadDir()
+        if (!dir.exists()) dir.mkdirs()
+        return dir
+    }
+
+    private fun getVideoFile(taskId: String) = File(getTaskDir(taskId), "${taskId}_video.m4s")
+    private fun getAudioFile(taskId: String) = File(getTaskDir(taskId), "${taskId}_audio.m4s")
+    private fun getOutputFile(taskId: String) = File(getTaskDir(taskId), "${taskId}.mp4")
+    private fun getCoverFile(taskId: String) = File(getTaskDir(taskId), "${taskId}_cover.jpg")
     
     /**
      * 🖼️ [新增] 下载封面图片
@@ -569,6 +567,29 @@ object DownloadManager {
             } catch (e: Exception) {
                 com.android.purebilibili.core.util.Logger.e("DownloadManager", "Failed to save tasks", e)
             }
+        }
+    }
+    
+    /**
+     * 解析下载目录 (已提取为辅助方法)
+     */
+    private fun resolveDownloadDir(context: Context, customPath: String?): File {
+        val defaultDir = File(context.getExternalFilesDir(null), "downloads").apply { mkdirs() }
+        
+        if (customPath.isNullOrBlank()) return defaultDir
+        
+        return try {
+            val customFile = File(customPath)
+            if ((customFile.exists() || customFile.mkdirs()) && customFile.canWrite()) {
+                com.android.purebilibili.core.util.Logger.d("DownloadManager", "✅ Resolved custom dir: ${customFile.absolutePath}")
+                customFile
+            } else {
+                com.android.purebilibili.core.util.Logger.w("DownloadManager", "⚠️ Custom path unavailable/writable: $customPath")
+                defaultDir
+            }
+        } catch (e: Exception) {
+            com.android.purebilibili.core.util.Logger.e("DownloadManager", "❌ Failed to resolve custom path: $customPath", e)
+            defaultDir
         }
     }
 }
