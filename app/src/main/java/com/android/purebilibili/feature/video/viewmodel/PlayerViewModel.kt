@@ -148,6 +148,20 @@ class PlayerViewModel : ViewModel() {
         _showPlaybackEndedDialog.value = true
     }
     
+    // [New] Danmaku Input Dialog State (Kept)
+
+    // [New] Danmaku Input Dialog State
+    private val _showDanmakuInputDialog = MutableStateFlow(false)
+    val showDanmakuInputDialog = _showDanmakuInputDialog.asStateFlow()
+
+    fun showDanmakuInputDialog() {
+        _showDanmakuInputDialog.value = true
+    }
+
+    fun dismissDanmakuInputDialog() {
+        _showDanmakuInputDialog.value = false
+    }
+    
     // Internal state
     private var currentBvid = ""
     private var currentCid = 0L
@@ -206,6 +220,89 @@ class PlayerViewModel : ViewModel() {
         } else {
             Logger.d("PlayerVM", "⏰ 定时关闭已取消")
             toast("定时关闭已取消")
+        }
+    }
+    
+    // ========== 收藏夹相关状态 ==========
+    private val _favoriteFolderDialogVisible = MutableStateFlow(false)
+    val favoriteFolderDialogVisible = _favoriteFolderDialogVisible.asStateFlow()
+    
+    private val _favoriteFolders = MutableStateFlow<List<com.android.purebilibili.data.model.response.FavFolder>>(emptyList())
+    val favoriteFolders = _favoriteFolders.asStateFlow()
+    
+    private val _isFavoriteFoldersLoading = MutableStateFlow(false)
+    val isFavoriteFoldersLoading = _isFavoriteFoldersLoading.asStateFlow()
+    
+    fun showFavoriteFolderDialog() {
+        _favoriteFolderDialogVisible.value = true
+        if (_favoriteFolders.value.isEmpty()) {
+            loadFavoriteFolders()
+        }
+    }
+    
+    fun dismissFavoriteFolderDialog() {
+        _favoriteFolderDialogVisible.value = false
+    }
+    
+    private fun loadFavoriteFolders() {
+        viewModelScope.launch {
+            _isFavoriteFoldersLoading.value = true
+            val result = interactionUseCase.getFavoriteFolders()
+            result.fold(
+                onSuccess = { folders ->
+                    _favoriteFolders.value = folders
+                },
+                onFailure = { e ->
+                    toast("加载收藏夹失败: ${e.message}")
+                }
+            )
+            _isFavoriteFoldersLoading.value = false
+        }
+    }
+    
+    fun addToFavoriteFolder(folder: com.android.purebilibili.data.model.response.FavFolder) {
+        val current = _uiState.value as? PlayerUiState.Success ?: return
+        val currentBvid = current.info.bvid
+        val currentAid = current.info.aid
+        
+        viewModelScope.launch {
+            val result = interactionUseCase.toggleFavorite(
+                aid = currentAid,
+                currentlyFavorited = false, // 总是尝试添加
+                bvid = currentBvid,
+                folderId = folder.id
+            )
+            
+            result.onSuccess {
+                toast("已收藏至: ${folder.title}")
+                dismissFavoriteFolderDialog()
+                // Update UI state might be handled by toggleFavorite flow inside usecase if observed, 
+                // but currently we manually update localized state in success block of loadVideo if needed.
+                // toggleFavorite updates ActionRepository which might not push updates here unless we reload.
+                // However, toggleFavorite returns Result<Boolean> (favorited state).
+                
+                // Manually update local state to reflect favorited
+                _uiState.update { state ->
+                    if (state is PlayerUiState.Success) {
+                        state.copy(isFavorited = true)
+                    } else state
+                }
+            }.onFailure { e ->
+                toast("收藏失败: ${e.message}")
+            }
+        }
+    }
+
+    fun createFavoriteFolder(title: String, intro: String = "", isPrivate: Boolean = false) {
+        viewModelScope.launch {
+            val result = com.android.purebilibili.data.repository.ActionRepository.createFavFolder(title, intro, isPrivate)
+            result.onSuccess {
+                toast("创建收藏夹成功")
+                // 刷新文件夹列表
+                loadFavoriteFolders()
+            }.onFailure { e ->
+                toast("创建失败: ${e.message}")
+            }
         }
     }
     
@@ -534,12 +631,21 @@ class PlayerViewModel : ViewModel() {
                     is VideoLoadResult.Success -> {
                         currentCid = result.info.cid
                         
+                        // 🛠️ [修复] 检查是否已播放结束 (余量 < 5秒)
+                        // 若上次已看完，则从头开始播放，避免立即触发 STATE_ENDED 导致循环跳转
+                        val videoDuration = result.duration
+                        var startPos = cachedPosition
+                        if (videoDuration > 0 && startPos >= videoDuration - 5000) {
+                             Logger.d("PlayerVM", "🛡️ Previous position at end ($startPos / $videoDuration), restarting from 0")
+                             startPos = 0
+                        }
+
                         // Play video
                         if (!shouldSkipPlayerPrepare) {
                             if (result.audioUrl != null) {
-                                playbackUseCase.playDashVideo(result.playUrl, result.audioUrl, cachedPosition, playWhenReady = shouldAutoPlay)
+                                playbackUseCase.playDashVideo(result.playUrl, result.audioUrl, startPos, playWhenReady = shouldAutoPlay)
                             } else {
-                                playbackUseCase.playVideo(result.playUrl, cachedPosition, playWhenReady = shouldAutoPlay)
+                                playbackUseCase.playVideo(result.playUrl, startPos, playWhenReady = shouldAutoPlay)
                             }
                         } else {
                              // 🎯 Skip preparing player, but ensure it's playing if needed

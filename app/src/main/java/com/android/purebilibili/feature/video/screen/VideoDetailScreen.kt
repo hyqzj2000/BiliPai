@@ -141,6 +141,9 @@ fun VideoDetailScreen(
     val configuration = LocalConfiguration.current
     val uiState by viewModel.uiState.collectAsState()
     
+    // 🔄 [Seamless Playback] Internal BVID state to support seamless switching in portrait mode
+    var currentBvid by remember(bvid) { mutableStateOf(bvid) }
+    
     //  监听评论状态
     val commentState by commentViewModel.commentState.collectAsState()
     val subReplyState by commentViewModel.subReplyState.collectAsState()
@@ -406,7 +409,7 @@ fun VideoDetailScreen(
     val playerState = rememberVideoPlayerState(
         context = context,
         viewModel = viewModel,
-        bvid = bvid
+        bvid = currentBvid
     )
     
     //  [性能优化] 生命周期感知：进入后台时暂停播放，返回前台时继续
@@ -426,14 +429,14 @@ fun VideoDetailScreen(
         miniPlayerManager?.let { manager ->
             //  [埋点] PiP 进入事件
             com.android.purebilibili.core.util.AnalyticsHelper.logPictureInPicture(
-                videoId = bvid,
+                videoId = currentBvid,
                 action = "enter_mini"
             )
 
             // 1. 将当前播放器信息传递给小窗管理器
             val info = uiState as? PlayerUiState.Success
             manager.setVideoInfo(
-                bvid = bvid,
+                bvid = currentBvid,
                 title = info?.info?.title ?: "",
                 cover = info?.info?.pic ?: "",
                 owner = info?.info?.owner?.name ?: "",
@@ -480,10 +483,10 @@ fun VideoDetailScreen(
             //  同步视频信息到小窗管理器（为小窗模式做准备）
             //  🚀 [性能优化] 将繁重的序列化和缓存操作移至后台线程，防止主线程卡顿
             // 🔧 [性能优化] 只有首次加载或视频切换时才缓存 MiniPlayer 信息
-            val shouldCacheMiniPlayer = lastCachedMiniPlayerBvid != bvid
+            val shouldCacheMiniPlayer = lastCachedMiniPlayerBvid != currentBvid
             
             if (miniPlayerManager != null && shouldCacheMiniPlayer) {
-                lastCachedMiniPlayerBvid = bvid
+                lastCachedMiniPlayerBvid = currentBvid
                 
                 launch(Dispatchers.Default) {
                     com.android.purebilibili.core.util.Logger.d("VideoDetailScreen", "🔄 [Background] Preparing MiniPlayer info...")
@@ -495,7 +498,7 @@ fun VideoDetailScreen(
                     
                     withContext(Dispatchers.Main) {
                         miniPlayerManager.setVideoInfo(
-                            bvid = bvid,
+                            bvid = currentBvid,
                             title = info.title,
                             cover = info.pic,
                             owner = info.owner.name,
@@ -753,10 +756,10 @@ fun VideoDetailScreen(
                         if (!swipeHidePlayerEnabled) playerHeightOffsetPx = 0f
                     }
 
-                    val nestedScrollConnection = remember(swipeHidePlayerEnabled) {
+                    val nestedScrollConnection = remember(swipeHidePlayerEnabled, isPortraitFullscreen) {
                         object : NestedScrollConnection {
                             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                                if (!swipeHidePlayerEnabled) return Offset.Zero
+                                if (!swipeHidePlayerEnabled || isPortraitFullscreen) return Offset.Zero
                                 
                                 val delta = available.y
                                 // 上滑 (delta < 0)：隐藏播放器，消费滚动
@@ -771,7 +774,7 @@ fun VideoDetailScreen(
                             }
 
                             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                                if (!swipeHidePlayerEnabled) return Offset.Zero
+                                if (!swipeHidePlayerEnabled || isPortraitFullscreen) return Offset.Zero
                                 
                                 val delta = available.y
                                 // 下滑 (delta > 0)：显示播放器 (且 available > 0 说明内容已滚到顶)
@@ -794,8 +797,11 @@ fun VideoDetailScreen(
                     ) {
                     
                     //  播放器隐藏状态（用于动画）
+                    //  播放器隐藏状态（用于动画）
                     //  当 playerHeightOffsetPx 为 -videoHeightPx 时，高度只剩 statusBarHeight
-                    val animatedPlayerHeight = videoHeight + statusBarHeight + with(LocalDensity.current) { playerHeightOffsetPx.toDp() }
+                    //  [Fix] 竖屏全屏模式下强制高度不受偏移影响
+                    val playerHeightOffset = if (isPortraitFullscreen) 0f else playerHeightOffsetPx
+                    val animatedPlayerHeight = videoHeight + statusBarHeight + with(LocalDensity.current) { playerHeightOffset.toDp() }
                     
                     //  注意：移除了状态栏黑色 Spacer
                     // 播放器将延伸到状态栏下方，共享元素过渡更流畅
@@ -1018,7 +1024,7 @@ fun VideoDetailScreen(
                                                 onSortModeChange = { commentViewModel.setSortMode(it) },
                                                 onUpOnlyToggle = { commentViewModel.toggleUpOnly() },
                                                 onFollowClick = { viewModel.toggleFollow() },
-                                                onFavoriteClick = { viewModel.toggleFavorite() },
+                                                onFavoriteClick = { viewModel.showFavoriteFolderDialog() }, // [修改] 单击直接打开收藏夹选择
                                                 onLikeClick = { viewModel.toggleLike() },
                                                 onCoinClick = { viewModel.openCoinDialog() },
                                                 onTripleClick = { viewModel.doTripleAction() },
@@ -1040,7 +1046,18 @@ fun VideoDetailScreen(
                                                     viewModel.showDanmakuSendDialog()
                                                 },
                                                 // 🔗 [新增] 传递共享元素过渡开关
-                                                transitionEnabled = transitionEnabled
+                                                transitionEnabled = transitionEnabled,
+                                                
+                                                // [新增] 收藏夹相关
+                                                favoriteFolderDialogVisible = viewModel.favoriteFolderDialogVisible.collectAsState().value,
+                                                favoriteFolders = viewModel.favoriteFolders.collectAsState().value,
+                                                isFavoriteFoldersLoading = viewModel.isFavoriteFoldersLoading.collectAsState().value,
+                                                onFavoriteLongClick = { viewModel.showFavoriteFolderDialog() },
+                                                onFavoriteFolderClick = { folder -> viewModel.addToFavoriteFolder(folder) },
+                                                onDismissFavoriteFolderDialog = { viewModel.dismissFavoriteFolderDialog() },
+                                                onCreateFavoriteFolder = { title, intro, isPrivate -> 
+                                                    viewModel.createFavoriteFolder(title, intro, isPrivate) 
+                                                }
                                             )
                                         }
 
@@ -1228,16 +1245,44 @@ fun VideoDetailScreen(
                 onDispose { }
             }
 
+            // [新增] 监听小窗模式设置，决定后台是否暂停
+            val miniPlayerMode by com.android.purebilibili.core.store.SettingsManager
+                .getMiniPlayerMode(context)
+                .collectAsState(initial = com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.OFF)
+
             // 使用 LifecycleOwner 在 Activity 销毁时清理引用
             //  [关键修复] 添加 ON_RESUME 事件，确保从其他视频返回后重新绑定弹幕播放器
             val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
-            DisposableEffect(lifecycleOwner, playerState.player) {
+            DisposableEffect(lifecycleOwner, playerState.player, miniPlayerMode) {
                 val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
                     when (event) {
                         androidx.lifecycle.Lifecycle.Event.ON_RESUME -> {
-                            //  [关键修复] 返回页面时重新绑定弹幕播放器
+                             //  [已存在] 返回页面时重新绑定弹幕播放器
                             com.android.purebilibili.core.util.Logger.d("PortraitDanmaku", " ON_RESUME: Re-attaching danmaku player")
                             danmakuManager.attachPlayer(playerState.player)
+                            // [新增] 恢复弹幕显示 (如果之前被隐藏)
+                            danmakuManager.show()
+                        }
+                        androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> {
+                            // [新增] 暂停处理 (仅针对 API < 24)
+                             if (android.os.Build.VERSION.SDK_INT < 23) {
+                                danmakuManager.hide()
+                                if (miniPlayerMode == com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.OFF) {
+                                    playerState.player.pause()
+                                }
+                             }
+                        }
+                        androidx.lifecycle.Lifecycle.Event.ON_STOP -> {
+                             // [新增] 停止处理 (API 24+) - 节省资源的关键
+                             // 1. 隐藏弹幕视图，停止渲染循环
+                             com.android.purebilibili.core.util.Logger.d("PortraitDanmaku", " ON_STOP: Hiding danmaku to save CPU")
+                             danmakuManager.hide()
+                             
+                             // 2. 如果未开启后台播放/小窗，则暂停播放器
+                             if (miniPlayerMode == com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.OFF) {
+                                 com.android.purebilibili.core.util.Logger.d("PortraitDanmaku", " ON_STOP: Pausing player (BgPlay OFF)")
+                                 playerState.player.pause()
+                             }
                         }
                         androidx.lifecycle.Lifecycle.Event.ON_DESTROY -> {
                             com.android.purebilibili.core.util.Logger.d("PortraitDanmaku", " ON_DESTROY: Clearing danmaku references")
@@ -1368,80 +1413,83 @@ fun VideoDetailScreen(
             // 记录拖拽速度
             var lastVelocity by remember { mutableFloatStateOf(0f) }
             
+            // [Moved] Define gesture modifier here to pass to Overlay
+            val swipeDraggableModifier = Modifier.draggable(
+                state = draggableState,
+                orientation = androidx.compose.foundation.gestures.Orientation.Vertical,
+                onDragStarted = { _ ->
+                    // 拖拽开始
+                },
+                onDragStopped = { velocity ->
+                    lastVelocity = velocity
+                    val currentOffset = verticalOffset.value
+                    
+                    // 判断是否触发切换
+                    val isSwipeUp = currentOffset < -swipeThreshold || (velocity < -velocityThreshold && currentOffset < 0)
+                    val isSwipeDown = currentOffset > swipeThreshold || (velocity > velocityThreshold && currentOffset > 0)
+                    
+                    scope.launch {
+                        if (isSwipeUp) {
+                            // 上滑 -> 下一个视频
+                            val nextVid = viewModel.getNextVideoId()
+                            if (nextVid != null) {
+                                verticalOffset.animateTo(
+                                    targetValue = -screenHeightPx,
+                                    animationSpec = androidx.compose.animation.core.tween(300)
+                                )
+                                // 🔄 [Seamless] Update internal BVID instead of navigating off-screen
+                                currentBvid = nextVid
+                                // 重置偏移量
+                                verticalOffset.snapTo(0f)
+                            } else {
+                                // 回弹
+                                verticalOffset.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = androidx.compose.animation.core.spring(
+                                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                                    )
+                                )
+                            }
+                        } else if (isSwipeDown) {
+                            // 下滑 -> 上一个视频
+                            val prevVid = viewModel.getPreviousVideoId()
+                            if (prevVid != null) {
+                                verticalOffset.animateTo(
+                                    targetValue = screenHeightPx,
+                                    animationSpec = androidx.compose.animation.core.tween(300)
+                                )
+                                // 🔄 [Seamless] Update internal BVID
+                                currentBvid = prevVid
+                                // 重置偏移量
+                                verticalOffset.snapTo(0f)
+                            } else {
+                                // 回弹
+                                verticalOffset.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = androidx.compose.animation.core.spring(
+                                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                                    )
+                                )
+                            }
+                        } else {
+                            // 回弹
+                            verticalOffset.animateTo(
+                                targetValue = 0f,
+                                animationSpec = androidx.compose.animation.core.spring(
+                                    stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                                )
+                            )
+                        }
+                    }
+                }
+            )
+            
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(androidx.compose.ui.graphics.Color.Black)
                     // [关键] 使用 offset 而不是 graphicsLayer，确保触摸热区随视觉移动
                     .offset { androidx.compose.ui.unit.IntOffset(0, verticalOffset.value.toInt()) }
-                    // [新增] 使用 draggable 替代 pointerInput，不阻塞点击事件
-                    .draggable(
-                        state = draggableState,
-                        orientation = androidx.compose.foundation.gestures.Orientation.Vertical,
-                        onDragStarted = { _ ->
-                            // 拖拽开始
-                        },
-                        onDragStopped = { velocity ->
-                            lastVelocity = velocity
-                            val currentOffset = verticalOffset.value
-                            
-                            // 判断是否触发切换
-                            val isSwipeUp = currentOffset < -swipeThreshold || (velocity < -velocityThreshold && currentOffset < 0)
-                            val isSwipeDown = currentOffset > swipeThreshold || (velocity > velocityThreshold && currentOffset > 0)
-                            
-                            scope.launch {
-                                if (isSwipeUp) {
-                                    // 上滑 -> 下一个视频
-                                    val nextVid = viewModel.getNextVideoId()
-                                    if (nextVid != null) {
-                                        verticalOffset.animateTo(
-                                            targetValue = -screenHeightPx,
-                                            animationSpec = androidx.compose.animation.core.tween(300)
-                                        )
-                                        onVideoClick(nextVid, null)
-                                        // 重置偏移量 (为了返回时状态正常)
-                                        verticalOffset.snapTo(0f)
-                                    } else {
-                                        // 回弹
-                                        verticalOffset.animateTo(
-                                            targetValue = 0f,
-                                            animationSpec = androidx.compose.animation.core.spring(
-                                                stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
-                                            )
-                                        )
-                                    }
-                                } else if (isSwipeDown) {
-                                    // 下滑 -> 上一个视频
-                                    val prevVid = viewModel.getPreviousVideoId()
-                                    if (prevVid != null) {
-                                        verticalOffset.animateTo(
-                                            targetValue = screenHeightPx,
-                                            animationSpec = androidx.compose.animation.core.tween(300)
-                                        )
-                                        onVideoClick(prevVid, null)
-                                        // 重置偏移量
-                                        verticalOffset.snapTo(0f)
-                                    } else {
-                                        // 回弹
-                                        verticalOffset.animateTo(
-                                            targetValue = 0f,
-                                            animationSpec = androidx.compose.animation.core.spring(
-                                                stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
-                                            )
-                                        )
-                                    }
-                                } else {
-                                    // 回弹
-                                    verticalOffset.animateTo(
-                                        targetValue = 0f,
-                                        animationSpec = androidx.compose.animation.core.spring(
-                                            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    )
             ) {
                 // 视频播放器
                 androidx.compose.ui.viewinterop.AndroidView(
@@ -1519,9 +1567,11 @@ fun VideoDetailScreen(
                     )
                 }
                 
-                // 竖屏全屏控件覆盖层
+                // 竖屏全屏控件覆盖层 (TikTok Style)
                 PortraitFullscreenOverlay(
                     title = success.info.title,
+                    authorName = success.info.owner.name,
+                    authorFace = success.info.owner.face,
                     isPlaying = isPlaying,
                     progress = progressState,
                     
@@ -1532,6 +1582,14 @@ fun VideoDetailScreen(
                     onLikeClick = { viewModel.toggleLike() },
                     onCoinClick = { viewModel.openCoinDialog() },
                     onFavoriteClick = { viewModel.toggleFavorite() },
+                    onCommentClick = { 
+                        // 打开评论输入 (后续可改为打开评论列表 BottomSheet)
+                        viewModel.showCommentInputDialog() 
+                    },
+                    onShareClick = {
+                        // TODO: Share implementation
+                        viewModel.toast("分享功能开发中")
+                    },
                     
                     // 控制状态
                     currentSpeed = currentSpeed,
@@ -1559,8 +1617,9 @@ fun VideoDetailScreen(
                                 .setDanmakuEnabled(context, !danmakuEnabled)
                         }
                     },
-                    onDanmakuInputClick = { /* TODO: 弹幕输入 */ },
-                    onToggleStatusBar = { isStatusBarHidden = !isStatusBarHidden }
+                    onDanmakuInputClick = { viewModel.showDanmakuInputDialog() },
+                    onToggleStatusBar = { isStatusBarHidden = !isStatusBarHidden },
+                    modifier = swipeDraggableModifier // [Fix] Apply swipe gesture to overlay
                 )
                 
                 // 倍速选择菜单

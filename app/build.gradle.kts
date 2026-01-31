@@ -22,8 +22,8 @@ android {
         targetSdk = 35  // 保持35以避免Android 16的新运行时行为
         // 🔥🔥 [版本号] 发布新版前记得更新！格式：versionCode +1, versionName 递增
         // 更新日志：CHANGELOG.md
-        versionCode = 49
-        versionName = "4.3.7"
+        versionCode = 50
+        versionName = "5.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -206,6 +206,8 @@ dependencies {
     // --- 8. Utils (工具类) ---
     // 二维码生成
     implementation("com.google.zxing:core:3.5.3")
+    // Pinyin 拼音转换 (用于模糊搜索)
+    implementation("com.belerweb:pinyin4j:2.5.0")
     // Core KTX
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
