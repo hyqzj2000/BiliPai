@@ -36,13 +36,21 @@ import coil.transform.RoundedCornersTransformation
 import com.android.purebilibili.R
 import com.android.purebilibili.core.network.NetworkModule
 import com.android.purebilibili.core.util.FormatUtils
+import com.android.purebilibili.core.util.Logger
+import com.android.purebilibili.core.store.SettingsManager
+import com.android.purebilibili.feature.video.player.PlaylistManager
+import com.android.purebilibili.feature.video.player.PlayMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
 
 private const val NOTIFICATION_ID = 1001
 private const val CHANNEL_ID = "media_playback_channel"
@@ -608,6 +616,26 @@ fun rememberVideoPlayerState(
             }
             
             override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_ENDED) {
+                    //  检查播放模式
+                    val currentMode = PlaylistManager.playMode.value
+                    
+                    //  优先级 1: 单曲循环 (强制重播)
+                    if (currentMode == PlayMode.REPEAT_ONE) {
+                            player.seekTo(0)
+                            player.play()
+                            return
+                    }
+                    
+                    //  优先级 2: 自动播放设置
+                    val autoPlayEnabled = SettingsManager.getAutoPlaySync(context)
+                    if (autoPlayEnabled) {
+                        viewModel.playNextPageOrRecommended()
+                    } else {
+                        // 确保调用正确的方法显示对话框
+                        viewModel.showPlaybackEndedDialogIfNeeded()
+                    }
+                }
                 if (playbackState == Player.STATE_READY) {
                     // 播放成功，重置所有计数
                     retryCountRef.count = 0

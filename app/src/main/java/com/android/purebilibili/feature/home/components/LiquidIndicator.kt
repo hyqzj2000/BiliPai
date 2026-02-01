@@ -26,7 +26,9 @@ import com.android.purebilibili.core.ui.effect.liquidGlass
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.blur
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import com.android.purebilibili.core.store.LiquidGlassStyle
 
 /**
  * 🌊 液态玻璃选中指示器
@@ -55,6 +57,8 @@ fun LiquidIndicator(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
     isLiquidGlassEnabled: Boolean = false,
+
+    liquidGlassStyle: LiquidGlassStyle = LiquidGlassStyle.CLASSIC, // [New]
     backdrop: LayerBackdrop? = null // [New] Backdrop for refraction
 ) {
     val density = LocalDensity.current
@@ -107,22 +111,41 @@ fun LiquidIndicator(
                 .run {
                     if (isLiquidGlassEnabled && backdrop != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         // [Effect] Strong refraction for the indicator (Magnifying Glass effect)
-                        this.drawBackdrop(
-                            backdrop = backdrop,
-                            shape = { shape },
-                            effects = {
-                                lens(
-                                    refractionHeight = 40f, // Stronger bulge
-                                    refractionAmount = 30f, // Strong distortion
-                                    depthEffect = true,
-                                    chromaticAberration = true // Always aberrate for "magic" feel
-                                )
-                            },
-                            onDrawSurface = {
-                                // Subtle tint for the indicator
-                                drawRect(color.copy(alpha = 0.15f))
-                            }
-                        )
+                        if (liquidGlassStyle == LiquidGlassStyle.CLASSIC) {
+                            // [Style: Classic] Strong Refractive Lens (Deformation)
+                           this.drawBackdrop(
+                                backdrop = backdrop,
+                                shape = { shape },
+                                effects = {
+                                    lens(
+                                        refractionHeight = 40f, 
+                                        refractionAmount = 30f, 
+                                        depthEffect = true,
+                                        chromaticAberration = true 
+                                    )
+                                },
+                                onDrawSurface = {
+                                    drawRect(color.copy(alpha = 0.15f))
+                                }
+                            )
+                         } else {
+                             // [Style: SimpMusic] Frosted Glass (Blur Only, No Deformation)
+                             val blurRadius = 30f // Soft blur
+                             this.drawBackdrop(
+                                backdrop = backdrop,
+                                shape = { shape },
+                                effects = {
+                                    blur(blurRadius)
+                                    // No lens effect here
+                                },
+                                onDrawSurface = {
+                                    // More visible tint for frosted glass
+                                    drawRect(color.copy(alpha = 0.25f)) 
+                                    // Add a subtle white overlay for that "frosted" look
+                                    drawRect(Color.White.copy(alpha = 0.1f))
+                                }
+                            )
+                        }
                     } else {
                         // Fallback
                          this.background(color)

@@ -116,7 +116,10 @@ fun VideoPlayerSection(
     onAudioQualityChange: (Int) -> Unit = {},
     // [New Actions]
     onSaveCover: () -> Unit = {},
-    onDownloadAudio: () -> Unit = {}
+    onDownloadAudio: () -> Unit = {},
+    // 🔁 [新增] 播放模式
+    currentPlayMode: com.android.purebilibili.feature.video.player.PlayMode = com.android.purebilibili.feature.video.player.PlayMode.SEQUENTIAL,
+    onPlayModeClick: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
@@ -1092,7 +1095,10 @@ fun VideoPlayerSection(
                 onlineCount = uiState.onlineCount,
                 // [New]
                 onSaveCover = onSaveCover,
-                onDownloadAudio = onDownloadAudio
+                onDownloadAudio = onDownloadAudio,
+                // 🔁 [新增] 播放模式
+                currentPlayMode = currentPlayMode,
+                onPlayModeClick = onPlayModeClick
             )
         }
         

@@ -53,6 +53,7 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -140,6 +141,7 @@ fun VideoDetailScreen(
     val view = LocalView.current
     val configuration = LocalConfiguration.current
     val uiState by viewModel.uiState.collectAsState()
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     
     // 🔄 [Seamless Playback] Internal BVID state to support seamless switching in portrait mode
     var currentBvid by remember(bvid) { mutableStateOf(bvid) }
@@ -195,6 +197,9 @@ fun VideoDetailScreen(
     var videoPlayerBounds by remember { mutableStateOf<android.graphics.Rect?>(null) }
     
     // 📱 [优化] isPortraitFullscreen 和 isVerticalVideo 现在从 playerState 获取（见 playerState 定义后）
+    
+    // 🔁 [新增] 播放模式状态
+    val currentPlayMode by com.android.purebilibili.feature.video.player.PlaylistManager.playMode.collectAsState()
     
     //  从小窗展开时自动进入全屏
     LaunchedEffect(startInFullscreen) {
@@ -283,9 +288,10 @@ fun VideoDetailScreen(
             // 🎯 [修复] 通知小窗管理器这是导航离开（用于控制后台音频）
             // 移动到这里以支持预测性返回手势（原来在 BackHandler 中会阻止手势动画）
             // [修复] 如果是导航到音频模式，不要标记为离开（否则会触发自动暂停）
-            if (!isNavigatingToAudioMode) {
-                miniPlayerManager?.markLeavingByNavigation()
-            }
+            // ⚠️ [MOVED] Logic moved to a later DisposableEffect to ensure it runs BEFORE playerState disposal
+            // if (!isNavigatingToAudioMode) {
+            //    miniPlayerManager?.markLeavingByNavigation()
+            // }
             
             // 🎯 [新增] 标记正在返回，跳过首页卡片入场动画
             // 这确保共享元素返回动画正常播放（不被卡片入场动画干扰）
@@ -411,6 +417,19 @@ fun VideoDetailScreen(
         viewModel = viewModel,
         bvid = currentBvid
     )
+
+    // 🎯 [修复] 确保在 VideoPlayerState 销毁之前通知 MiniPlayerManager 页面退出
+    // 必须在 playerState 之后声明此 Effect，这样它会在 playerState.onDispose 之前执行（LIFO 顺序）
+    DisposableEffect(playerState) {
+        onDispose {
+            // 标记页面正在退出
+            // 如果是导航到音频模式，不要标记为离开（否则会触发自动暂停）
+            if (!isNavigatingToAudioMode) {
+                com.android.purebilibili.core.util.Logger.d("VideoDetailScreen", "🛑 Disposing screen, notifying MiniPlayerManager")
+                miniPlayerManager?.markLeavingByNavigation()
+            }
+        }
+    }
     
     //  [性能优化] 生命周期感知：进入后台时暂停播放，返回前台时继续
     //  [修复] 此处逻辑已移至 VideoPlayerState.kt 统一处理
@@ -665,7 +684,14 @@ fun VideoDetailScreen(
                     
                     // 📖 [新增] 视频章节数据
                     viewPoints = viewPoints,
+                // 📱 [新增] 竖屏全屏模式
+                isVerticalVideo = isVerticalVideo,
                 isPortraitFullscreen = isPortraitFullscreen,
+                onPortraitFullscreen = { playerState.setPortraitFullscreen(!isPortraitFullscreen) },
+                // 🔁 [新增] 播放模式
+                currentPlayMode = currentPlayMode,
+                onPlayModeClick = { com.android.purebilibili.feature.video.player.PlaylistManager.togglePlayMode() },
+
                 // [New Actions]
                 onSaveCover = { viewModel.saveCover(context) },
                 onDownloadAudio = { viewModel.downloadAudio(context) }
@@ -735,7 +761,10 @@ fun VideoDetailScreen(
                         onCodecChange = { viewModel.setVideoCodec(it) },
                         currentAudioQuality = audioQualityPreference,
                         onAudioQualityChange = { viewModel.setAudioQuality(it) },
-                        onRelatedVideoClick = onVideoClick
+                        onRelatedVideoClick = onVideoClick,
+                        // 🔁 [新增] 播放模式
+                        currentPlayMode = currentPlayMode,
+                        onPlayModeClick = { com.android.purebilibili.feature.video.player.PlaylistManager.togglePlayMode() }
                     )
                 } else {
                     // 📱 手机竖屏：原有单列布局
@@ -1070,9 +1099,15 @@ fun VideoDetailScreen(
                                             onLikeClick = { viewModel.toggleLike() },
                                             onFavoriteClick = { viewModel.toggleFavorite() },
                                             onCoinClick = { viewModel.openCoinDialog() },
-                                            onShareClick = { 
-                                                android.util.Log.d("VideoDetailScreen", "📤 Share clicked!")
-                                                // TODO: Implement share
+                                            onShareClick = {
+                                                val shareText = "【${success.info.title}】\nhttps://www.bilibili.com/video/${success.info.bvid}"
+                                                val sendIntent = android.content.Intent().apply {
+                                                    action = android.content.Intent.ACTION_SEND
+                                                    putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                                                    type = "text/plain"
+                                                }
+                                                val shareIntent = android.content.Intent.createChooser(sendIntent, "分享视频到")
+                                                context.startActivity(shareIntent)
                                             },
                                             onCommentClick = { 
                                                 android.util.Log.d("VideoDetailScreen", "📝 Comment input clicked!")
@@ -1413,76 +1448,123 @@ fun VideoDetailScreen(
             // 记录拖拽速度
             var lastVelocity by remember { mutableFloatStateOf(0f) }
             
-            // [Moved] Define gesture modifier here to pass to Overlay
-            val swipeDraggableModifier = Modifier.draggable(
-                state = draggableState,
-                orientation = androidx.compose.foundation.gestures.Orientation.Vertical,
-                onDragStarted = { _ ->
-                    // 拖拽开始
-                },
-                onDragStopped = { velocity ->
-                    lastVelocity = velocity
-                    val currentOffset = verticalOffset.value
-                    
-                    // 判断是否触发切换
-                    val isSwipeUp = currentOffset < -swipeThreshold || (velocity < -velocityThreshold && currentOffset < 0)
-                    val isSwipeDown = currentOffset > swipeThreshold || (velocity > velocityThreshold && currentOffset > 0)
-                    
-                    scope.launch {
-                        if (isSwipeUp) {
-                            // 上滑 -> 下一个视频
-                            val nextVid = viewModel.getNextVideoId()
-                            if (nextVid != null) {
-                                verticalOffset.animateTo(
-                                    targetValue = -screenHeightPx,
-                                    animationSpec = androidx.compose.animation.core.tween(300)
-                                )
-                                // 🔄 [Seamless] Update internal BVID instead of navigating off-screen
-                                currentBvid = nextVid
-                                // 重置偏移量
-                                verticalOffset.snapTo(0f)
-                            } else {
-                                // 回弹
-                                verticalOffset.animateTo(
-                                    targetValue = 0f,
-                                    animationSpec = androidx.compose.animation.core.spring(
-                                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
-                                    )
-                                )
-                            }
-                        } else if (isSwipeDown) {
-                            // 下滑 -> 上一个视频
-                            val prevVid = viewModel.getPreviousVideoId()
-                            if (prevVid != null) {
-                                verticalOffset.animateTo(
-                                    targetValue = screenHeightPx,
-                                    animationSpec = androidx.compose.animation.core.tween(300)
-                                )
-                                // 🔄 [Seamless] Update internal BVID
-                                currentBvid = prevVid
-                                // 重置偏移量
-                                verticalOffset.snapTo(0f)
-                            } else {
-                                // 回弹
-                                verticalOffset.animateTo(
-                                    targetValue = 0f,
-                                    animationSpec = androidx.compose.animation.core.spring(
-                                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
-                                    )
-                                )
-                            }
+            // 🖐️ [交互核心] 全新手势逻辑 (分区控制)
+            // 左侧 15%: 亮度
+            // 右侧 15%: 音量
+            // 中间 70%: 切换视频 (上下滑动)
+            
+            var gestureMode by remember { mutableStateOf("None") } // "Brightness", "Volume", "PageFlip"
+            var gestureValue by remember { mutableFloatStateOf(0f) }
+            var isGestureVisible by remember { mutableStateOf(false) }
+            
+            // 初始值记录
+            var startVolume by remember { mutableIntStateOf(0) }
+            var startBrightness by remember { mutableFloatStateOf(0f) }
+            var accumulatedDragY by remember { mutableFloatStateOf(0f) }
+            
+            // 音频管理器
+            val audioManager = remember { context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager }
+            val maxVolume = remember { audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC) }
+            
+            val screenWidthPx = with(androidx.compose.ui.platform.LocalDensity.current) {
+                configuration.screenWidthDp.dp.toPx()
+            }
+
+            val edgeZoneWidth = screenWidthPx * 0.15f
+            
+            val swipeDraggableModifier = Modifier.pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        accumulatedDragY = 0f
+                        isGestureVisible = true
+                        
+                        // 判定区域
+                        if (offset.x < edgeZoneWidth) {
+                            gestureMode = "Brightness"
+                            val attributes = activity?.window?.attributes
+                            val current = attributes?.screenBrightness ?: -1f
+                            // 获取系统亮度比较麻烦，这里简单处理：如果未覆盖(-1)，假设为0.5
+                            startBrightness = if (current < 0) 0.5f else current
+                        } else if (offset.x > screenWidthPx - edgeZoneWidth) {
+                            gestureMode = "Volume"
+                            startVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC)
                         } else {
-                            // 回弹
-                            verticalOffset.animateTo(
-                                targetValue = 0f,
-                                animationSpec = androidx.compose.animation.core.spring(
-                                    stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
-                                )
-                            )
+                            gestureMode = "PageFlip"
+                        }
+                    },
+                    onDragEnd = {
+                        if (gestureMode == "PageFlip") {
+                            // 翻页判定逻辑
+                            val currentOffset = verticalOffset.value
+                            val threshold = screenHeightPx * 0.15f // 15% 阈值
+                            
+                            scope.launch {
+                                if (currentOffset < -threshold) {
+                                    // 上滑 -> 下一个
+                                    val nextVid = viewModel.getNextVideoId()
+                                    if (nextVid != null) {
+                                        verticalOffset.animateTo(-screenHeightPx)
+                                        currentBvid = nextVid
+                                        verticalOffset.snapTo(0f)
+                                    } else {
+                                        verticalOffset.animateTo(0f)
+                                    }
+                                } else if (currentOffset > threshold) {
+                                    // 下滑 -> 上一个
+                                    val prevVid = viewModel.getPreviousVideoId()
+                                    if (prevVid != null) {
+                                        verticalOffset.animateTo(screenHeightPx)
+                                        currentBvid = prevVid
+                                        verticalOffset.snapTo(0f)
+                                    } else {
+                                        verticalOffset.animateTo(0f)
+                                    }
+                                } else {
+                                    verticalOffset.animateTo(0f)
+                                }
+                            }
+                        }
+                        
+                        isGestureVisible = false
+                        gestureMode = "None"
+                        accumulatedDragY = 0f
+                    },
+                    onDragCancel = {
+                        scope.launch { verticalOffset.animateTo(0f) }
+                        isGestureVisible = false
+                        gestureMode = "None"
+                    },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        
+                        when (gestureMode) {
+                            "Brightness" -> {
+                                accumulatedDragY -= dragAmount.y // 上滑增加
+                                val deltaPercent = accumulatedDragY / screenHeightPx
+                                val newBrightness = (startBrightness + deltaPercent).coerceIn(0f, 1f)
+                                
+                                activity?.window?.attributes = activity?.window?.attributes?.apply {
+                                    screenBrightness = newBrightness
+                                }
+                                gestureValue = newBrightness
+                            }
+                            "Volume" -> {
+                                accumulatedDragY -= dragAmount.y // 上滑增加
+                                val deltaPercent = accumulatedDragY / screenHeightPx
+                                val newVolPercent = ((startVolume.toFloat() / maxVolume) + deltaPercent).coerceIn(0f, 1f)
+                                val newVol = (newVolPercent * maxVolume).toInt()
+                                audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, newVol, 0)
+                                gestureValue = newVolPercent
+                            }
+                            "PageFlip" -> {
+                                scope.launch {
+                                    verticalOffset.snapTo(verticalOffset.value + dragAmount.y)
+                                }
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
             
             Box(
                 modifier = Modifier
@@ -1703,6 +1785,38 @@ fun VideoDetailScreen(
                                 text = "正在加载新视频...",
                                 color = Color.White,
                                 style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+                
+                // 🔊/🔅 手势反馈 (音量/亮度)
+                if (isGestureVisible && (gestureMode == "Volume" || gestureMode == "Brightness")) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .size(120.dp)
+                            .background(androidx.compose.ui.graphics.Color.Black.copy(0.7f), RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = if (gestureMode == "Brightness") 
+                                    io.github.alexzhirkevich.cupertino.icons.CupertinoIcons.Default.SunMax 
+                                else 
+                                    io.github.alexzhirkevich.cupertino.icons.CupertinoIcons.Default.SpeakerWave2,
+                                contentDescription = null,
+                                tint = androidx.compose.ui.graphics.Color.White,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "${(gestureValue * 100).toInt()}%",
+                                color = androidx.compose.ui.graphics.Color.White,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp
+                                )
                             )
                         }
                     }
@@ -2065,7 +2179,14 @@ fun VideoDetailScreen(
                     commentViewModel.deleteSubComment(rpid)
                 },
                 onCommentLike = commentViewModel::likeComment,
-                likedComments = commentState.likedComments
+                likedComments = commentState.likedComments,
+                onUrlClick = { url ->
+                    try {
+                        uriHandler.openUri(url)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
             )
         }
         

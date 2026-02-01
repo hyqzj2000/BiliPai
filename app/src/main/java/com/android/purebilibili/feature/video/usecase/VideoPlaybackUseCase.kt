@@ -44,6 +44,8 @@ sealed class VideoLoadResult {
         val isFavorited: Boolean,
         val isLiked: Boolean,
         val coinCount: Int,
+        // [New] Duration (ms) from PlayUrlData
+        val duration: Long = 0,
         // [New] Codec Info for UI display
         val videoCodecId: Int = 0,
         val audioCodecId: Int = 0
@@ -303,7 +305,8 @@ class VideoPlaybackUseCase(
                         isFollowing = isFollowing,
                         isFavorited = isFavorited,
                         isLiked = isLiked,
-                        coinCount = coinCount
+                        coinCount = coinCount,
+                        duration = playData.timelength
                     )
                 },
                 onFailure = { e ->

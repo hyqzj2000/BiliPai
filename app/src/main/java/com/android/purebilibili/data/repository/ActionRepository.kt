@@ -141,6 +141,53 @@ object ActionRepository {
     }
     
     /**
+     * 获取用户收藏夹列表
+     */
+    suspend fun getFavoriteFolders(): Result<List<com.android.purebilibili.data.model.response.FavFolder>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val mid = TokenManager.midCache ?: return@withContext Result.failure(Exception("请先登录"))
+                val response = api.getFavFolders(mid)
+                if (response.code == 0) {
+                    Result.success(response.data?.list ?: emptyList())
+                } else {
+                    Result.failure(Exception(response.message))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    /**
+     * 创建收藏夹
+     */
+    suspend fun createFavFolder(title: String, intro: String = "", isPrivate: Boolean = false): Result<Boolean> {
+        return withContext(Dispatchers.IO) {
+            try {
+                if (title.isBlank()) return@withContext Result.failure(Exception("标题不能为空"))
+                val privacy = if (isPrivate) 1 else 0
+                val csrf = TokenManager.csrfCache ?: return@withContext Result.failure(Exception("未登录"))
+                
+                val response = api.createFavFolder(
+                    title = title,
+                    intro = intro,
+                    privacy = privacy,
+                    csrf = csrf
+                )
+                
+                if (response.code == 0) {
+                    Result.success(true)
+                } else {
+                    Result.failure(Exception(response.message))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+    
+    /**
      *  点赞/取消点赞视频
      */
     suspend fun likeVideo(aid: Long, like: Boolean): Result<Boolean> {

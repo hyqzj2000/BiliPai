@@ -141,7 +141,10 @@ fun VideoPlayerOverlay(
     onlineCount: String = "",
     // [New Actions]
     onSaveCover: () -> Unit = {},
-    onDownloadAudio: () -> Unit = {}
+    onDownloadAudio: () -> Unit = {},
+    // 🔁 [新增] 播放模式
+    currentPlayMode: com.android.purebilibili.feature.video.player.PlayMode = com.android.purebilibili.feature.video.player.PlayMode.SEQUENTIAL,
+    onPlayModeClick: () -> Unit = {},
 ) {
     var showQualityMenu by remember { mutableStateOf(false) }
     var showSpeedMenu by remember { mutableStateOf(false) }
@@ -337,6 +340,9 @@ fun VideoPlayerOverlay(
                     onPortraitFullscreen = onPortraitFullscreen,
                     // 📲 [新增] 小窗模式
                     onPipClick = onPipClick,
+                    // 🔁 [新增] 播放模式
+                    currentPlayMode = currentPlayMode,
+                    onPlayModeClick = onPlayModeClick,
                     //  [修复] 传入 modifier 确保在底部
                     modifier = Modifier.align(Alignment.BottomStart)
                 )

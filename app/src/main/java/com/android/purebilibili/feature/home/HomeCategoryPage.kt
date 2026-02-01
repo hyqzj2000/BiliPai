@@ -15,6 +15,7 @@ import com.android.purebilibili.data.model.response.VideoItem
 import com.android.purebilibili.feature.home.components.cards.ElegantVideoCard
 import com.android.purebilibili.feature.home.components.cards.LiveRoomCard
 import com.android.purebilibili.feature.home.components.cards.StoryVideoCard
+
 import com.android.purebilibili.core.store.SettingsManager
 import com.android.purebilibili.core.util.CardPositionManager
 import androidx.compose.ui.platform.LocalContext
@@ -82,7 +83,6 @@ fun HomeCategoryPageContent(
         contentPadding = contentPadding,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-
         modifier = modifier
     ) {
         if (category == HomeCategory.LIVE) {
@@ -166,6 +166,7 @@ fun HomeCategoryPageContent(
                                     onClick = { bvid, cid -> onVideoClick(bvid, cid, video.pic) }
                                 )
                             }
+
                             else -> {
                                 ElegantVideoCard(
                                     video = video,

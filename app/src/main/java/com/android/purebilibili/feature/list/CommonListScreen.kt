@@ -7,6 +7,7 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import com.android.purebilibili.core.ui.blur.unifiedBlur
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import kotlinx.coroutines.flow.distinctUntilChanged // [Fix] Missing import
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -15,15 +16,18 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.runtime.DisposableEffect // [Fix] Missing import
 //  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +40,7 @@ import io.github.alexzhirkevich.cupertino.CupertinoActivityIndicator
 import com.android.purebilibili.core.util.rememberAdaptiveGridColumns
 import com.android.purebilibili.core.util.rememberResponsiveSpacing
 import com.android.purebilibili.core.util.rememberResponsiveValue
+import com.android.purebilibili.core.util.PinyinUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,6 +97,49 @@ fun CommonListScreen(
             historyViewModel?.loadMore()  //  历史记录加载更多
         }
     }
+    
+    // [Feature] BottomBar Scroll Hiding for CommonListScreen (History/Favorite)
+    val setBottomBarVisible = com.android.purebilibili.core.ui.LocalSetBottomBarVisible.current
+    
+    // 监听列表滚动实现底栏自动隐藏/显示
+    var lastFirstVisibleItem by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var lastScrollOffset by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    
+    LaunchedEffect(gridState) {
+        snapshotFlow { 
+            Pair(gridState.firstVisibleItemIndex, gridState.firstVisibleItemScrollOffset) 
+        }
+        .distinctUntilChanged()
+        .collect { (firstVisibleItem, scrollOffset) ->
+             // 顶部始终显示
+             if (firstVisibleItem == 0 && scrollOffset < 100) {
+                 setBottomBarVisible(true)
+             } else {
+                 val isScrollingDown = when {
+                     firstVisibleItem > lastFirstVisibleItem -> true
+                     firstVisibleItem < lastFirstVisibleItem -> false
+                     else -> scrollOffset > lastScrollOffset + 50
+                 }
+                 val isScrollingUp = when {
+                     firstVisibleItem < lastFirstVisibleItem -> true
+                     firstVisibleItem > lastFirstVisibleItem -> false
+                     else -> scrollOffset < lastScrollOffset - 50
+                 }
+                 
+                 if (isScrollingDown) setBottomBarVisible(false)
+                 if (isScrollingUp) setBottomBarVisible(true)
+             }
+             lastFirstVisibleItem = firstVisibleItem
+             lastScrollOffset = scrollOffset
+        }
+    }
+    
+    // 离开页面时恢复底栏显示
+    DisposableEffect(Unit) {
+        onDispose {
+            setBottomBarVisible(true)
+        }
+    }
 
     // 📁 [新增] 收藏夹切换 Tab
     val foldersState by favoriteViewModel?.folders?.collectAsState() 
@@ -101,6 +149,9 @@ fun CommonListScreen(
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val hazeState = androidx.compose.runtime.remember { HazeState() }
+    
+    // 🔍 搜索状态
+    var searchQuery by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -126,22 +177,32 @@ fun CommonListScreen(
                         scrollBehavior = scrollBehavior
                     )
                     
+                    // 🔍 搜索栏 (在 TopBar 内部)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        com.android.purebilibili.core.ui.components.IOSSearchBar(
+                            query = searchQuery,
+                            onQueryChange = { searchQuery = it },
+                            placeholder = "搜索视频",
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) // 更加透明以适应模糊背景
+                        )
+                    }
+                    
                     // 📁 [新增] 收藏夹 Tab 栏（仅显示多个收藏夹时）
                     if (foldersState.size > 1) {
                         ScrollableTabRow(
                             selectedTabIndex = selectedFolderIndex,
                             containerColor = Color.Transparent,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            contentColor = MaterialTheme.colorScheme.primary,
                             edgePadding = 16.dp,
                             indicator = { tabPositions ->
                                 if (selectedFolderIndex < tabPositions.size) {
                                     TabRowDefaults.SecondaryIndicator(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .wrapContentSize(Alignment.BottomStart)
-                                            .offset(x = tabPositions[selectedFolderIndex].left)
-                                            .width(tabPositions[selectedFolderIndex].width),
-                                        color = BiliPink
+                                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedFolderIndex]),
+                                        color = MaterialTheme.colorScheme.primary // 使用主题色
                                     )
                                 }
                             },
@@ -150,13 +211,17 @@ fun CommonListScreen(
                             foldersState.forEachIndexed { index, folder ->
                                 Tab(
                                     selected = selectedFolderIndex == index,
-                                    onClick = { favoriteViewModel?.switchFolder(index) },
+                                    onClick = { 
+                                        favoriteViewModel?.switchFolder(index) 
+                                        // 切换收藏夹时清空搜索，避免混淆
+                                        searchQuery = ""
+                                    },
                                     text = {
                                         Text(
                                             text = folder.title,
                                             maxLines = 1,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = if (selectedFolderIndex == index) BiliPink else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                            color = if (selectedFolderIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                         )
                                     }
                                 )
@@ -205,42 +270,61 @@ fun CommonListScreen(
                     Text("暂无数据", color = Color.Gray)
                 }
             } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(columns),
-                    state = gridState,
-                    contentPadding = PaddingValues(
-                        start = spacing.medium,
-                        end = spacing.medium,
-                        top = padding.calculateTopPadding() + spacing.medium,
-                        bottom = padding.calculateBottomPadding() + spacing.medium + 80.dp // [调整] 增加底部 padding 防止底栏遮挡
-                    ),
-                    horizontalArrangement = Arrangement.spacedBy(spacing.medium),
-                    verticalArrangement = Arrangement.spacedBy(spacing.medium),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    itemsIndexed(
-                        items = state.items,
-                        key = { _, item -> item.bvid.ifEmpty { item.id.toString() } } // 确保 key 唯一且不为空
-                    ) { index, video ->
-                        ElegantVideoCard(
-                            video = video,
-                            index = index,
-                            animationEnabled = true,
-                            transitionEnabled = true, // 启用共享元素过渡
-                            onClick = { bvid, cid -> onVideoClick(bvid, cid) }
-                        )
+                // 🔍 过滤列表
+                val filteredItems = androidx.compose.runtime.remember(state.items, searchQuery) {
+                    if (searchQuery.isBlank()) state.items
+                    else {
+                        state.items.filter { 
+                            PinyinUtils.matches(it.title, searchQuery) ||
+                            PinyinUtils.matches(it.owner.name, searchQuery)
+                        }
                     }
-                    
-                    //  加载更多指示器
-                    if (isLoadingMore) {
-                        item(span = { GridItemSpan(columns) }) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CupertinoActivityIndicator()
+                }
+
+                if (filteredItems.isEmpty() && searchQuery.isNotEmpty()) {
+                     Box(Modifier.align(Alignment.Center)) {
+                        Text("没有找到相关视频", color = Color.Gray)
+                     }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(columns),
+                        state = gridState,
+                        contentPadding = PaddingValues(
+                            start = spacing.medium,
+                            end = spacing.medium,
+                            top = padding.calculateTopPadding() + spacing.medium,
+                            bottom = padding.calculateBottomPadding() + spacing.medium + 80.dp // [调整] 增加底部 padding 防止底栏遮挡
+                        ),
+                        horizontalArrangement = Arrangement.spacedBy(spacing.medium),
+                        verticalArrangement = Arrangement.spacedBy(spacing.medium),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        itemsIndexed(
+                            items = filteredItems,
+                            key = { _, item -> item.bvid.ifEmpty { item.id.toString() } } // 确保 key 唯一且不为空
+                        ) { index, video ->
+                            ElegantVideoCard(
+                                video = video,
+                                index = index,
+                                animationEnabled = true,
+                                transitionEnabled = true, // 启用共享元素过渡
+                                onClick = { bvid, cid -> onVideoClick(bvid, cid) }
+                            )
+                        }
+                        
+                        //  加载更多指示器 (仅在未搜索时显示)
+                        if (searchQuery.isEmpty()) {
+                            if (isLoadingMore) {
+                                item(span = { GridItemSpan(columns) }) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CupertinoActivityIndicator()
+                                    }
+                                }
                             }
                         }
                     }

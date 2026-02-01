@@ -8,6 +8,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress // [New]
+import androidx.compose.ui.input.pointer.pointerInput // [New]
+import androidx.compose.ui.zIndex // [New]
+import androidx.compose.ui.draw.scale // [New]
+import androidx.compose.animation.core.animateFloatAsState // [New]
+import androidx.compose.animation.core.snap // [New]
+import androidx.compose.animation.core.spring // [New]
+import androidx.compose.ui.platform.LocalDensity // [New]
+import androidx.compose.ui.geometry.Offset // [New]
+import androidx.compose.ui.input.pointer.PointerInputChange // [New]
+import com.android.purebilibili.core.util.rememberHapticFeedback // [New]
+import com.android.purebilibili.core.util.HapticType // [New]
 //  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
@@ -107,6 +119,26 @@ fun BottomBarSettingsContent(
     // 可编辑的本地状态
     var localOrder by remember(order) { mutableStateOf(order) }
     var localVisibleTabs by remember(visibleTabs) { mutableStateOf(visibleTabs) }
+    
+    // [新增] 监听顺序变化并保存
+    fun onOrderChanged(fromIndex: Int, toIndex: Int) {
+        val currentVisibleTabsList = localOrder.filter { it in localVisibleTabs }
+        if (fromIndex in currentVisibleTabsList.indices && toIndex in currentVisibleTabsList.indices) {
+            val fromId = currentVisibleTabsList[fromIndex]
+            val toId = currentVisibleTabsList[toIndex]
+            
+            val globalFrom = localOrder.indexOf(fromId)
+            val globalTo = localOrder.indexOf(toId)
+            
+            if (globalFrom != -1 && globalTo != -1) {
+                // 交换位置
+                val newOrder = localOrder.toMutableList()
+                val item = newOrder.removeAt(globalFrom)
+                newOrder.add(globalTo, item)
+                localOrder = newOrder
+            }
+        }
+    }
     
     //  [新增] 读取项目颜色配置
     val itemColors by SettingsManager.getBottomBarItemColors(context).collectAsState(initial = emptyMap())
@@ -341,7 +373,9 @@ fun BottomBarSettingsContent(
                 Box(modifier = Modifier.staggeredEntrance(4, isVisible)) {
                     BottomBarPreview(
                         tabs = localOrder.filter { it in localVisibleTabs }
-                            .mapNotNull { id -> allBottomBarTabs.find { it.id == id } }
+                            .mapNotNull { id -> allBottomBarTabs.find { it.id == id } },
+                        onMove = { from, to -> onOrderChanged(from, to) },
+                        onDragEnd = { saveConfig() }
                     )
                 }
             }
@@ -401,7 +435,7 @@ fun BottomBarSettingsContent(
                     Column {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = " 长按拖拽底栏图标可调整顺序（开发中）",
+                            text = " 长按图标并拖拽可调整显示顺序",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
@@ -437,10 +471,21 @@ fun BottomBarSettingsContent(
 
 
 /**
- * 底栏预览组件
+ * 底栏预览组件（支持长按拖拽排序）
  */
 @Composable
-private fun BottomBarPreview(tabs: List<BottomBarTabConfig>) {
+private fun BottomBarPreview(
+    tabs: List<BottomBarTabConfig>,
+    onMove: (Int, Int) -> Unit,
+    onDragEnd: () -> Unit
+) {
+    // 触感反馈
+    val haptic = rememberHapticFeedback()
+    
+    // 拖拽状态
+    var draggingItemIndex by remember { mutableStateOf<Int?>(null) }
+    var draggingItemCenter by remember { mutableFloatStateOf(0f) }
+    
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -448,30 +493,98 @@ private fun BottomBarPreview(tabs: List<BottomBarTabConfig>) {
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         tonalElevation = 2.dp
     ) {
-        Row(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(vertical = 12.dp, horizontal = 8.dp)
         ) {
+            val totalWidth = maxWidth
+            val itemWidth = totalWidth / tabs.size.coerceAtLeast(1)
+            val density = LocalDensity.current
+            
+            // 全局手势检测区域
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .zIndex(20f) // 确保在最上层接收触摸事件
+                    .pointerInput(tabs.size, itemWidth) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = { offset ->
+                                val index = (offset.x / itemWidth.toPx()).toInt().coerceIn(0, tabs.lastIndex)
+                                draggingItemIndex = index
+                                draggingItemCenter = offset.x.coerceIn(0f, totalWidth.toPx())
+                                haptic.invoke(HapticType.MEDIUM)
+                            },
+                            onDragEnd = {
+                                draggingItemIndex = null
+                                onDragEnd()
+                            },
+                            onDragCancel = {
+                                draggingItemIndex = null
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                draggingItemCenter = (draggingItemCenter + dragAmount.x).coerceIn(0f, totalWidth.toPx())
+                                
+                                // 计算新索引
+                                val newIndex = (draggingItemCenter / itemWidth.toPx()).toInt()
+                                    .coerceIn(0, tabs.lastIndex)
+                                
+                                if (newIndex != draggingItemIndex) {
+                                    if (draggingItemIndex != null) {
+                                        onMove(draggingItemIndex!!, newIndex)
+                                        draggingItemIndex = newIndex
+                                        haptic.invoke(HapticType.LIGHT)
+                                    }
+                                }
+                            }
+                        )
+                    }
+            )
+
             tabs.forEachIndexed { index, tab ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = tab.icon,
-                        contentDescription = tab.label,
-                        tint = if (index == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp)
+                key(tab.id) {
+                    val isDragging = index == draggingItemIndex
+                    val zIndex = if (isDragging) 10f else 0f
+                    val scale by androidx.compose.animation.core.animateFloatAsState(if (isDragging) 1.2f else 1f, label = "scale")
+                    
+                    // 计算目标 X 位置
+                    val targetX = if (isDragging) {
+                         // 拖拽时：跟随手指中心
+                         with(density) { draggingItemCenter.toDp() - (itemWidth / 2) }
+                    } else {
+                        // 静止时：网格位置
+                        itemWidth * index
+                    }
+                    
+                    val animatedX by androidx.compose.animation.core.animateDpAsState(
+                        targetValue = targetX,
+                        animationSpec = if (isDragging) androidx.compose.animation.core.snap() else androidx.compose.animation.core.spring(),
+                        label = "offset"
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = tab.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (index == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .width(itemWidth)
+                            .offset(x = animatedX)
+                            .zIndex(zIndex)
+                            .scale(scale)
+                            // 移除单独的 pointerInput
+                    ) {
+                        Icon(
+                            imageVector = tab.icon,
+                            contentDescription = tab.label,
+                            tint = if (index == 0 && !isDragging) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = tab.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (index == 0 && !isDragging) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

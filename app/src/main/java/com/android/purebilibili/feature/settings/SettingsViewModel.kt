@@ -44,7 +44,9 @@ data class SettingsUiState(
     // [新增] 触感反馈
     val hapticFeedbackEnabled: Boolean = true,
     // [New]
-    val isLiquidGlassEnabled: Boolean = true
+    // [New]
+    val isLiquidGlassEnabled: Boolean = true,
+    val liquidGlassStyle: com.android.purebilibili.core.store.LiquidGlassStyle = com.android.purebilibili.core.store.LiquidGlassStyle.CLASSIC // [New]
 )
 
 // 内部数据类，用于分批合并流
@@ -67,8 +69,9 @@ data class ExtraSettings(
     val displayMode: Int,
     val cardAnimationEnabled: Boolean,
     val cardTransitionEnabled: Boolean,
-    val hapticFeedbackEnabled: Boolean, // [新增]
-    val isLiquidGlassEnabled: Boolean // [New]
+    val hapticFeedbackEnabled: Boolean, // [Restored]
+    val isLiquidGlassEnabled: Boolean = true, // [New]
+    val liquidGlassStyle: com.android.purebilibili.core.store.LiquidGlassStyle // [New]
 )
 
 
@@ -100,7 +103,8 @@ private data class BaseSettings(
     val cardAnimationEnabled: Boolean, //  卡片进场动画
     val cardTransitionEnabled: Boolean, //  卡片过渡动画
     val hapticFeedbackEnabled: Boolean, // [新增]
-    val isLiquidGlassEnabled: Boolean // [New]
+    val isLiquidGlassEnabled: Boolean, // [New]
+    val liquidGlassStyle: com.android.purebilibili.core.store.LiquidGlassStyle // [New]
 )
 
 
@@ -138,7 +142,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         SettingsManager.getCardAnimationEnabled(context), // [Restored]
         SettingsManager.getCardTransitionEnabled(context),
         SettingsManager.getHapticFeedbackEnabled(context), // [新增]
-        SettingsManager.getLiquidGlassEnabled(context) // [New]
+        SettingsManager.getLiquidGlassEnabled(context), // [New]
+        SettingsManager.getLiquidGlassStyle(context) // [New]
     ) { values ->
         val isBottomBarFloating = values[0] as Boolean
         val labelMode = values[1] as Int
@@ -147,24 +152,28 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         val cardTransition = values[4] as Boolean
         val hapticFeedback = values[5] as Boolean
         val liquidGlass = values[6] as Boolean
-        listOf(isBottomBarFloating, labelMode, displayMode, cardAnimation, cardTransition, hapticFeedback, liquidGlass)
+        val liquidGlassStyle = values[7] as com.android.purebilibili.core.store.LiquidGlassStyle
+        
+        data class Ui2(val f: Boolean, val l: Int, val d: Int, val ca: Boolean, val ct: Boolean, val h: Boolean, val lg: Boolean, val lgs: com.android.purebilibili.core.store.LiquidGlassStyle)
+        Ui2(isBottomBarFloating, labelMode, displayMode, cardAnimation, cardTransition, hapticFeedback, liquidGlass, liquidGlassStyle)
     }
 
     // 合并所有 UI 设置
     private val uiSettingsFlow = combine(uiSettingsFlow1, uiSettingsFlow2) { ui1, ui2 ->
         // ui1: Triple(gesture, color, icon)
-        // ui2: List(floating, label, display, cardAnim, cardTrans)
+        // ui2: Ui2 class
         ExtraSettings(
             gestureSensitivity = ui1.first,
             themeColorIndex = ui1.second,
             appIcon = ui1.third,
-            isBottomBarFloating = ui2[0] as Boolean,
-            bottomBarLabelMode = ui2[1] as Int,
-            displayMode = ui2[2] as Int,
-            cardAnimationEnabled = ui2[3] as Boolean,
-            cardTransitionEnabled = ui2[4] as Boolean,
-            hapticFeedbackEnabled = ui2[5] as Boolean, // [新增]
-            isLiquidGlassEnabled = ui2[6] as Boolean, // [New]
+            isBottomBarFloating = ui2.f,
+            bottomBarLabelMode = ui2.l,
+            displayMode = ui2.d,
+            cardAnimationEnabled = ui2.ca,
+            cardTransitionEnabled = ui2.ct,
+            hapticFeedbackEnabled = ui2.h, // [新增]
+            isLiquidGlassEnabled = ui2.lg, // [New]
+            liquidGlassStyle = ui2.lgs, // [New]
             headerBlurEnabled = false, // 暂存，将在下一步合并
             bottomBarBlurEnabled = false, // 暂存
             blurIntensity = BlurIntensity.THIN // 暂存
@@ -227,7 +236,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             cardAnimationEnabled = extra.cardAnimationEnabled,
             cardTransitionEnabled = extra.cardTransitionEnabled,
             hapticFeedbackEnabled = extra.hapticFeedbackEnabled, // [新增]
-            isLiquidGlassEnabled = extra.isLiquidGlassEnabled // [New]
+            isLiquidGlassEnabled = extra.isLiquidGlassEnabled, // [New]
+            liquidGlassStyle = extra.liquidGlassStyle // [New]
         )
 
     }
@@ -260,6 +270,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             cardTransitionEnabled = settings.cardTransitionEnabled,
             hapticFeedbackEnabled = settings.hapticFeedbackEnabled, // [新增]
             isLiquidGlassEnabled = settings.isLiquidGlassEnabled, // [New]
+            liquidGlassStyle = settings.liquidGlassStyle, // [New]
 
             cacheSize = cache.first,
             cacheBreakdown = cache.second,  //  详细缓存统计
@@ -467,14 +478,20 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun toggleHapticFeedback(value: Boolean) { viewModelScope.launch { SettingsManager.setHapticFeedbackEnabled(context, value) } }
     
     // [New] Liquid Glass
-    fun toggleLiquidGlass(value: Boolean) { 
-        viewModelScope.launch { 
-            SettingsManager.setLiquidGlassEnabled(context, value)
-            if (value) {
+    fun toggleLiquidGlass(enabled: Boolean) {
+        viewModelScope.launch {
+            SettingsManager.setLiquidGlassEnabled(context, enabled)
+            if (enabled) {
                 // 开启液态玻璃时，自动关闭磨砂效果，仅保留一个效果
                 SettingsManager.setBottomBarBlurEnabled(context, false)
             }
-        } 
+        }
+    }
+    
+    fun setLiquidGlassStyle(style: com.android.purebilibili.core.store.LiquidGlassStyle) {
+        viewModelScope.launch {
+            SettingsManager.setLiquidGlassStyle(context, style)
+        }
     }
     
 
@@ -483,6 +500,5 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 // Move DisplayMode enum here to be accessible
 enum class DisplayMode(val title: String, val description: String, val value: Int) {
     DoubleGrid(title = "双列网格", description = "经典双列瀑布流布局", value = 0),
-    SingleColumn(title = "单列视频", description = "类似信息流的单列布局", value = 1),
-    DoubleColumn(title = "双列视频", description = "双列大图视频卡片模式", value = 2)
+    SingleColumn(title = "单列视频", description = "类似信息流的单列布局", value = 1)
 }

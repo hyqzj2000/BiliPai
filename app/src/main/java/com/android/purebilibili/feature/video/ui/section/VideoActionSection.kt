@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -59,7 +60,8 @@ fun ActionButtonsRow(
     onTripleClick: () -> Unit = {},
     onCommentClick: () -> Unit,
     onDownloadClick: () -> Unit = {},  //  下载点击
-    onWatchLaterClick: () -> Unit = {}  //  稍后再看点击
+    onWatchLaterClick: () -> Unit = {},  //  稍后再看点击
+    onFavoriteLongClick: () -> Unit = {} // [New] 长按收藏
 ) {
     Row(
         modifier = Modifier
@@ -93,7 +95,8 @@ fun ActionButtonsRow(
             text = FormatUtils.formatStat(info.stat.favorite.toLong()),
             isActive = isFavorited,
             activeColor = Color(0xFFFFC107),
-            onClick = onFavoriteClick
+            onClick = onFavoriteClick,
+            onLongClick = onFavoriteLongClick
         )
         
         //  稍后再看
@@ -135,13 +138,15 @@ fun ActionButtonsRow(
 /**
  * Bilibili Official Style Action Button - icon + number, no circle background
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun BiliActionButton(
     icon: ImageVector,
     text: String,
     isActive: Boolean,
     activeColor: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null // [New] Long click support
 ) {
     // Press animation
     val interactionSource = remember { MutableInteractionSource() }
@@ -182,10 +187,12 @@ private fun BiliActionButton(
                 scaleX = scale * pulseScale
                 scaleY = scale * pulseScale
             }
-            .clickable(
+            .combinedClickable(
                 interactionSource = interactionSource,
-                indication = null
-            ) { onClick() }
+                indication = null,
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .padding(horizontal = 4.dp, vertical = 2.dp)
     ) {
         Icon(

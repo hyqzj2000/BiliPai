@@ -354,7 +354,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             face = item.modules.module_author?.face ?: ""
                         ),
                         stat = com.android.purebilibili.data.model.response.Stat(
-                            view = parseStatText(archive.stat.play)
+                            view = parseStatText(archive.stat.play),
+                            danmaku = parseStatText(archive.stat.danmaku)
                         )
                     )
                 } else null

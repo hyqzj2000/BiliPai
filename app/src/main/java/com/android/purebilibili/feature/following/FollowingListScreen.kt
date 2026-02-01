@@ -34,6 +34,7 @@ import io.github.alexzhirkevich.cupertino.CupertinoActivityIndicator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.android.purebilibili.core.util.PinyinUtils
 
 // UI 状态
 sealed class FollowingListUiState {
@@ -63,14 +64,22 @@ class FollowingListViewModel : ViewModel() {
             _uiState.value = FollowingListUiState.Loading
             
             try {
+                // 1. 加载第一页
                 val response = NetworkModule.api.getFollowings(mid, pn = 1, ps = 50)
                 if (response.code == 0 && response.data != null) {
-                    val users = response.data.list ?: emptyList()
+                    val initialUsers = response.data.list ?: emptyList()
+                    val total = response.data.total
+                    
                     _uiState.value = FollowingListUiState.Success(
-                        users = users,
-                        total = response.data.total,
-                        hasMore = users.size >= 50
+                        users = initialUsers,
+                        total = total,
+                        hasMore = initialUsers.size < total // 还有更多数据需要加载
                     )
+                    
+                    // 2. 如果还有更多数据，自动在后台加载剩余所有页面 (为了支持全量搜索)
+                    if (initialUsers.size < total) {
+                        loadAllRemainingPages(mid, total, initialUsers)
+                    }
                 } else {
                     _uiState.value = FollowingListUiState.Error("加载失败: ${response.message}")
                 }
@@ -80,33 +89,58 @@ class FollowingListViewModel : ViewModel() {
         }
     }
     
-    fun loadMore() {
-        val current = _uiState.value as? FollowingListUiState.Success ?: return
-        if (current.isLoadingMore || !current.hasMore) return
-        
+    // 自动加载剩余所有页面
+    private fun loadAllRemainingPages(mid: Long, total: Int, initialUsers: List<FollowingUser>) {
         viewModelScope.launch {
-            _uiState.value = current.copy(isLoadingMore = true)
-            
             try {
-                currentPage++
-                val response = NetworkModule.api.getFollowings(currentMid, pn = currentPage, ps = 50)
-                if (response.code == 0 && response.data != null) {
-                    val newUsers = response.data.list ?: emptyList()
-                    _uiState.value = current.copy(
-                        users = current.users + newUsers,
-                        isLoadingMore = false,
-                        hasMore = newUsers.size >= 50
-                    )
-                } else {
-                    _uiState.value = current.copy(isLoadingMore = false)
-                    currentPage--
+                var currentUsers = initialUsers.toMutableList()
+                val pageSize = 50
+                // 计算需要加载的总页数
+                val totalPages = (total + pageSize - 1) / pageSize
+                
+                // 从第2页开始循环加载
+                for (page in 2..totalPages) {
+                    if (mid != currentMid) break // 如果用户切换了查看的 UP 主，停止加载
+                    
+                    // 延迟一点时间，避免请求过于频繁触发风控
+                    kotlinx.coroutines.delay(300) 
+                    
+                    val response = NetworkModule.api.getFollowings(mid, pn = page, ps = pageSize)
+                    if (response.code == 0 && response.data != null) {
+                        val newUsers = response.data.list ?: emptyList()
+                        if (newUsers.isNotEmpty()) {
+                            currentUsers.addAll(newUsers)
+                            
+                            // 更新 UI 状态
+                            _uiState.value = FollowingListUiState.Success(
+                                users = currentUsers.toList(), // Create new list to trigger recomposition
+                                total = total,
+                                hasMore = page < totalPages,
+                                isLoadingMore = true // 显示正在后台加载
+                            )
+                        }
+                    } else {
+                        break // 出错停止加载
+                    }
+                }
+                
+                // 加载完成
+                val current = _uiState.value
+                if (current is FollowingListUiState.Success) {
+                    _uiState.value = current.copy(isLoadingMore = false, hasMore = false)
                 }
             } catch (e: Exception) {
-                _uiState.value = current.copy(isLoadingMore = false)
-                currentPage--
+                // 后台加载失败暂不干扰主流程
+                val current = _uiState.value
+                if (current is FollowingListUiState.Success) {
+                    _uiState.value = current.copy(isLoadingMore = false)
+                }
             }
         }
     }
+    
+    // 手动加载更多 (已废弃，保留空实现兼容接口或删除)
+    fun loadMore() { }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,6 +157,8 @@ fun FollowingListScreen(
         viewModel.loadFollowingList(mid)
     }
     
+    var searchQuery by remember { mutableStateOf("") }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -138,78 +174,114 @@ fun FollowingListScreen(
             )
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            when (val state = uiState) {
-                is FollowingListUiState.Loading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CupertinoActivityIndicator()
-                    }
-                }
-                
-                is FollowingListUiState.Error -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("😢", fontSize = 48.sp)
-                            Spacer(Modifier.height(16.dp))
-                            Text(state.message, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.height(16.dp))
-                            Button(onClick = { viewModel.loadFollowingList(mid) }) {
-                                Text("重试")
-                            }
+            // 🔍 搜索栏
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                com.android.purebilibili.core.ui.components.IOSSearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    placeholder = "搜索 UP 主"
+                )
+            }
+
+            Box(
+                modifier = Modifier.weight(1f)
+            ) {
+                when (val state = uiState) {
+                    is FollowingListUiState.Loading -> {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CupertinoActivityIndicator()
                         }
                     }
-                }
-                
-                is FollowingListUiState.Success -> {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        // 统计信息
-                        item {
-                            Text(
-                                text = "共 ${state.total} 个关注",
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                            )
-                        }
-                        
-                        items(state.users, key = { it.mid }) { user ->
-                            FollowingUserItem(
-                                user = user,
-                                onClick = { onUserClick(user.mid) }
-                            )
-                        }
-                        
-                        // 加载更多
-                        if (state.isLoadingMore) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CupertinoActivityIndicator()
+                    
+                    is FollowingListUiState.Error -> {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("😢", fontSize = 48.sp)
+                                Spacer(Modifier.height(16.dp))
+                                Text(state.message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.height(16.dp))
+                                Button(onClick = { viewModel.loadFollowingList(mid) }) {
+                                    Text("重试")
                                 }
                             }
-                        } else if (state.hasMore) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { viewModel.loadMore() }
-                                        .padding(16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
+                        }
+                    }
+                    
+                    is FollowingListUiState.Success -> {
+                        // 🔍 过滤列表
+                        val filteredUsers = remember(state.users, searchQuery) {
+                            if (searchQuery.isBlank()) state.users
+                            else {
+                                state.users.filter { 
+                                    PinyinUtils.matches(it.uname, searchQuery) ||
+                                    PinyinUtils.matches(it.sign, searchQuery)
+                                }
+                            }
+                        }
+
+                        if (filteredUsers.isEmpty() && searchQuery.isNotEmpty()) {
+                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("没有找到相关 UP 主", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                             }
+                        } else {
+                            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                // 统计信息
+                                item {
                                     Text(
-                                        "加载更多",
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontSize = 14.sp
+                                        text = if (searchQuery.isEmpty()) "共 ${state.total} 个关注" else "找到 ${filteredUsers.size} 个结果",
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                                     )
+                                }
+                                
+                                items(filteredUsers, key = { it.mid }) { user ->
+                                    FollowingUserItem(
+                                        user = user,
+                                        onClick = { onUserClick(user.mid) }
+                                    )
+                                }
+                                
+                                // 加载更多 (仅在未搜索时显示，因为搜索是本地过滤)
+                                if (searchQuery.isEmpty()) {
+                                    if (state.isLoadingMore) {
+                                        item {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(16.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CupertinoActivityIndicator()
+                                            }
+                                        }
+                                    } else if (state.hasMore) {
+                                        item {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable { viewModel.loadMore() }
+                                                    .padding(16.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    "加载更多",
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    fontSize = 14.sp
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -271,3 +343,5 @@ private fun FollowingUserItem(
         }
     }
 }
+
+

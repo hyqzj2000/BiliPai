@@ -12,6 +12,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class FavFolderResponse(
     val code: Int = 0,
+    val message: String = "",
     val data: FavFolderList? = null
 )
 

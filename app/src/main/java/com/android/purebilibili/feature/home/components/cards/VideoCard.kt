@@ -14,6 +14,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+//  Cupertino Icons
+import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
+import io.github.alexzhirkevich.cupertino.icons.outlined.*
+import io.github.alexzhirkevich.cupertino.icons.filled.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -240,51 +244,6 @@ fun ElegantVideoCard(
                 )
             }
             
-            //  播放量和弹幕数 - 左下角 (官方风格)
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // 播放量
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "▶",
-                        color = Color.White.copy(0.9f),
-                        fontSize = 9.sp
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(
-                        text = if (video.stat.view > 0) FormatUtils.formatStat(video.stat.view.toLong())
-                               else FormatUtils.formatProgress(video.progress, video.duration),
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        softWrap = false
-                    )
-                }
-                
-                // 弹幕数
-                if (video.stat.view > 0 && video.stat.danmaku > 0) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "",
-                            fontSize = 9.sp
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(
-                            text = FormatUtils.formatStat(video.stat.danmaku.toLong()),
-                            color = Color.White.copy(0.9f),
-                            fontSize = 11.sp,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
-                }
-            }
         }
         
         Spacer(modifier = Modifier.height(8.dp))
@@ -460,6 +419,87 @@ fun ElegantVideoCard(
                     fontSize = 11.sp,
                     color = iOSSystemGray.copy(alpha = 0.7f)
                 )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(6.dp))
+        
+        //  [重设计] 播放数据行 - 独立展示，精致风格
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // 播放量
+            // 🔗 [共享元素] 播放量
+            var viewsModifier = Modifier.wrapContentSize()
+            if (transitionEnabled && sharedTransitionScope != null && animatedVisibilityScope != null) {
+                with(sharedTransitionScope) {
+                    viewsModifier = viewsModifier.sharedBounds(
+                        sharedContentState = rememberSharedContentState(key = "video_views_${video.bvid}"),
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        boundsTransform = { _, _ ->
+                            spring(dampingRatio = 0.8f, stiffness = 200f)
+                        }
+                    )
+                }
+            }
+
+            Box(modifier = viewsModifier) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Icon(
+                        imageVector = CupertinoIcons.Outlined.PlayCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(12.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = if (video.stat.view > 0) FormatUtils.formatStat(video.stat.view.toLong())
+                               else FormatUtils.formatProgress(video.progress, video.duration),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            
+            // 弹幕数 (仅当有播放量时显示，保持逻辑一致)
+            if (video.stat.view > 0 && video.stat.danmaku > 0) {
+                // 🔗 [共享元素] 弹幕数
+                var danmakuModifier = Modifier.wrapContentSize()
+                if (transitionEnabled && sharedTransitionScope != null && animatedVisibilityScope != null) {
+                    with(sharedTransitionScope) {
+                        danmakuModifier = danmakuModifier.sharedBounds(
+                            sharedContentState = rememberSharedContentState(key = "video_danmaku_${video.bvid}"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            boundsTransform = { _, _ ->
+                                spring(dampingRatio = 0.8f, stiffness = 200f)
+                            }
+                        )
+                    }
+                }
+
+                Box(modifier = danmakuModifier) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Icon(
+                            imageVector = CupertinoIcons.Outlined.BubbleLeft,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = FormatUtils.formatStat(video.stat.danmaku.toLong()),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
         }
     }

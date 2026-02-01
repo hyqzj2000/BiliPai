@@ -83,7 +83,10 @@ fun TabletVideoLayout(
     currentAudioQuality: Int = -1,
     onAudioQualityChange: (Int) -> Unit = {},
     transitionEnabled: Boolean = false, //  卡片过渡动画开关
-    onRelatedVideoClick: (String, android.os.Bundle?) -> Unit
+    onRelatedVideoClick: (String, android.os.Bundle?) -> Unit,
+    // 🔁 [新增] 播放模式
+    currentPlayMode: com.android.purebilibili.feature.video.player.PlayMode = com.android.purebilibili.feature.video.player.PlayMode.SEQUENTIAL,
+    onPlayModeClick: () -> Unit = {}
 ) {
     val splitRatio = rememberSplitLayoutRatio()
     
@@ -175,7 +178,10 @@ fun TabletVideoLayout(
                         onAudioQualityChange = onAudioQualityChange,
                         // [New Actions]
                         onSaveCover = { viewModel.saveCover(context) },
-                        onDownloadAudio = { viewModel.downloadAudio(context) }
+                        onDownloadAudio = { viewModel.downloadAudio(context) },
+                        // 🔁 [新增] 播放模式
+                        currentPlayMode = currentPlayMode,
+                        onPlayModeClick = onPlayModeClick
                     )
                 }
                 

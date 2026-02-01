@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.*
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import coil.compose.AsyncImage
@@ -86,9 +87,9 @@ fun ReplyItemView(
     onLikeClick: (() -> Unit)? = null,
     onReplyClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
-    // [新增] 删除回调
     onDeleteClick: (() -> Unit)? = null,
     location: String? = item.replyControl?.location,
+    onUrlClick: ((String) -> Unit)? = null,
     hideSubPreview: Boolean = false
 ) {
     val isUpComment = upMid > 0 && item.mid == upMid
@@ -96,6 +97,15 @@ fun ReplyItemView(
         val mergedMap = emoteMap.toMutableMap()
         item.content.emote?.forEach { (key, value) -> mergedMap[key] = value.url }
         mergedMap
+    }
+    
+    // [优化] IP 属地显示逻辑
+    val displayLocation = remember(location) {
+        if (!location.isNullOrEmpty()) {
+            // 移除旧的前缀（如果有），统一添加 "IP归属地："
+            val cleanLocation = location.removePrefix("IP属地：").removePrefix("IP属地")
+            "IP归属地：$cleanLocation"
+        } else null
     }
 
     Column(
@@ -162,7 +172,8 @@ fun ReplyItemView(
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     emoteMap = localEmoteMap,
-                    onTimestampClick = onTimestampClick
+                    onTimestampClick = onTimestampClick,
+                    onUrlClick = onUrlClick
                 )
 
                 // Images
@@ -184,8 +195,8 @@ fun ReplyItemView(
                     Text(
                         text = buildString {
                             append(formatTime(item.ctime))
-                            if (!location.isNullOrEmpty()) {
-                                append(" · $location")
+                            if (!displayLocation.isNullOrEmpty()) {
+                                append(" · $displayLocation")
                             }
                         },
                         fontSize = 12.sp,
@@ -302,6 +313,7 @@ fun ReplyItemView(
                                 emoteMap = subEmoteMap,
                                 maxLines = 3,  // Increase max lines for inline text
                                 onTimestampClick = onTimestampClick,
+                                onUrlClick = onUrlClick,
                                 prefix = prefix
                             )
                         }
@@ -344,6 +356,7 @@ fun RichCommentText(
     emoteMap: Map<String, String>,
     maxLines: Int = Int.MAX_VALUE,
     onTimestampClick: ((Long) -> Unit)? = null,
+    onUrlClick: ((String) -> Unit)? = null,
     prefix: AnnotatedString? = null
 ) {
     val timestampColor = MaterialTheme.colorScheme.primary
@@ -395,6 +408,13 @@ fun RichCommentText(
             allMatches.add(MatchInfo(match.range, "timestamp", match.value, totalSeconds.toLong()))
         }
         
+        // 收集 URL 匹配
+        // 简单 URL 正则，匹配 http/https/ftp/file 开头
+        val urlPattern = """((https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|])""".toRegex()
+        urlPattern.findAll(remainingText).forEach { match ->
+            allMatches.add(MatchInfo(match.range, "url", match.value))
+        }
+
         // 按位置排序
         allMatches.sortBy { it.range.first }
         
@@ -404,27 +424,36 @@ fun RichCommentText(
             if (lastIndex < matchInfo.range.first) {
                 append(remainingText.substring(lastIndex, matchInfo.range.first))
             }
+            // 避免重叠匹配（例如 URL 中的数字被识别为时间戳）
+            if (matchInfo.range.first >= lastIndex) {
             
-            when (matchInfo.type) {
-                "emote" -> {
-                    if (emoteMap.containsKey(matchInfo.value)) {
-                        appendInlineContent(id = matchInfo.value, alternateText = matchInfo.value)
-                    } else {
-                        append(matchInfo.value)
+                when (matchInfo.type) {
+                    "emote" -> {
+                        if (emoteMap.containsKey(matchInfo.value)) {
+                            appendInlineContent(id = matchInfo.value, alternateText = matchInfo.value)
+                        } else {
+                            append(matchInfo.value)
+                        }
+                    }
+                    "timestamp" -> {
+                        //  时间戳使用特殊样式并添加点击注解
+                        pushStringAnnotation(tag = "TIMESTAMP", annotation = matchInfo.seconds.toString())
+                        withStyle(SpanStyle(color = timestampColor, fontWeight = FontWeight.Medium)) {
+                            append(matchInfo.value)
+                        }
+                        pop()
+                    }
+                    "url" -> {
+                        // URL 高亮
+                        pushStringAnnotation(tag = "URL", annotation = matchInfo.value)
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)) {
+                            append(matchInfo.value)
+                        }
+                        pop()
                     }
                 }
-                "timestamp" -> {
-                    //  时间戳使用特殊样式并添加点击注解
-                    val annotationStart = length
-                    pushStringAnnotation(tag = "TIMESTAMP", annotation = matchInfo.seconds.toString())
-                    withStyle(SpanStyle(color = timestampColor, fontWeight = FontWeight.Medium)) {
-                        append(matchInfo.value)
-                    }
-                    pop()
-                }
+                lastIndex = matchInfo.range.last + 1
             }
-            
-            lastIndex = matchInfo.range.last + 1
         }
         
         // 添加剩余文本
@@ -463,7 +492,7 @@ fun RichCommentText(
             onTextLayout = { textLayoutResult = it },
             //  [修复] 添加 padding 确保点击区域足够大
             modifier = Modifier.then(
-                if (onTimestampClick != null) {
+                if (onTimestampClick != null || onUrlClick != null) {
                     Modifier.pointerInput(annotatedString) {
                         detectTapGestures { offset ->
                             textLayoutResult?.let { layoutResult ->
@@ -471,6 +500,18 @@ fun RichCommentText(
                                 //  [修复] 扩大搜索范围，允许一定的点击容差
                                 val searchStart = maxOf(0, position - 1)
                                 val searchEnd = minOf(annotatedString.length, position + 1)
+                                
+                                // 优先检测 URL 点击
+                                annotatedString.getStringAnnotations(
+                                    tag = "URL",
+                                    start = searchStart,
+                                    end = searchEnd
+                                ).firstOrNull()?.let { annotation ->
+                                    onUrlClick?.invoke(annotation.item)
+                                    return@detectTapGestures
+                                }
+
+                                // 检测时间戳点击
                                 annotatedString.getStringAnnotations(
                                     tag = "TIMESTAMP", 
                                     start = searchStart, 
@@ -478,7 +519,7 @@ fun RichCommentText(
                                 )
                                     .firstOrNull()?.let { annotation ->
                                         val seconds = annotation.item.toLongOrNull() ?: 0L
-                                        onTimestampClick(seconds * 1000)  // 转换为毫秒
+                                        onTimestampClick?.invoke(seconds * 1000)  // 转换为毫秒
                                     }
                             }
                         }

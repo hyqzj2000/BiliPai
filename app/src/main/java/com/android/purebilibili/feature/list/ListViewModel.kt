@@ -293,24 +293,9 @@ class FavoriteViewModel(application: Application) : BaseListViewModel(applicatio
                 com.android.purebilibili.core.util.Logger.d("FavoriteVM", " Loaded ${newItems.size} items from folder $currentFolderIndex page $currentPage")
                 
                 //  如果当前收藏夹没有更多内容，尝试加载下一个收藏夹
+                //  [修复] 如果当前收藏夹没有更多内容，停止加载，不自动跳转下一个
                 if (newItems.isEmpty() || newItems.size < 20) {
-                    currentFolderIndex++
-                    if (currentFolderIndex < allFolderIds.size) {
-                        // 重置页码，加载下一个收藏夹
-                        currentPage = 1
-                        com.android.purebilibili.core.util.Logger.d("FavoriteVM", " Moving to next folder: $currentFolderIndex")
-                        
-                        val nextFolderResult = com.android.purebilibili.data.repository.FavoriteRepository.getFavoriteList(
-                            mediaId = allFolderIds[currentFolderIndex], 
-                            pn = 1
-                        )
-                        val nextItems = nextFolderResult.getOrNull()?.map { it.toVideoItem() } ?: emptyList()
-                        newItems = newItems + nextItems
-                        hasMore = nextItems.size >= 20 || currentFolderIndex < allFolderIds.size - 1
-                    } else {
-                        // 所有收藏夹都加载完了
-                        hasMore = false
-                    }
+                    hasMore = false
                 } else {
                     hasMore = true
                 }

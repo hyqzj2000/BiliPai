@@ -89,7 +89,19 @@ fun CollectionSheet(
             Divider(color = MaterialTheme.colorScheme.outlineVariant)
             
             //  视频列表
+            val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+            
+            // 自动滚动到当前播放的视频
+            LaunchedEffect(currentIndex) {
+                if (currentIndex != -1) {
+                    // 稍微延迟一下以确保布局完成
+                    kotlinx.coroutines.delay(100)
+                    listState.scrollToItem(currentIndex)
+                }
+            }
+
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f, fill = false)

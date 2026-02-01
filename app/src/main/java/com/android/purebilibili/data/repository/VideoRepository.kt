@@ -755,6 +755,12 @@ object VideoRepository {
             com.android.purebilibili.core.util.Logger.d("VideoRepo", " APP PlayUrl response: code=${response.code}, qn=$qn, dashIds=$dashIds")
             
             if (response.code == 0 && response.data != null) {
+                // 🚀 [优化] 只要 APP API 返回了数据，就认为成功，不需要严格匹配 targetQn
+                // 之前的逻辑太严格，导致 116 请求返回 112 时也被丢弃并回退到 DASH，造成不必要的双重请求
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", " APP API success: returned quality=${response.data.quality}, available: $dashIds")
+                return response.data
+                
+                /* 移除旧的严格检查逻辑
                 // 检查是否真的获取到了高画质流
                 val hasHighQuality = dashIds?.any { it >= qn } == true
                 if (hasHighQuality) {
@@ -763,6 +769,7 @@ object VideoRepository {
                 } else {
                     com.android.purebilibili.core.util.Logger.d("VideoRepo", " APP API didn't return target quality $qn, available: $dashIds")
                 }
+                */
             } else {
                 com.android.purebilibili.core.util.Logger.d("VideoRepo", " APP API error: code=${response.code}, msg=${response.message}")
             }

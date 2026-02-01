@@ -76,6 +76,9 @@ fun BottomControlBar(
     // 📱 [新增] 竖屏全屏模式
     isVerticalVideo: Boolean = false,
     onPortraitFullscreen: () -> Unit = {},
+    // 🔁 [新增] 播放模式
+    currentPlayMode: com.android.purebilibili.feature.video.player.PlayMode = com.android.purebilibili.feature.video.player.PlayMode.SEQUENTIAL,
+    onPlayModeClick: () -> Unit = {},
     // 📲 [新增] 小窗模式
     onPipClick: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -210,6 +213,31 @@ fun BottomControlBar(
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+                
+                // 🔁 播放模式按钮 - 仅竖屏非全屏时显示
+                if (!isFullscreen) {
+                    IconButton(
+                        onClick = onPlayModeClick,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        // 根据模式选择图标
+                        val icon = when (currentPlayMode) {
+                            com.android.purebilibili.feature.video.player.PlayMode.SEQUENTIAL -> CupertinoIcons.Default.ChevronForward
+                            com.android.purebilibili.feature.video.player.PlayMode.SHUFFLE -> CupertinoIcons.Default.Shuffle
+                            com.android.purebilibili.feature.video.player.PlayMode.REPEAT_ONE -> CupertinoIcons.Default.Repeat
+                        }
+                        
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = "切换播放模式",
+                            tint = if (currentPlayMode == com.android.purebilibili.feature.video.player.PlayMode.SEQUENTIAL) 
+                                Color.White.copy(alpha = 0.7f) // 顺序播放时颜色淡一点
+                            else 
+                                MaterialTheme.colorScheme.primary, // 其他模式高亮
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }

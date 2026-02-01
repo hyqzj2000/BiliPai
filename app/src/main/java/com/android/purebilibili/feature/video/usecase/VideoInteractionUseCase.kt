@@ -4,6 +4,7 @@ package com.android.purebilibili.feature.video.usecase
 import com.android.purebilibili.core.util.AnalyticsHelper
 import com.android.purebilibili.core.util.Logger
 import com.android.purebilibili.data.repository.ActionRepository
+import com.android.purebilibili.data.model.response.FavFolder
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 
@@ -49,16 +50,24 @@ class VideoInteractionUseCase {
     suspend fun toggleFavorite(
         aid: Long, 
         currentlyFavorited: Boolean,
-        bvid: String = ""
+        bvid: String = "",
+        folderId: Long? = null // [新增] 支持指定收藏夹
     ): Result<Boolean> {
         Logger.d(TAG, "toggleFavorite: aid=$aid, currentlyFavorited=$currentlyFavorited")
         val newFavorited = !currentlyFavorited
         
-        return ActionRepository.favoriteVideo(aid, newFavorited).also { result ->
+        return ActionRepository.favoriteVideo(aid, newFavorited, folderId).also { result ->
             result.onSuccess { favorited ->
                 AnalyticsHelper.logFavorite(bvid, favorited)
             }
         }
+    }
+    
+    /**
+     * 获取用户收藏夹列表
+     */
+    suspend fun getFavoriteFolders(): Result<List<FavFolder>> {
+        return ActionRepository.getFavoriteFolders()
     }
     
     /**

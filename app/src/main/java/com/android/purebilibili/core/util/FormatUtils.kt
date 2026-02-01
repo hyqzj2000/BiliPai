@@ -15,7 +15,20 @@ object FormatUtils {
     /**
      * 将秒数格式化为 mm:ss
      */
+    /**
+     * 将秒数格式化为 mm:ss
+     */
     fun formatDuration(seconds: Int): String {
+        val min = seconds / 60
+        val sec = seconds % 60
+        return String.format("%02d:%02d", min, sec)
+    }
+
+    /**
+     * 将毫秒数格式化为 mm:ss
+     */
+    fun formatDuration(milliseconds: Long): String {
+        val seconds = milliseconds / 1000
         val min = seconds / 60
         val sec = seconds % 60
         return String.format("%02d:%02d", min, sec)

@@ -2,6 +2,7 @@
 package com.android.purebilibili.feature.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable // [Fix] Missing import
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -140,6 +141,42 @@ fun AnimationSettingsContent(
                                 onCheckedChange = { viewModel.toggleLiquidGlass(it) },
                                 iconTint = iOSBlue
                             )
+                            // Style Selector (Only visible when enabled)
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = state.isLiquidGlassEnabled,
+                                enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                                exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        "风格选择", 
+                                        style = MaterialTheme.typography.labelSmall, 
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        // Classic
+                                        LiquidGlassStyleCard(
+                                            title = "Classic",
+                                            subtitle = "流体波纹",
+                                            isSelected = state.liquidGlassStyle == com.android.purebilibili.core.store.LiquidGlassStyle.CLASSIC,
+                                            onClick = { viewModel.setLiquidGlassStyle(com.android.purebilibili.core.store.LiquidGlassStyle.CLASSIC) },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        // SimpMusic
+                                        LiquidGlassStyleCard(
+                                            title = "SimpMusic",
+                                            subtitle = "自适应透镜",
+                                            isSelected = state.liquidGlassStyle == com.android.purebilibili.core.store.LiquidGlassStyle.SIMP_MUSIC,
+                                            onClick = { viewModel.setLiquidGlassStyle(com.android.purebilibili.core.store.LiquidGlassStyle.SIMP_MUSIC) },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                            }
                             Divider()
                         }
 
@@ -223,3 +260,38 @@ fun AnimationSettingsContent(
         }
     }
 
+
+@Composable
+private fun LiquidGlassStyleCard(
+    title: String,
+    subtitle: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.5f)
+    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(color)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = contentColor
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor.copy(alpha = 0.8f)
+            )
+        }
+    }
+}

@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
+import kotlinx.coroutines.flow.distinctUntilChanged // [Fix] Missing import
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -166,6 +167,49 @@ fun DynamicScreen(
             } else {
                 viewModel.loadMore()
             }
+        }
+    }
+    
+    // [Feature] BottomBar Scroll Hiding for Dynamic Screen
+    val setBottomBarVisible = com.android.purebilibili.core.ui.LocalSetBottomBarVisible.current
+    
+    // 监听列表滚动实现底栏自动隐藏/显示
+    var lastFirstVisibleItem by remember { mutableIntStateOf(0) }
+    var lastScrollOffset by remember { mutableIntStateOf(0) }
+    
+    LaunchedEffect(listState) {
+        snapshotFlow { 
+            Pair(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) 
+        }
+        .distinctUntilChanged()
+        .collect { (firstVisibleItem, scrollOffset) ->
+             // 顶部始终显示
+             if (firstVisibleItem == 0 && scrollOffset < 100) {
+                 setBottomBarVisible(true)
+             } else {
+                 val isScrollingDown = when {
+                     firstVisibleItem > lastFirstVisibleItem -> true
+                     firstVisibleItem < lastFirstVisibleItem -> false
+                     else -> scrollOffset > lastScrollOffset + 50 // 较小的阈值
+                 }
+                 val isScrollingUp = when {
+                     firstVisibleItem < lastFirstVisibleItem -> true
+                     firstVisibleItem > lastFirstVisibleItem -> false
+                     else -> scrollOffset < lastScrollOffset - 50
+                 }
+                 
+                 if (isScrollingDown) setBottomBarVisible(false)
+                 if (isScrollingUp) setBottomBarVisible(true)
+             }
+             lastFirstVisibleItem = firstVisibleItem
+             lastScrollOffset = scrollOffset
+        }
+    }
+    
+    // 离开页面时恢复底栏显示 (特别是进入详情页或其他 Tab)
+    DisposableEffect(Unit) {
+        onDispose {
+            setBottomBarVisible(true)
         }
     }
 

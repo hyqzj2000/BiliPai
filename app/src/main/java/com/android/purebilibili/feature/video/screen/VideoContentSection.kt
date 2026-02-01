@@ -109,7 +109,15 @@ fun VideoContentSection(
     // [新增] 已点赞的评论 ID 集合
     likedComments: Set<Long> = emptySet(),
     // 🔗 [新增] 共享元素过渡开关
-    transitionEnabled: Boolean = false
+    transitionEnabled: Boolean = false,
+    // [新增] 收藏夹相关参数
+    onFavoriteLongClick: () -> Unit = {},
+    favoriteFolderDialogVisible: Boolean = false,
+    favoriteFolders: List<com.android.purebilibili.data.model.response.FavFolder> = emptyList(),
+    isFavoriteFoldersLoading: Boolean = false,
+    onFavoriteFolderClick: (com.android.purebilibili.data.model.response.FavFolder) -> Unit = {},
+    onDismissFavoriteFolderDialog: () -> Unit = {},
+    onCreateFavoriteFolder: (String, String, Boolean) -> Unit = { _, _, _ -> }
 ) {
     val tabs = listOf("简介", "评论 $replyCount")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
@@ -149,6 +157,17 @@ fun VideoContentSection(
                 }
             )
         }
+    }
+    
+    // 收藏夹底部弹窗
+    if (favoriteFolderDialogVisible) {
+        com.android.purebilibili.feature.video.ui.components.FavoriteFolderSheet(
+            folders = favoriteFolders,
+            isLoading = isFavoriteFoldersLoading,
+            onFolderClick = onFavoriteFolderClick,
+            onDismissRequest = onDismissFavoriteFolderDialog,
+            onCreateFolder = onCreateFavoriteFolder
+        )
     }
 
     val onTabSelected: (Int) -> Unit = { index ->
@@ -206,7 +225,8 @@ fun VideoContentSection(
                     onDownloadClick = onDownloadClick,
                     onWatchLaterClick = onWatchLaterClick,
                     contentPadding = PaddingValues(bottom = 84.dp), // 适配底部输入栏
-                    transitionEnabled = transitionEnabled  // 🔗 传递共享元素开关
+                    transitionEnabled = transitionEnabled,  // 🔗 传递共享元素开关
+                    onFavoriteLongClick = onFavoriteLongClick
                 )
                 1 -> VideoCommentTab(
                     listState = commentListState,
@@ -277,7 +297,8 @@ private fun VideoIntroTab(
     onDownloadClick: () -> Unit,
     onWatchLaterClick: () -> Unit,
     contentPadding: PaddingValues,
-    transitionEnabled: Boolean = false  // 🔗 共享元素过渡开关
+    transitionEnabled: Boolean = false,  // 🔗 共享元素过渡开关
+    onFavoriteLongClick: () -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     LazyColumn(
@@ -307,7 +328,8 @@ private fun VideoIntroTab(
                 onWatchLaterClick = onWatchLaterClick,
 
                 onGloballyPositioned = { },
-                transitionEnabled = transitionEnabled  // 🔗 传递共享元素开关
+                transitionEnabled = transitionEnabled,  // 🔗 传递共享元素开关
+                onFavoriteLongClick = onFavoriteLongClick
             )
         }
         if (info.pages.size > 1) {
@@ -372,6 +394,8 @@ private fun VideoCommentTab(
     onCommentLike: (Long) -> Unit,
     likedComments: Set<Long>
 ) {
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+
     Box(
         modifier = modifier.fillMaxSize()
     ) {
@@ -431,7 +455,15 @@ private fun VideoCommentTab(
                             // [新增] 仅当评论 mid 与当前登录用户 mid 一致时显示删除按钮
                             onDeleteClick = if (currentMid > 0 && reply.mid == currentMid) {
                                 { onDissolveStart(reply.rpid) }
-                            } else null
+                            } else null,
+                            // [新增] URL 点击跳转
+                            onUrlClick = { url ->
+                                try {
+                                    uriHandler.openUri(url)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
                         )
                     }
                 }
@@ -492,7 +524,8 @@ private fun VideoHeaderContent(
     onDownloadClick: () -> Unit,
     onWatchLaterClick: () -> Unit,
     onGloballyPositioned: (Float) -> Unit,
-    transitionEnabled: Boolean = false  // 🔗 共享元素过渡开关
+    transitionEnabled: Boolean = false,  // 🔗 共享元素过渡开关
+    onFavoriteLongClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -529,7 +562,8 @@ private fun VideoHeaderContent(
             onTripleClick = onTripleClick,
             onCommentClick = {},
             onDownloadClick = onDownloadClick,
-            onWatchLaterClick = onWatchLaterClick
+            onWatchLaterClick = onWatchLaterClick,
+            onFavoriteLongClick = onFavoriteLongClick
         )
 
         info.ugc_season?.let { season ->

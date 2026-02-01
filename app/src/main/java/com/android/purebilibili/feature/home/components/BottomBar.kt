@@ -69,6 +69,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape as RoundedCornerShap
 import androidx.compose.ui.Modifier.Companion.then
 import dev.chrisbanes.haze.hazeSource
 import com.android.purebilibili.core.ui.effect.liquidGlass
+import com.android.purebilibili.core.ui.effect.simpMusicLiquidGlass // [New]
+import com.android.purebilibili.core.store.LiquidGlassStyle // [New] Top-level enum
 import androidx.compose.foundation.isSystemInDarkTheme // [New] Theme detection for adaptive readability
 
 /**
@@ -165,8 +167,12 @@ fun FrostedBottomBar(
     // [NEW] LayerBackdrop for real background refraction (captures content behind the bar)
     backdrop: LayerBackdrop? = null
 ) {
-    val isDarkTheme = MaterialTheme.colorScheme.background.red < 0.5f
+    val isDarkTheme = MaterialTheme.colorScheme.background.red < 0.5f // Simple darkness check
     val haptic = rememberHapticFeedback()
+    
+    // [New] Adaptive Luminance for SimpMusic Style
+    // 0.0 = Black/Dark, 1.0 = White/Bright
+    var contentLuminance by remember { mutableFloatStateOf(0f) }
     
     // 🔒 [防抖]
     var lastClickTime by remember { mutableStateOf(0L) }
@@ -419,6 +425,15 @@ fun FrostedBottomBar(
                             val scrollValue = scrollState.floatValue
                             val isDark = isSystemInDarkTheme()
                             
+                                if (homeSettings.liquidGlassStyle == LiquidGlassStyle.SIMP_MUSIC) {
+                                    // [Style: SimpMusic] Adaptive Lens with Vibrancy & Blur
+                                    this.simpMusicLiquidGlass(
+                                        backdrop = backdrop,
+                                        shape = barShape,
+                                        onLuminanceChanged = { contentLuminance = it }
+                                    )
+                                } else {
+                                    // [Style: Classic] BiliPai's Wavy Ripple
                                     // [Visual Tuning] Glass Effect Parameters
                                     // 1. Refraction: Much stronger lens effect for "thick liquid" feel
                                     val dynamicRefractionAmount = 65f + (scrollValue * 0.05f).coerceIn(0f, 40f)
@@ -444,6 +459,7 @@ fun FrostedBottomBar(
                                             drawRect(barColor.copy(alpha = overlayAlpha))
                                         }
                                     )
+                                }
                         } else if (showGlassEffect && isSupported && hazeState != null) {
                             // [Haze Fallback] Use Haze blur when no backdrop available
                             this
@@ -497,6 +513,8 @@ fun FrostedBottomBar(
                     ) {
                         // 实体指示器背景 - 始终显示，提供选中项的背景色
                         // liquidGlass 仅提供折射效果，指示器背景由 LiquidIndicator 提供
+                        // 实体指示器背景 - 始终显示，提供选中项的背景色
+                        // liquidGlass 仅提供折射效果，指示器背景由 LiquidIndicator 提供
                          LiquidIndicator(
                                  position = dampedDragState.value,
                                  itemWidth = itemWidth,
@@ -509,11 +527,12 @@ fun FrostedBottomBar(
                                      .offset(y = contentVerticalOffset)
                                      .alpha(indicatorAlpha),
                                      isLiquidGlassEnabled = showGlassEffect,
+                                     liquidGlassStyle = homeSettings.liquidGlassStyle, // [New] Pass style
                                      backdrop = backdrop, // [New] Pass backdrop for lens refraction
                                      color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                  )
 
-                         BottomBarContent(
+                        BottomBarContent(
                             visibleItems = visibleItems,
                             selectedIndex = selectedIndex,
                             itemColorIndices = itemColorIndices,
@@ -533,7 +552,10 @@ fun FrostedBottomBar(
                             dragModifier = Modifier.horizontalDragGesture(
                                 dragState = dampedDragState,
                                 itemWidthPx = with(LocalDensity.current) { itemWidth.toPx() }
-                            )
+                            ),
+                            // [New] Param for adaptive text color
+                            contentLuminance = contentLuminance,
+                            liquidGlassStyle = homeSettings.liquidGlassStyle
                        )
                     }
                         
@@ -578,7 +600,9 @@ private fun BottomBarContent(
     contentVerticalOffset: Dp,
     isInteractive: Boolean,
     currentPosition: Float, // [新增] 当前指示器位置，用于动态插值
-    dragModifier: Modifier = Modifier
+    dragModifier: Modifier = Modifier,
+    contentLuminance: Float = 0f, // [New]
+    liquidGlassStyle: LiquidGlassStyle = LiquidGlassStyle.CLASSIC // [New]
 ) {
     Row(
         modifier = Modifier
@@ -646,7 +670,9 @@ private fun BottomBarContent(
                 haptic = haptic,
                 debounceClick = debounceClick,
                 onHomeDoubleTap = onHomeDoubleTap,
-                isTablet = isTablet
+                isTablet = isTablet,
+                contentLuminance = contentLuminance, // [New]
+                liquidGlassStyle = liquidGlassStyle // [New]
             )
         }
     }
@@ -668,19 +694,31 @@ private fun BottomBarItem(
     haptic: (HapticType) -> Unit,
     debounceClick: (BottomNavItem, () -> Unit) -> Unit,
     onHomeDoubleTap: () -> Unit,
-    isTablet: Boolean
+    isTablet: Boolean,
+    contentLuminance: Float = 0f, // [New]
+    liquidGlassStyle: LiquidGlassStyle = LiquidGlassStyle.CLASSIC // [New]
 ) {
     var isPending by remember { mutableStateOf(false) }
     val isDarkTheme = isSystemInDarkTheme()
     
     val primaryColor = MaterialTheme.colorScheme.primary
+    
     // [Adaptive] High Contrast Scheme for Glass Readability
     // Light Mode: Black text/icons (to stand out against white-ish glass)
     // Dark Mode: White text/icons (to stand out against dark glass)
-    val unselectedColor = if (isDarkTheme) {
-        androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f)
+    // [SimpMusic Style]: Adaptive based on luminance
+    val unselectedColor = if (liquidGlassStyle == LiquidGlassStyle.SIMP_MUSIC) {
+        // Luminance > 0.6 (Bright background) -> Black text
+        // Luminance < 0.6 (Dark background) -> White text
+        if (contentLuminance > 0.6f) androidx.compose.ui.graphics.Color.Black.copy(alpha=0.8f) 
+        else androidx.compose.ui.graphics.Color.White.copy(alpha=0.9f)
     } else {
-        androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.8f)
+        // Classic Logic
+        if (isDarkTheme) {
+            androidx.compose.ui.graphics.Color.White.copy(alpha = 0.8f)
+        } else {
+            androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.8f)
+        }
     }
     
     // [修改] 颜色插值：根据 selectionFraction 在 unselected 和 selected 之间混合

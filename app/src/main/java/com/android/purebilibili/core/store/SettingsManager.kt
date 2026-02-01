@@ -21,6 +21,15 @@ private val Context.settingsDataStore by preferencesDataStore(name = "settings_p
  *  首页设置合并类 - 减少 HomeScreen 重组次数
  * 将多个独立的设置流合并为单一流，避免每个设置变化都触发重组
  */
+enum class LiquidGlassStyle(val value: Int) {
+    CLASSIC(0),      // BiliPai's Wavy Ripple
+    SIMP_MUSIC(1);   // SimpMusic's Adaptive Lens
+
+    companion object {
+        fun fromValue(value: Int): LiquidGlassStyle = entries.find { it.value == value } ?: CLASSIC
+    }
+}
+
 data class HomeSettings(
     val displayMode: Int = 0,              // 展示模式 (0=网格, 1=故事卡片)
     val isBottomBarFloating: Boolean = true,
@@ -28,6 +37,7 @@ data class HomeSettings(
     val isHeaderBlurEnabled: Boolean = true,
     val isBottomBarBlurEnabled: Boolean = true,
     val isLiquidGlassEnabled: Boolean = true, // [New]
+    val liquidGlassStyle: LiquidGlassStyle = LiquidGlassStyle.CLASSIC, // [New]
     val cardAnimationEnabled: Boolean = false,    //  卡片进场动画（默认关闭）
     val cardTransitionEnabled: Boolean = true,    //  卡片过渡动画（默认开启）
     //  [修复] 默认值改为 true，避免在 Flow 加载实际值之前错误触发弹窗
@@ -78,6 +88,11 @@ object SettingsManager {
     private val KEY_BOTTOM_BAR_BLUR_ENABLED = booleanPreferencesKey("bottom_bar_blur_enabled")
     //  [New] Liquid Glass Effect Toggle (Default On)
     private val KEY_LIQUID_GLASS_ENABLED = booleanPreferencesKey("liquid_glass_enabled")
+    
+    // MOVED KEY_LIQUID_GLASS_STYLE down to where enum is defined to avoid forward reference issues if Kotlin 
+    // but better to keep keys together. 
+    // For simplicity, I will use getLiquidGlassStyle() helper in the flow below.
+
     //  [新增] 模糊强度 (ULTRA_THIN, THIN, THICK)
     private val KEY_BLUR_INTENSITY = stringPreferencesKey("blur_intensity")
     //  [合并] 首页展示模式 (0=Grid, 1=Story, 2=Glass)
@@ -104,25 +119,34 @@ object SettingsManager {
         val headerBlurFlow = context.settingsDataStore.data.map { it[KEY_HEADER_BLUR_ENABLED] ?: true }
         val bottomBarBlurFlow = context.settingsDataStore.data.map { it[KEY_BOTTOM_BAR_BLUR_ENABLED] ?: true }
         val liquidGlassFlow = context.settingsDataStore.data.map { it[KEY_LIQUID_GLASS_ENABLED] ?: true } // [New]
+        // Resolve KEY_LIQUID_GLASS_STYLE here since it is defined below
+        val liquidGlassStyleFlow = context.settingsDataStore.data.map { 
+             val styleVal = it[intPreferencesKey("liquid_glass_style")] ?: 0 
+             LiquidGlassStyle.fromValue(styleVal)
+        }
         val crashConsentFlow = context.settingsDataStore.data.map { it[KEY_CRASH_TRACKING_CONSENT_SHOWN] ?: false }
         val cardAnimationFlow = context.settingsDataStore.data.map { it[KEY_CARD_ANIMATION_ENABLED] ?: false }
         val cardTransitionFlow = context.settingsDataStore.data.map { it[KEY_CARD_TRANSITION_ENABLED] ?: true }  // 默认开启
         
         // 🔧 Kotlin combine() 最多支持 5 个参数，这里我们满了，需要重组 flow 或者使用 combine 的 list 重载
         // Since we added liquidGlassFlow, we have 6 flows in total now for 'firstFive'.
-        // Let's grouping: (Display, Floating, Label) + (HeaderBlur, BottomBlur, LiquidGlass)
+        // Let's grouping: (Display, Floating, Label) + (HeaderBlur, BottomBlur, LiquidGlass, Style)
         
         val layoutSettingsFlow = combine(displayModeFlow, bottomBarFloatingFlow, bottomBarLabelModeFlow) { d, f, l -> Triple(d, f, l) }
-        val visualSettingsFlow = combine(headerBlurFlow, bottomBarBlurFlow, liquidGlassFlow) { h, b, l -> Triple(h, b, l) }
+        val visualSettingsFlow = combine(headerBlurFlow, bottomBarBlurFlow, liquidGlassFlow, liquidGlassStyleFlow) { h, b, l, s -> 
+            data class Visual(val h: Boolean, val b: Boolean, val l: Boolean, val s: LiquidGlassStyle)
+            Visual(h, b, l, s)
+        }
         
         val coreSettingsFlow = combine(layoutSettingsFlow, visualSettingsFlow) { layout, visual ->
              HomeSettings(
                 displayMode = layout.first,
                 isBottomBarFloating = layout.second,
                 bottomBarLabelMode = layout.third,
-                isHeaderBlurEnabled = visual.first,
-                isBottomBarBlurEnabled = visual.second,
-                isLiquidGlassEnabled = visual.third, // [New]
+                isHeaderBlurEnabled = visual.h,
+                isBottomBarBlurEnabled = visual.b,
+                isLiquidGlassEnabled = visual.l, // [New]
+                liquidGlassStyle = visual.s, // [New]
                 cardAnimationEnabled = false, // placeholder
                 cardTransitionEnabled = false,
                 crashTrackingConsentShown = false
@@ -431,11 +455,23 @@ object SettingsManager {
     }
     
     //  [New] --- Liquid Glass Effect ---
+    
+    private val KEY_LIQUID_GLASS_STYLE = intPreferencesKey("liquid_glass_style")
+
     fun getLiquidGlassEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data
         .map { preferences -> preferences[KEY_LIQUID_GLASS_ENABLED] ?: true }
 
     suspend fun setLiquidGlassEnabled(context: Context, value: Boolean) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_LIQUID_GLASS_ENABLED] = value }
+    }
+    
+    fun getLiquidGlassStyle(context: Context): Flow<LiquidGlassStyle> = context.settingsDataStore.data
+        .map { preferences -> 
+            LiquidGlassStyle.fromValue(preferences[KEY_LIQUID_GLASS_STYLE] ?: LiquidGlassStyle.CLASSIC.value)
+        }
+
+    suspend fun setLiquidGlassStyle(context: Context, style: LiquidGlassStyle) {
+        context.settingsDataStore.edit { preferences -> preferences[KEY_LIQUID_GLASS_STYLE] = style.value }
     }
     
     //  [修复] --- 模糊强度 (THIN, THICK, APPLE_DOCK) ---

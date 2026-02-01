@@ -74,6 +74,7 @@ fun SearchScreen(
     onBack: () -> Unit,
     onVideoClick: (String, Long) -> Unit,
     onUpClick: (Long) -> Unit,  //  点击UP主跳转到空间
+    onLiveClick: (Long, String, String) -> Unit, // [新增] 直播点击
     onAvatarClick: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -309,7 +310,7 @@ fun SearchScreen(
                                     items(state.liveResults) { liveItem ->
                                         LiveSearchResultCard(
                                             item = liveItem,
-                                            onClick = { /* TODO: Navigate to live room */ }
+                                            onClick = { onLiveClick(liveItem.roomid, liveItem.title, liveItem.uname) }
                                         )
                                     }
                                 }

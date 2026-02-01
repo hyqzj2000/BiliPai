@@ -62,6 +62,16 @@ interface BilibiliApi {
     @GET("x/v3/fav/folder/created/list-all")
     suspend fun getFavFolders(@Query("up_mid") mid: Long): FavFolderResponse
 
+    // [新增] 创建收藏夹
+    @retrofit2.http.FormUrlEncoded
+    @retrofit2.http.POST("x/v3/fav/folder/add")
+    suspend fun createFavFolder(
+        @retrofit2.http.Field("title") title: String,
+        @retrofit2.http.Field("intro") intro: String = "",
+        @retrofit2.http.Field("privacy") privacy: Int = 0, // 0:公开, 1:私密
+        @retrofit2.http.Field("csrf") csrf: String
+    ): SimpleApiResponse
+
     @GET("x/v3/fav/resource/list")
     suspend fun getFavoriteList(
         @Query("media_id") mediaId: Long, 

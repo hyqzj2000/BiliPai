@@ -9,6 +9,7 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable // [New]
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -540,6 +541,8 @@ private fun MobileSettingsLayout(
     }
 }
 
+// Imports... (Ensure clickable is imported)
+
 @Composable
 fun DonateDialog(onDismiss: () -> Unit) {
     androidx.compose.ui.window.Dialog(
@@ -553,37 +556,39 @@ fun DonateDialog(onDismiss: () -> Unit) {
             modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.9f)),
             contentAlignment = Alignment.Center
         ) {
-            // Close Button (Top Left)
-            // Using statusBarsPadding to avoid overlap with system bars
-            IconButton(
-                onClick = onDismiss,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .statusBarsPadding()
-                    .padding(top = 16.dp, start = 16.dp)
-            ) {
-                Icon(
-                    imageVector = CupertinoIcons.Filled.XmarkCircle,
-                    contentDescription = "Close",
-                    tint = Color.White,
-                    modifier = Modifier.size(36.dp)
-                )
-            }
-
             // QR Code Container
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Image(
-                    painter = painterResource(id = com.android.purebilibili.R.drawable.author_qr),
-                    contentDescription = "Donate QR Code",
-                    modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(16.dp)),
-                    contentScale = ContentScale.Fit
-                )
+                Box(contentAlignment = Alignment.TopStart) {
+                    Image(
+                        painter = painterResource(id = com.android.purebilibili.R.drawable.author_qr),
+                        contentDescription = "Donate QR Code",
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .aspectRatio(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable { onDismiss() }, // [New] Click to dismiss
+                        contentScale = ContentScale.Fit
+                    )
+
+                    // Close Button (Top Left of Image)
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .background(Color.Black.copy(alpha = 0.3f), androidx.compose.foundation.shape.CircleShape)
+                            .size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = CupertinoIcons.Default.Xmark, // Fixed: Filled.Xmark -> Default.Xmark or correct path
+                            contentDescription = "Close",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
@@ -591,6 +596,14 @@ fun DonateDialog(onDismiss: () -> Unit) {
                     "感谢您的支持！",
                     color = Color.White.copy(alpha = 0.9f),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    "点击二维码或关闭按钮退出",
+                    color = Color.White.copy(alpha = 0.6f),
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }

@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.lazy.staggeredgrid.*  // 🌊 瀑布流布局
+import com.kyant.backdrop.backdrops.layerBackdrop // [Fix] Import for modifier
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -118,6 +119,10 @@ fun HomeScreen(
     }
     val staggeredGridState = rememberLazyStaggeredGridState()  // 🌊 瀑布流状态
     val hazeState = remember { HazeState() }
+    
+    // [Revert] Background capture removed for performance
+    // val homeBackdrop = com.kyant.backdrop.backdrops.rememberLayerBackdrop()
+    
     val coroutineScope = rememberCoroutineScope()  //  用于双击回顶动画
     
     // [新增] 监听全局回顶事件
@@ -176,8 +181,10 @@ fun HomeScreen(
         )
     }
 
-    // [New] Broadcast Scroll Offset for Liquid Glass Effect
-    val globalScrollOffset = LocalHomeScrollOffset.current
+    // [New] Broadcast Scroll Offset for Liquid Glass Effect & Parallax
+    // Create the state here and provide it
+    val globalScrollOffsetState = remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+
     LaunchedEffect(state.currentCategory, gridStates) { // Re-launch when category changes
         // Use a simple timer loop or snapshotFlow to poll scroll state to avoid heavy recomposition
         // We only need rough updates for the shader wave effect
@@ -186,7 +193,7 @@ fun HomeScreen(
             // Calculate an approximate absolute scroll pixel value
             gridState.firstVisibleItemIndex * 500f + gridState.firstVisibleItemScrollOffset
         }.collect { offset ->
-            globalScrollOffset.floatValue = offset
+            globalScrollOffsetState.floatValue = offset
         }
     }
     
@@ -283,16 +290,20 @@ fun HomeScreen(
 
     
     //  📐 [平板适配] 根据屏幕尺寸和展示模式动态设置网格列数
-    // 故事卡片需要单列全宽，网格和玻璃使用双列，平板端使用多列
+    // 故事卡片(1)和沉浸模式(2)需要单列全宽，网格(0)使用双列
     val windowSizeClass = com.android.purebilibili.core.util.LocalWindowSizeClass.current
     val contentWidth = if (windowSizeClass.isExpandedScreen) {
         minOf(windowSizeClass.widthDp, 1280.dp)
     } else {
         windowSizeClass.widthDp
     }
+    
+    // 是否为单列模式 (Story or Cinematic)
+    val isSingleColumnMode = displayMode == 1
+    
     val adaptiveColumns = remember(contentWidth, displayMode) {
-        val minColumnWidth = if (displayMode == 1) 240.dp else 180.dp
-        val maxColumns = if (displayMode == 1) 2 else 6
+        val minColumnWidth = if (isSingleColumnMode) 280.dp else 180.dp // 单列模式给更宽的基准
+        val maxColumns = if (isSingleColumnMode) 2 else 6
         val columns = (contentWidth / minColumnWidth).toInt()
         columns.coerceIn(1, maxColumns)
     }
@@ -300,8 +311,8 @@ fun HomeScreen(
         adaptiveColumns
     } else {
         com.android.purebilibili.core.util.rememberResponsiveValue(
-            compact = if (displayMode == 1) 1 else 2,  // 手机：故事1列，其他2列
-            medium = if (displayMode == 1) 2 else 3    // 中等宽度：故事2列，其它3列
+            compact = if (isSingleColumnMode) 1 else 2,  // 手机：单列模式1列，其他2列
+            medium = if (isSingleColumnMode) 2 else 3    // 中等宽度：单列模式2列，其它3列
         )
     }
     
@@ -449,6 +460,50 @@ fun HomeScreen(
             
             lastFirstVisibleItem = firstVisibleItem
             lastScrollOffset = scrollOffset
+        }
+    }
+    
+    // [Feature] 首页 Header 自动隐藏逻辑 (独立于底栏)
+    var isHeaderVisible by remember { mutableStateOf(true) }
+    var lastHeaderScrollOffset by remember { mutableIntStateOf(0) }
+    var lastHeaderFirstVisibleItem by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(state.currentCategory) {
+        val currentGridState = gridStates[state.currentCategory] ?: return@LaunchedEffect
+        snapshotFlow {
+            Pair(currentGridState.firstVisibleItemIndex, currentGridState.firstVisibleItemScrollOffset)
+        }
+        .distinctUntilChanged()
+        .collect { (firstVisibleItem, scrollOffset) ->
+             // 顶部始终显示
+            if (firstVisibleItem == 0 && scrollOffset < 100) {
+                isHeaderVisible = true
+            } else {
+                val isScrollingDown = when {
+                    firstVisibleItem > lastHeaderFirstVisibleItem -> true
+                    firstVisibleItem < lastHeaderFirstVisibleItem -> false
+                    else -> scrollOffset > lastHeaderScrollOffset + 50 // 较灵敏的阈值
+                }
+                val isScrollingUp = when {
+                    firstVisibleItem < lastHeaderFirstVisibleItem -> true
+                    firstVisibleItem > lastHeaderFirstVisibleItem -> false
+                    else -> scrollOffset < lastHeaderScrollOffset - 50
+                }
+                
+                if (isScrollingDown) isHeaderVisible = false
+                if (isScrollingUp) isHeaderVisible = true
+            }
+            lastHeaderFirstVisibleItem = firstVisibleItem
+            lastHeaderScrollOffset = scrollOffset
+        }
+    }
+    
+    // [Fix Bug 2] 首页上滑未触发隐藏时切换 Tab 导致底栏突兀消失的问题
+    // 监听 currentCategory 变化，如果新 Tab 处于顶部，强制显示底栏
+    LaunchedEffect(state.currentCategory) {
+        val currentGridState = gridStates[state.currentCategory]
+        if (currentGridState == null || (currentGridState.firstVisibleItemIndex == 0 && currentGridState.firstVisibleItemScrollOffset < 200)) {
+            setBottomBarVisible(true) 
         }
     }
     
@@ -656,11 +711,26 @@ fun HomeScreen(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
+            CompositionLocalProvider(LocalHomeScrollOffset provides globalScrollOffsetState) {
+
             // ===== 内容层 (hazeSource) =====
+            
+            // [Feature] Animate content up when Tabs collapse
+            val contentTranslationY by androidx.compose.animation.core.animateDpAsState(
+                targetValue = if (isHeaderVisible) 0.dp else (-44).dp, // -TabHeight
+                animationSpec = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessLow),
+                label = "contentTranslation"
+            )
+
             // [修复] 如果有全局 hazeState，同时应用两个 hazeSource
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .graphicsLayer { translationY = contentTranslationY.toPx() } // Apply sticky header compensation
+                    // [Revert] Capture for Liquid Glass TopBar removed
+
+                    // [Revert] Capture for Liquid Glass TopBar removed
+                    // .run { ... }
                     // [Fix] Move local hazeSource deeper to avoid drawing hierarchy crash
                     // .hazeSource(state = hazeState) 
                     .then(if (globalHazeState != null) Modifier.hazeSource(state = globalHazeState) else Modifier)  // 全局 hazeSource - 底栏使用
@@ -875,7 +945,7 @@ fun HomeScreen(
                 }
             },
             onPartitionClick = onPartitionClick,
-            isScrollingUp = isScrollingUp,
+            isScrollingUp = isHeaderVisible,
             hazeState = if (isHeaderBlurEnabled) hazeState else null,
             onStatusBarDoubleTap = {
                 coroutineScope.launch {
@@ -884,9 +954,13 @@ fun HomeScreen(
             },
             isRefreshing = isRefreshing,
             pullProgress = 0f, // [Fix] Outer header doesn't track inner pull state
-            pagerState = pagerState
+            pagerState = pagerState,
+            // [Revert] backdrop removed
+            // backdrop = homeBackdrop,
+            homeSettings = homeSettings
         )
-    }  // 关闭外层 Box
+    }  // 关闭 outer Box
+    }  // 关闭 Scaffold lambda
     }  //  关闭 scaffoldContent lambda
     // 📱 [平板适配] 导航模式切换动画
     // 始终使用 Row 布局，通过动画控制侧边栏的显示/隐藏
