@@ -19,6 +19,11 @@ dependencyResolutionManagement {
         maven { url = uri("https://jitpack.io") }
         // 🔥 ByteDance DanmakuRenderEngine 仓库
         maven { url = uri("https://artifact.bytedance.com/repository/releases/") }
+        // Cling Repo
+        maven { 
+            url = uri("http://4thline.org/m2") 
+            isAllowInsecureProtocol = true
+        }
     }
 }
 

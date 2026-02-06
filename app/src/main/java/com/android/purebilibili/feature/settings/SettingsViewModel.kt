@@ -49,7 +49,8 @@ data class SettingsUiState(
     val liquidGlassStyle: com.android.purebilibili.core.store.LiquidGlassStyle = com.android.purebilibili.core.store.LiquidGlassStyle.CLASSIC, // [New]
     // [New] 平板导航模式
     val tabletUseSidebar: Boolean = false,
-    val isHeaderCollapseEnabled: Boolean = true // [New]
+    val isHeaderCollapseEnabled: Boolean = true, // [New]
+    val gridColumnCount: Int = 0 // [New]
 )
 
 // 内部数据类，用于分批合并流
@@ -76,7 +77,8 @@ data class ExtraSettings(
     val isLiquidGlassEnabled: Boolean = true, // [New]
     val liquidGlassStyle: com.android.purebilibili.core.store.LiquidGlassStyle, // [New]
     val tabletUseSidebar: Boolean, // [New]
-    val isHeaderCollapseEnabled: Boolean // [New]
+    val isHeaderCollapseEnabled: Boolean, // [New]
+    val gridColumnCount: Int // [New]
 )
 
 
@@ -111,7 +113,8 @@ private data class BaseSettings(
     val isLiquidGlassEnabled: Boolean, // [New]
     val liquidGlassStyle: com.android.purebilibili.core.store.LiquidGlassStyle, // [New]
     val tabletUseSidebar: Boolean, // [New]
-    val isHeaderCollapseEnabled: Boolean // [New]
+    val isHeaderCollapseEnabled: Boolean, // [New]
+    val gridColumnCount: Int // [New]
 )
 
 
@@ -152,7 +155,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         SettingsManager.getLiquidGlassEnabled(context), // [New]
         SettingsManager.getLiquidGlassStyle(context), // [New]
         SettingsManager.getTabletUseSidebar(context), // [New]
-        SettingsManager.getHeaderCollapseEnabled(context) // [New]
+        SettingsManager.getHeaderCollapseEnabled(context), // [New]
+        SettingsManager.getGridColumnCount(context) // [New]
     ) { values ->
         val isBottomBarFloating = values[0] as Boolean
         val labelMode = values[1] as Int
@@ -164,9 +168,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         val liquidGlassStyle = values[7] as com.android.purebilibili.core.store.LiquidGlassStyle
         val tabletUseSidebar = values[8] as Boolean
         val headerCollapse = values[9] as Boolean
+        val gridColumnCount = values[10] as Int
         
-        data class Ui2(val f: Boolean, val l: Int, val d: Int, val ca: Boolean, val ct: Boolean, val h: Boolean, val lg: Boolean, val lgs: com.android.purebilibili.core.store.LiquidGlassStyle, val tus: Boolean, val hc: Boolean)
-        Ui2(isBottomBarFloating, labelMode, displayMode, cardAnimation, cardTransition, hapticFeedback, liquidGlass, liquidGlassStyle, tabletUseSidebar, headerCollapse)
+        data class Ui2(val f: Boolean, val l: Int, val d: Int, val ca: Boolean, val ct: Boolean, val h: Boolean, val lg: Boolean, val lgs: com.android.purebilibili.core.store.LiquidGlassStyle, val tus: Boolean, val hc: Boolean, val gcc: Int)
+        Ui2(isBottomBarFloating, labelMode, displayMode, cardAnimation, cardTransition, hapticFeedback, liquidGlass, liquidGlassStyle, tabletUseSidebar, headerCollapse, gridColumnCount)
     }
 
     // 合并所有 UI 设置
@@ -187,6 +192,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             liquidGlassStyle = ui2.lgs, // [New]
             tabletUseSidebar = ui2.tus, // [New]
             isHeaderCollapseEnabled = ui2.hc, // [New]
+            gridColumnCount = ui2.gcc, // [New]
             headerBlurEnabled = false, // 暂存，将在下一步合并
             bottomBarBlurEnabled = false, // 暂存
             blurIntensity = BlurIntensity.THIN // 暂存
@@ -252,7 +258,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             isLiquidGlassEnabled = extra.isLiquidGlassEnabled, // [New]
             liquidGlassStyle = extra.liquidGlassStyle, // [New]
             tabletUseSidebar = extra.tabletUseSidebar, // [New]
-            isHeaderCollapseEnabled = extra.isHeaderCollapseEnabled // [New]
+            isHeaderCollapseEnabled = extra.isHeaderCollapseEnabled, // [New]
+            gridColumnCount = extra.gridColumnCount // [New]
         )
 
     }
@@ -288,6 +295,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             liquidGlassStyle = settings.liquidGlassStyle, // [New]
             tabletUseSidebar = settings.tabletUseSidebar, // [New]
             isHeaderCollapseEnabled = settings.isHeaderCollapseEnabled, // [New]
+            gridColumnCount = settings.gridColumnCount, // [New]
 
             cacheSize = cache.first,
             cacheBreakdown = cache.second,  //  详细缓存统计
@@ -516,6 +524,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun toggleTabletUseSidebar(value: Boolean) {
         viewModelScope.launch {
             SettingsManager.setTabletUseSidebar(context, value)
+        }
+    }
+
+    // [New] 网格列数
+    fun setGridColumnCount(count: Int) {
+        viewModelScope.launch {
+            SettingsManager.setGridColumnCount(context, count)
         }
     }
     

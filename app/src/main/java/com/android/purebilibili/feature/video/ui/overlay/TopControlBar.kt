@@ -2,143 +2,187 @@
 package com.android.purebilibili.feature.video.ui.overlay
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-//  Cupertino Icons - iOS SF Symbols 风格图标
-import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
-import io.github.alexzhirkevich.cupertino.icons.outlined.*
-import io.github.alexzhirkevich.cupertino.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+//  Cupertino Icons
+import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
+import io.github.alexzhirkevich.cupertino.icons.filled.*
+import io.github.alexzhirkevich.cupertino.icons.outlined.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ThumbUp
+import androidx.compose.material.icons.outlined.ThumbUp
+import androidx.compose.material.icons.outlined.ThumbDown
+import androidx.compose.material.icons.rounded.MonetizationOn
+import androidx.compose.material.icons.outlined.MonetizationOn
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Cast
 
 /**
  * Top Control Bar Component
  * 
- * Displays the top control bar with:
- * - Back button
- * - Video title
- * - Danmaku toggle
- * - Quality selector
- * 
- * Requirement Reference: AC2.2 - Reusable TopControlBar
+ * Redesigned to match official Bilibili landscape layout:
+ * - Left: Back button, Title (Marquee), Online count
+ * - Right: Action buttons (Like, Dislike, Coin, Share, Cast, More)
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TopControlBar(
     title: String,
-    isFullscreen: Boolean,
-    currentQualityLabel: String,
-    onBack: () -> Unit,
-    onQualityClick: () -> Unit,
-    // Danmaku controls
-    danmakuEnabled: Boolean = true,
-    onDanmakuToggle: () -> Unit = {},
-    onDanmakuSettingsClick: () -> Unit = {},
-    // 👀 [新增] 在线观看人数
     onlineCount: String = "",
-    // [新增] 侧边栏回调
-    onDrawerClick: () -> Unit = {},
+    isFullscreen: Boolean,
+    onBack: () -> Unit,
+    // Interactions
+    isLiked: Boolean = false,
+    isCoined: Boolean = false,
+    onLikeClick: () -> Unit = {},
+    onDislikeClick: () -> Unit = {},
+    onCoinClick: () -> Unit = {},
+    onShareClick: () -> Unit = {},
+    onCastClick: () -> Unit = {}, // Added Cast callback
+    onMoreClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            //  只在全屏模式下添加状态栏padding，非全屏时视频区域已在状态栏下方
             .then(if (isFullscreen) Modifier.statusBarsPadding() else Modifier)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onBack) {
-            Icon(CupertinoIcons.Default.ChevronBackward, contentDescription = "Back", tint = Color.White)
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-            )
-            // 👀 在线人数
-            if (onlineCount.isNotEmpty()) {
-                Text(
-                    text = onlineCount,
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Normal
-                )
-            }
-        }
-        // Danmaku toggle button with settings indicator
-        Spacer(modifier = Modifier.width(8.dp))
-        Surface(
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .combinedClickable(
-                    onClick = onDanmakuToggle,
-                    onLongClick = onDanmakuSettingsClick
-                ),
-            color = Color.White.copy(alpha = 0.2f),
-            shape = RoundedCornerShape(4.dp)
+        // --- Left Section: Back & Info ---
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f) // Text takes remaining space
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                verticalAlignment = Alignment.CenterVertically
+            // Back Button
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
-                    imageVector = if (danmakuEnabled) CupertinoIcons.Default.TextBubble else CupertinoIcons.Outlined.TextBubble,
-                    contentDescription = if (danmakuEnabled) "Disable danmaku" else "Enable danmaku",
-                    tint = if (danmakuEnabled) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.6f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-        //  独立的弹幕设置按钮，更直观
-        Spacer(modifier = Modifier.width(4.dp))
-        Surface(
-            onClick = onDanmakuSettingsClick,
-            color = Color.White.copy(alpha = 0.2f),
-            shape = RoundedCornerShape(4.dp)
-        ) {
-            Box(
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = CupertinoIcons.Default.Gearshape,
-                    contentDescription = "弹幕设置",
-                    tint = Color.White.copy(alpha = 0.8f),
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-        // 侧边栏按钮 (Sidebar Toggle)
-        Surface(
-            onClick = onDrawerClick,
-            color = Color.White.copy(alpha = 0.2f),
-            shape = RoundedCornerShape(4.dp)
-        ) {
-            Box(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = CupertinoIcons.Default.SidebarRight,
-                    contentDescription = "侧边栏",
+                    imageVector = CupertinoIcons.Default.ChevronBackward, 
+                    contentDescription = "Back", 
                     tint = Color.White,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            // Title & Info
+            Column(modifier = Modifier.weight(1f)) { // Allow text column to take remaining width within parent Row
+                Text(
+                    text = title,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    modifier = Modifier.basicMarquee() // Marquee effect for long text
+                )
+                if (onlineCount.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = onlineCount,
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.width(24.dp)) // Space between text and actions
+        
+        // --- Right Section: Actions ---
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // Like
+            ActionIcon(
+                icon = if (isLiked) Icons.Rounded.ThumbUp else Icons.Outlined.ThumbUp,
+                contentDescription = "点赞",
+                isActive = isLiked,
+                onClick = onLikeClick
+            )
+            
+            // Dislike
+            ActionIcon(
+                icon = Icons.Outlined.ThumbDown,
+                contentDescription = "不喜欢",
+                isActive = false,
+                onClick = onDislikeClick
+            )
+            
+            // Coin
+            ActionIcon(
+                icon = if (isCoined) Icons.Rounded.MonetizationOn else Icons.Outlined.MonetizationOn,
+                contentDescription = "投币",
+                isActive = isCoined,
+                onClick = onCoinClick
+            )
+            
+            // Share
+            ActionIcon(
+                icon = Icons.Outlined.Share,
+                contentDescription = "分享",
+                isActive = false,
+                onClick = onShareClick
+            )
+
+            // Cast (Added back)
+            ActionIcon(
+                icon = Icons.Outlined.Cast,
+                contentDescription = "投屏",
+                isActive = false,
+                onClick = onCastClick
+            )
+            
+            // More (Three dots)
+            IconButton(
+                onClick = onMoreClick,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.MoreVert,
+                    contentDescription = "更多",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ActionIcon(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    isActive: Boolean,
+    onClick: () -> Unit
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(32.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = if (isActive) MaterialTheme.colorScheme.primary else Color.White,
+            modifier = Modifier.size(24.dp)
+        )
     }
 }

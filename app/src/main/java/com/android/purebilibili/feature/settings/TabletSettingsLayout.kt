@@ -31,6 +31,7 @@ import com.android.purebilibili.core.theme.iOSTeal
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.filled.*
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
+import kotlinx.coroutines.launch
 
 enum class SettingsCategory(
     val title: String, 
@@ -64,6 +65,7 @@ fun TabletSettingsLayout(
     onDonateClick: () -> Unit,
     onTipsClick: () -> Unit, // [Feature]
     onOpenLinksClick: () -> Unit, // [New]
+    onBlockedListClick: () -> Unit, // [New]
     
     // Logic Callbacks
     onPrivacyModeChange: (Boolean) -> Unit,
@@ -248,6 +250,20 @@ fun TabletSettingsLayout(
                             SettingsDetail.PERMISSION -> PermissionSettingsContent(
                                 modifier = Modifier
                             )
+                            SettingsDetail.BLOCKED_LIST -> {
+                                // [New] Blocked List Content for Tablet
+                                val repository = remember { com.android.purebilibili.data.repository.BlockedUpRepository(context) }
+                                val blockedUps by repository.getAllBlockedUps().collectAsState(initial = emptyList())
+                                // Pass scope for unblocking
+                                val scope = rememberCoroutineScope()
+                                BlockedListContent(
+                                    blockedUps = blockedUps,
+                                    onUnblock = { mid ->
+                                        scope.launch { repository.unblockUp(mid) }
+                                    },
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                             SettingsDetail.PLUGINS -> {
                                 // Need to manage editing state locally for the tablet view
                                 var editingPlugin by remember { mutableStateOf<com.android.purebilibili.core.plugin.json.JsonRulePlugin?>(null) }
@@ -346,7 +362,8 @@ fun TabletSettingsLayout(
                                 SettingsCategory.PRIVACY -> PrivacySection(
                                     privacyModeEnabled = privacyModeEnabled,
                                     onPrivacyModeChange = onPrivacyModeChange,
-                                    onPermissionClick = { activeDetail = SettingsDetail.PERMISSION }
+                                    onPermissionClick = { activeDetail = SettingsDetail.PERMISSION },
+                                    onBlockedListClick = { activeDetail = SettingsDetail.BLOCKED_LIST } // [New]
                                 )
                                 SettingsCategory.STORAGE -> DataStorageSection(
                                     customDownloadPath = customDownloadPath,
@@ -382,10 +399,5 @@ fun TabletSettingsLayout(
 }
 
 enum class SettingsDetail {
-    APPEARANCE, ICONS, ANIMATION, PLAYBACK, BOTTOM_BAR, PERMISSION, PLUGINS
+    APPEARANCE, ICONS, ANIMATION, PLAYBACK, BOTTOM_BAR, PERMISSION, PLUGINS, BLOCKED_LIST // [New]
 }
-
-// Helper to access Icon Groups if possible, otherwise I'll need to copy helper function
-// Currently I cant access `getIconGroups` because I haven't defined it as a function in IconSettingsScreen.kt
-// I defined `IconGroup` class, but the list `iconGroups` was inside `IconSettingsScreen` COMPOSABLE.
-

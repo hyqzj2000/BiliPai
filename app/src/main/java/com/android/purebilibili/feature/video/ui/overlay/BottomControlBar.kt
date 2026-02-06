@@ -6,14 +6,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.style.TextOverflow
-//  Cupertino Icons - iOS SF Symbols 风格图标
+import androidx.compose.ui.graphics.Brush
+//  Cupertino Icons
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
-import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
+import io.github.alexzhirkevich.cupertino.icons.outlined.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,23 +29,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.feature.video.ui.components.VideoAspectRatio
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.ui.draw.clip
 
 /**
  * Bottom Control Bar Component
  * 
- * Displays the bottom control bar with:
- * - Play/pause button
- * - Progress bar
- * - Time display
- * - Speed selector
- * - Fullscreen toggle
- * 
- * Requirement Reference: AC2.3 - Reusable BottomControlBar
+ * Redesigned Control Bar:
+ * [Play/Pause] [Time]  [Danmaku Switch] [       Input Bar       ] [Settings]  [Quality] [Speed] [Fullscreen]
  */
 
-/**
- * Player progress data class
- */
 data class PlayerProgress(
     val current: Long = 0L,
     val duration: Long = 0L,
@@ -57,225 +54,182 @@ fun BottomControlBar(
     currentRatio: VideoAspectRatio = VideoAspectRatio.FIT,
     onPlayPauseClick: () -> Unit,
     onSeek: (Long) -> Unit,
-    onSeekStart: () -> Unit = {},  //  [新增] 拖动进度条开始回调（清除弹幕）
+    onSeekStart: () -> Unit = {},
     onSpeedClick: () -> Unit = {},
     onRatioClick: () -> Unit = {},
     onToggleFullscreen: () -> Unit,
-    //  [新增] 竖屏模式弹幕开关
+    
+    // Danmaku
     danmakuEnabled: Boolean = true,
     onDanmakuToggle: () -> Unit = {},
-    //  [新增] 竖屏模式清晰度选择
+    onDanmakuSettingsClick: () -> Unit = {},
+    
+    // Quality
     currentQualityLabel: String = "",
     onQualityClick: () -> Unit = {},
-    // 🖼️ [新增] 视频预览图数据
+    
+    // Features
     videoshotData: com.android.purebilibili.data.model.response.VideoshotData? = null,
-    // 📖 [新增] 视频章节数据
     viewPoints: List<com.android.purebilibili.data.model.response.ViewPoint> = emptyList(),
     currentChapter: String? = null,
     onChapterClick: () -> Unit = {},
-    // 📱 [新增] 竖屏全屏模式
+    
+    // Portrait controls (kept for compatibility, though less used in new design)
     isVerticalVideo: Boolean = false,
     onPortraitFullscreen: () -> Unit = {},
-    // 🔁 [新增] 播放模式
     currentPlayMode: com.android.purebilibili.feature.video.player.PlayMode = com.android.purebilibili.feature.video.player.PlayMode.SEQUENTIAL,
     onPlayModeClick: () -> Unit = {},
-    // 📲 [新增] 小窗模式
     onPipClick: () -> Unit = {},
+    
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp)  //  减小水平 padding
-            .padding(bottom = 4.dp)
-            //  只在全屏横屏时才需要避开导航栏
-            // 竖屏时导航栏在页面底部，不在播放器区域内
+            .padding(bottom = 12.dp)
             .let { if (isFullscreen) it.navigationBarsPadding() else it }
     ) {
+        // 1. Progress Bar (Top of controls)
         VideoProgressBar(
             currentPosition = progress.current,
             duration = progress.duration,
             bufferedPosition = progress.buffered,
             onSeek = onSeek,
-            onSeekStart = onSeekStart,  //  传递给进度条
+            onSeekStart = onSeekStart,
             videoshotData = videoshotData,
             viewPoints = viewPoints,
             currentChapter = currentChapter,
             onChapterClick = onChapterClick
         )
 
-        Box(
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 2. Control Row
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 4.dp) // Maintain some padding
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // 左侧：播放按钮和时间
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.align(Alignment.CenterStart)
+            // Left: Play/Pause
+            IconButton(
+                onClick = onPlayPauseClick,
+                modifier = Modifier.size(32.dp)
             ) {
-                IconButton(
-                    onClick = onPlayPauseClick,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        if (isPlaying) CupertinoIcons.Default.Pause else CupertinoIcons.Default.Play,
-                        null,
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                Text(
-                    text = "${FormatUtils.formatDuration((progress.current / 1000).toInt())} / ${FormatUtils.formatDuration((progress.duration / 1000).toInt())}",
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1
+                Icon(
+                    imageVector = if (isPlaying) CupertinoIcons.Default.Pause else CupertinoIcons.Default.Play,
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
                 )
             }
-            
-            // 中间：功能按钮（居中显示）
-            if (isFullscreen || currentSpeed != 1.0f) { // 仅在全屏或有状态时显示中间区域，避免遮挡
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.align(Alignment.Center)
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Time
+            Text(
+                text = "${FormatUtils.formatDuration((progress.current / 1000).toInt())} / ${FormatUtils.formatDuration((progress.duration / 1000).toInt())}",
+                color = Color.White.copy(alpha = 0.9f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Center area: Danmaku Controls (Switch + Input) - Only visible in Fullscreen/Landscape
+            if (isFullscreen) {
+                // Danmaku Switch
+                Icon(
+                    imageVector = if (danmakuEnabled) CupertinoIcons.Default.TextBubble else CupertinoIcons.Outlined.TextBubble,
+                    contentDescription = "Danmaku Toggle",
+                    tint = if (danmakuEnabled) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.7f),
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable(onClick = onDanmakuToggle)
+                )
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                // Danmaku Input Box
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(36.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color.White.copy(alpha = 0.2f))
+                        .clickable { /* TODO: Open Input Dialog */ },
+                    contentAlignment = Alignment.CenterStart
                 ) {
-                    // 🎛️ 倍速按钮
-                    if (isFullscreen || currentSpeed != 1.0f) {
-                        Surface(
-                            onClick = onSpeedClick,
-                            color = Color.White.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                text = if (currentSpeed == 1.0f) "倍速" else "${currentSpeed}x",
-                                color = if (currentSpeed != 1.0f) MaterialTheme.colorScheme.primary else Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp)
-                            )
-                        }
-                    }
+                    Text(
+                        text = "发个友善的弹幕见证当下...",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
                     
-                    // 📺 Aspect Ratio button - 仅全屏时显示
-                    if (isFullscreen) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Surface(
-                            onClick = onRatioClick,
-                            color = Color.White.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                text = currentRatio.displayName,
-                                color = if (currentRatio != VideoAspectRatio.FIT) MaterialTheme.colorScheme.primary else Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp)
-                            )
-                        }
+                    // Settings Icon inside input bar (right)
+                    IconButton(
+                        onClick = onDanmakuSettingsClick,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 4.dp)
+                            .size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = CupertinoIcons.Default.Gearshape,
+                            contentDescription = "Settings",
+                            tint = Color.White.copy(alpha = 0.8f),
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+            } else {
+                Spacer(modifier = Modifier.weight(1f))
             }
-            
-            // 右侧：全屏按钮和其他控制
+
+            // Right: Function Buttons
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp), // 增加间距
-                modifier = Modifier.align(Alignment.CenterEnd)
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                 //  [新增] 竖屏模式弹幕开关 (非全屏时显示在右侧)
-                if (!isFullscreen) {
-                    IconButton(
-                        onClick = onDanmakuToggle,
-                        modifier = Modifier.size(26.dp)
-                    ) {
-                        Icon(
-                            if (danmakuEnabled) CupertinoIcons.Default.TextBubble else CupertinoIcons.Outlined.TextBubble,
-                            contentDescription = if (danmakuEnabled) "关闭弹幕" else "开启弹幕",
-                            tint = if (danmakuEnabled) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.7f),
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    
-                    // 竖屏按钮
-                    Surface(
-                        onClick = onPortraitFullscreen,
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            text = "竖屏",
-                            color = Color.White,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                        )
-                    }
-                    
-                    // 播放模式
-                    IconButton(
-                        onClick = onPlayModeClick,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        // 根据模式选择图标
-                        val icon = when (currentPlayMode) {
-                            com.android.purebilibili.feature.video.player.PlayMode.SEQUENTIAL -> CupertinoIcons.Default.ChevronForward
-                            com.android.purebilibili.feature.video.player.PlayMode.SHUFFLE -> CupertinoIcons.Default.Shuffle
-                            com.android.purebilibili.feature.video.player.PlayMode.REPEAT_ONE -> CupertinoIcons.Default.Repeat
-                        }
-                        
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = "切换播放模式",
-                            tint = if (currentPlayMode == com.android.purebilibili.feature.video.player.PlayMode.SEQUENTIAL) 
-                                Color.White.copy(alpha = 0.7f) // 顺序播放时颜色淡一点
-                            else 
-                                MaterialTheme.colorScheme.primary, // 其他模式高亮
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                // Quality
+                if (currentQualityLabel.isNotEmpty()) {
+                    Text(
+                        text = currentQualityLabel,
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.clickable(onClick = onQualityClick)
+                    )
                 }
                 
-                // 📲 小窗按钮 - 仅竖屏非全屏时显示
-                if (!isFullscreen) {
-                    IconButton(
-                        onClick = onPipClick,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            CupertinoIcons.Default.Pip,
-                            contentDescription = "小窗播放",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-                
-                // 📺 [增强] 横屏全屏按钮 - 始终显示
-                Surface(
-                    onClick = onToggleFullscreen,
-                    color = if (!isFullscreen) MaterialTheme.colorScheme.primary.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(6.dp),
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                        Icon(
-                            if (isFullscreen) CupertinoIcons.Default.ArrowDownRightAndArrowUpLeft else CupertinoIcons.Default.ArrowUpLeftAndArrowDownRight,
-                            contentDescription = if (isFullscreen) "退出全屏" else "全屏",
-                            tint = Color.White,
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
-                }
+                // Speed
+                Text(
+                    text = if (currentSpeed == 1.0f) "倍速" else "${currentSpeed}x",
+                    color = if (currentSpeed == 1.0f) Color.White else MaterialTheme.colorScheme.primary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.clickable(onClick = onSpeedClick)
+                )
+
+                // Fullscreen
+                Icon(
+                    imageVector = if (isFullscreen) CupertinoIcons.Default.ArrowDownRightAndArrowUpLeft else CupertinoIcons.Default.ArrowUpLeftAndArrowDownRight,
+                    contentDescription = "Fullscreen",
+                    tint = Color.White,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable(onClick = onToggleFullscreen)
+                )
             }
         }
     }
 }
 
 /**
- * Video Progress Bar - 自定义细进度条（支持拖动预览和章节标记）
+ * Reusing existing VideoProgressBar
  */
 @Composable
 fun VideoProgressBar(
@@ -283,14 +237,13 @@ fun VideoProgressBar(
     duration: Long,
     bufferedPosition: Long,
     onSeek: (Long) -> Unit,
-    onSeekStart: () -> Unit = {},  //  [新增] 拖动开始回调（用于清除弹幕）
+    onSeekStart: () -> Unit = {},
     videoshotData: com.android.purebilibili.data.model.response.VideoshotData? = null,
-    // 📖 [新增] 视频章节数据
     viewPoints: List<com.android.purebilibili.data.model.response.ViewPoint> = emptyList(),
     currentChapter: String? = null,
     onChapterClick: () -> Unit = {}
 ) {
-    val progress = if (duration > 0) currentPosition.toFloat() / duration else 0f
+     val progress = if (duration > 0) currentPosition.toFloat() / duration else 0f
     val bufferedProgress = if (duration > 0) bufferedPosition.toFloat() / duration else 0f
     var tempProgress by remember { mutableFloatStateOf(0f) }
     var isDragging by remember { mutableStateOf(false) }
@@ -305,18 +258,14 @@ fun VideoProgressBar(
     
     val displayProgress = if (isDragging) tempProgress else progress
     val primaryColor = MaterialTheme.colorScheme.primary
-    
-    // 计算拖动时的目标时间
     val targetPositionMs = (tempProgress * duration).toLong()
-    
-    // 根据是否有章节标签和是否正在拖动计算高度
-    val baseHeight = if (currentChapter != null) 40.dp else 24.dp
-    val containerHeight = if (isDragging && videoshotData != null) 120.dp else baseHeight
+    val baseHeight = if (currentChapter != null) 32.dp else 20.dp
+    val containerHeight = if (isDragging && videoshotData != null) 100.dp else baseHeight
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(containerHeight)  // 动态高度
+            .height(containerHeight)
             .pointerInput(Unit) {
                 containerWidth = size.width.toFloat()
                 detectTapGestures { offset ->
@@ -331,7 +280,7 @@ fun VideoProgressBar(
                         isDragging = true
                         tempProgress = (offset.x / size.width).coerceIn(0f, 1f)
                         dragOffsetX = offset.x
-                        onSeekStart()  //  拖动开始时清除弹幕
+                        onSeekStart()
                     },
                     onDrag = { change, _ ->
                         change.consume()
@@ -349,12 +298,11 @@ fun VideoProgressBar(
                 )
             }
     ) {
-        // 🖼️ 拖动时显示预览气泡（放在进度条上方）
-        if (isDragging) {
+         if (isDragging) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(bottom = 30.dp)  // 📐 预览气泡在进度条上方 30dp
+                    .padding(bottom = 24.dp)
             ) {
                 if (videoshotData != null && videoshotData.isValid) {
                     com.android.purebilibili.feature.video.ui.components.SeekPreviewBubble(
@@ -366,7 +314,6 @@ fun VideoProgressBar(
                         containerWidth = containerWidth
                     )
                 } else {
-                    // 无预览图时使用简化版气泡
                     com.android.purebilibili.feature.video.ui.components.SeekPreviewBubbleSimple(
                         targetPositionMs = targetPositionMs,
                         currentPositionMs = currentPosition,
@@ -377,23 +324,21 @@ fun VideoProgressBar(
             }
         }
         
-        // 进度条本体（放在底部）
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
         ) {
-            // 📖 当前章节标签（如有）
-            if (currentChapter != null) {
+             if (currentChapter != null) {
                 Row(
                     modifier = Modifier
                         .clickable(onClick = onChapterClick)
-                        .padding(bottom = 4.dp),
+                        .padding(bottom = 4.dp, start = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         CupertinoIcons.Default.ListBullet,
-                        contentDescription = "章节",
+                        contentDescription = "Chapter",
                         tint = Color.White.copy(alpha = 0.8f),
                         modifier = Modifier.size(12.dp)
                     )
@@ -412,18 +357,16 @@ fun VideoProgressBar(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(24.dp),
+                    .height(20.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-                // 背景轨道（带章节分隔线）
-                Box(
+                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(3.dp)
                         .background(Color.White.copy(alpha = 0.3f), RoundedCornerShape(1.5.dp))
                         .drawWithContent {
                             drawContent()
-                            // 📖 绘制章节分隔线
                             if (duration > 0 && viewPoints.isNotEmpty()) {
                                 viewPoints.forEach { point ->
                                     val position = point.fromMs.toFloat() / duration
@@ -441,7 +384,6 @@ fun VideoProgressBar(
                         }
                 )
                 
-                // 缓冲进度
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(bufferedProgress.coerceIn(0f, 1f))
@@ -449,7 +391,6 @@ fun VideoProgressBar(
                         .background(Color.White.copy(alpha = 0.5f), RoundedCornerShape(1.5.dp))
                 )
                 
-                // 当前进度
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(displayProgress.coerceIn(0f, 1f))
@@ -457,7 +398,6 @@ fun VideoProgressBar(
                         .background(primaryColor, RoundedCornerShape(1.5.dp))
                 )
                 
-                // 滑块（圆点）- 拖动时放大
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(displayProgress.coerceIn(0f, 1f))
@@ -467,7 +407,7 @@ fun VideoProgressBar(
                             .align(Alignment.CenterEnd)
                             .size(if (isDragging) 16.dp else 12.dp)
                             .offset(x = if (isDragging) 8.dp else 6.dp)
-                            .background(primaryColor, androidx.compose.foundation.shape.CircleShape)
+                            .background(primaryColor, CircleShape)
                     )
                 }
             }

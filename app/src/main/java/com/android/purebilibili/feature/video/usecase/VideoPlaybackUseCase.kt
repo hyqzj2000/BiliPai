@@ -50,7 +50,10 @@ sealed class VideoLoadResult {
         val duration: Long = 0,
         // [New] Codec Info for UI display
         val videoCodecId: Int = 0,
-        val audioCodecId: Int = 0
+        val audioCodecId: Int = 0,
+        // [New] AI Translation Info
+        val aiAudio: AiAudioInfo? = null,
+        val curAudioLang: String? = null
     ) : VideoLoadResult()
     
     data class Error(
@@ -104,7 +107,9 @@ class VideoPlaybackUseCase(
         aid: Long = 0,  // [修复] 新增 aid 参数
         defaultQuality: Int = 64,
         audioQualityPreference: Int = -1,
+
         videoCodecPreference: String = "hev1",
+        audioLang: String? = null, // [New] AI Translation Language
 
         playWhenReady: Boolean = true,  // [Added] Control auto-play
         onProgress: (String) -> Unit = {}
@@ -139,7 +144,7 @@ class VideoPlaybackUseCase(
             
             //  [性能优化] 并行请求视频详情、相关推荐和其它数据
             val (detailResult, relatedVideos, emoteMap) = kotlinx.coroutines.coroutineScope {
-                val detailDeferred = async { VideoRepository.getVideoDetails(bvid, aid, defaultQuality) }
+                val detailDeferred = async { VideoRepository.getVideoDetails(bvid, aid, defaultQuality, audioLang) }
                 val relatedDeferred = async { 
                     if (bvid.isNotEmpty()) VideoRepository.getRelatedVideos(bvid) else emptyList() 
                 }
@@ -315,8 +320,11 @@ class VideoPlaybackUseCase(
                         isFollowing = isFollowing,
                         isFavorited = isFavorited,
                         isLiked = isLiked,
+
                         coinCount = coinCount,
-                        duration = playData.timelength
+                        duration = playData.timelength,
+                        aiAudio = playData.aiAudio,
+                        curAudioLang = playData.curLanguage
                     )
                 },
                 onFailure = { e ->

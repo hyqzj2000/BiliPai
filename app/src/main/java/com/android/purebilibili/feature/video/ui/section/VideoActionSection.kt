@@ -30,7 +30,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 //  已改用 MaterialTheme.colorScheme.primary
 import com.android.purebilibili.core.util.FormatUtils
+import com.android.purebilibili.core.util.HapticType
+import com.android.purebilibili.core.util.rememberHapticFeedback
 import com.android.purebilibili.data.model.response.ViewInfo
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 
 /**
  * Video Action Section Components
@@ -71,13 +83,16 @@ fun ActionButtonsRow(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Like
-        BiliActionButton(
-            icon = if (isLiked) CupertinoIcons.Filled.Heart else CupertinoIcons.Default.Heart,
-            text = FormatUtils.formatStat(info.stat.like.toLong()),
-            isActive = isLiked,
-            activeColor = MaterialTheme.colorScheme.primary,
-            onClick = onLikeClick
+        // Like - 支持长按触发三连
+        TripleLikeActionButton(
+            isLiked = isLiked,
+            likeCount = FormatUtils.formatStat(info.stat.like.toLong()),
+            coinCount = FormatUtils.formatStat(info.stat.coin.toLong()),
+            isFavorited = isFavorited,
+            favoriteCount = FormatUtils.formatStat(info.stat.favorite.toLong()),
+            hasCoin = coinCount > 0,
+            onLikeClick = onLikeClick,
+            onTripleComplete = onTripleClick
         )
 
         // Coin
@@ -124,13 +139,189 @@ fun ActionButtonsRow(
             onClick = onDownloadClick
         )
 
-        // Triple action
-        BiliActionButton(
-            icon = CupertinoIcons.Filled.Heart,
-            text = "三连",
-            isActive = false,
-            activeColor = Color(0xFFE91E63),
-            onClick = onTripleClick
+    }
+}
+
+/**
+ * 一键三连长按按钮 - 长按显示点赞、投币、收藏三个图标的圆形进度条
+ */
+@Composable
+private fun TripleLikeActionButton(
+    isLiked: Boolean,
+    likeCount: String,
+    coinCount: String,
+    isFavorited: Boolean,
+    favoriteCount: String,
+    hasCoin: Boolean,
+    onLikeClick: () -> Unit,
+    onTripleComplete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val haptic = rememberHapticFeedback()
+    
+    // 长按进度状态
+    var isLongPressing by remember { mutableStateOf(false) }
+    var longPressProgress by remember { mutableFloatStateOf(0f) }
+    val progressDuration = 1500 // 1.5 秒
+    
+    // 进度动画
+    val animatedProgress by animateFloatAsState(
+        targetValue = if (isLongPressing) 1f else 0f,
+        animationSpec = if (isLongPressing) {
+            tween(durationMillis = progressDuration, easing = LinearEasing)
+        } else {
+            tween(durationMillis = 200, easing = FastOutSlowInEasing)
+        },
+        label = "tripleLikeProgress",
+        finishedListener = { progress ->
+            if (progress >= 1f && isLongPressing) {
+                haptic(HapticType.MEDIUM)
+                onTripleComplete()
+                isLongPressing = false
+            }
+        }
+    )
+    
+    LaunchedEffect(animatedProgress) {
+        longPressProgress = animatedProgress
+    }
+    
+    LaunchedEffect(isLongPressing) {
+        if (isLongPressing) {
+            haptic(HapticType.LIGHT)
+        }
+    }
+    
+    // 显示三个图标的进度
+    Row(
+        horizontalArrangement = Arrangement.spacedBy((-8).dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        isLongPressing = true
+                        val released = tryAwaitRelease()
+                        isLongPressing = false
+                        if (released && longPressProgress < 0.1f) {
+                            onLikeClick()
+                        }
+                    }
+                )
+            }
+    ) {
+        // 点赞图标
+        TripleProgressIcon(
+            icon = if (isLiked) CupertinoIcons.Filled.HandThumbsup else CupertinoIcons.Outlined.HandThumbsup,
+            text = likeCount,
+            progress = longPressProgress,
+            progressColor = MaterialTheme.colorScheme.primary,
+            isActive = isLiked
+        )
+        
+        // 投币图标 (只在长按时显示)
+        androidx.compose.animation.AnimatedVisibility(
+            visible = longPressProgress > 0.05f,
+            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
+            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut()
+        ) {
+            TripleProgressIcon(
+                icon = com.android.purebilibili.core.ui.AppIcons.BiliCoin,
+                text = coinCount,
+                progress = longPressProgress,
+                progressColor = Color(0xFFFFB300),
+                isActive = hasCoin
+            )
+        }
+        
+        // 收藏图标 (只在长按时显示)
+        androidx.compose.animation.AnimatedVisibility(
+            visible = longPressProgress > 0.05f,
+            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
+            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut()
+        ) {
+            TripleProgressIcon(
+                icon = if (isFavorited) CupertinoIcons.Filled.Bookmark else CupertinoIcons.Default.Bookmark,
+                text = favoriteCount,
+                progress = longPressProgress,
+                progressColor = Color(0xFFFFC107),
+                isActive = isFavorited
+            )
+        }
+    }
+}
+
+/**
+ * 带圆形进度环的图标
+ */
+@Composable
+private fun TripleProgressIcon(
+    icon: ImageVector,
+    text: String,
+    progress: Float,
+    progressColor: Color,
+    isActive: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val iconSize = 24.dp
+    val ringSize = iconSize + 12.dp
+    val strokeWidth = 2.5.dp
+    
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+    ) {
+        Box(
+            modifier = Modifier.size(ringSize),
+            contentAlignment = Alignment.Center
+        ) {
+            // 进度环
+            if (progress > 0f) {
+                Canvas(modifier = Modifier.size(ringSize)) {
+                    val stroke = strokeWidth.toPx()
+                    val diameter = size.minDimension - stroke
+                    val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
+                    
+                    // 背景环
+                    drawArc(
+                        color = progressColor.copy(alpha = 0.2f),
+                        startAngle = -90f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = Size(diameter, diameter),
+                        style = Stroke(width = stroke, cap = StrokeCap.Round)
+                    )
+                    
+                    // 进度环
+                    drawArc(
+                        color = progressColor,
+                        startAngle = -90f,
+                        sweepAngle = 360f * progress,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = Size(diameter, diameter),
+                        style = Stroke(width = stroke, cap = StrokeCap.Round)
+                    )
+                }
+            }
+            
+            // 图标
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isActive) progressColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(iconSize)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = text,
+            fontSize = 11.sp,
+            color = if (isActive) progressColor else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = if (isActive) FontWeight.Medium else FontWeight.Normal,
+            maxLines = 1
         )
     }
 }
@@ -153,7 +344,7 @@ private fun BiliActionButton(
     val isPressed by interactionSource.collectIsPressedAsState()
     
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.9f else 1f,
+        targetValue = if (isPressed) 0.92f else 1f, // 略微减小缩放感
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium
@@ -177,8 +368,7 @@ private fun BiliActionButton(
         if (isActive) shouldPulse = true
     }
     
-    val iconColor = if (isActive) activeColor else MaterialTheme.colorScheme.onSurfaceVariant
-    val textColor = if (isActive) activeColor else MaterialTheme.colorScheme.onSurfaceVariant
+    val contentColor = if (isActive) activeColor else MaterialTheme.colorScheme.onSurfaceVariant
     
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -198,15 +388,15 @@ private fun BiliActionButton(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = iconColor,
+            tint = contentColor,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = text,
             fontSize = 11.sp,
-            color = textColor,
-            fontWeight = FontWeight.Normal,
+            color = contentColor,
+            fontWeight = if (isActive) FontWeight.Medium else FontWeight.Normal,
             maxLines = 1
         )
     }

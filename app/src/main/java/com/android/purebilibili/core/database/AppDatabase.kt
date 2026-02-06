@@ -6,10 +6,13 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.android.purebilibili.core.database.dao.SearchHistoryDao
 import com.android.purebilibili.core.database.entity.SearchHistory
+import com.android.purebilibili.core.database.entity.BlockedUp
+import com.android.purebilibili.core.database.dao.BlockedUpDao
 
-@Database(entities = [SearchHistory::class], version = 2, exportSchema = false)
+@Database(entities = [SearchHistory::class, BlockedUp::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun searchHistoryDao(): SearchHistoryDao
+    abstract fun blockedUpDao(): BlockedUpDao
 
     companion object {
         @Volatile

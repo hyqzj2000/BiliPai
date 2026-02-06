@@ -80,10 +80,14 @@ sealed class PlayerUiState {
         val videoCodecId: Int = 0,
         val audioCodecId: Int = 0,
         // 👀 [新增] 在线观看人数
+
         val onlineCount: String = "",
         // [新增] AI Summary & BGM
         val aiSummary: AiSummaryData? = null,
-        val bgmInfo: BgmInfo? = null
+        val bgmInfo: BgmInfo? = null,
+        // [New] AI Audio Translation
+        val aiAudio: AiAudioInfo? = null,
+        val currentAudioLang: String? = null
     ) : PlayerUiState() {
         val cdnCount: Int get() = allVideoUrls.size.coerceAtLeast(1)
         val currentCdnLabel: String get() = "线路${currentCdnIndex + 1}"
@@ -532,11 +536,14 @@ class PlayerViewModel : ViewModel() {
     
     // [修复] 添加 aid 参数支持，用于移动端推荐流（可能只返回 aid）
     // [Added] autoPlay override: null = use settings, true/false = force
-    fun loadVideo(bvid: String, aid: Long = 0, force: Boolean = false, autoPlay: Boolean? = null) {
+    fun loadVideo(bvid: String, aid: Long = 0, force: Boolean = false, autoPlay: Boolean? = null, audioLang: String? = null) {
         if (bvid.isBlank()) return
         
-        //  防止重复加载：只有在正在加载同一视频时才跳过
-        if (!force && currentBvid == bvid && _uiState.value is PlayerUiState.Loading) {
+        //  防止重复加载：只有在正在加载同一视频时才跳过 (且语言未改变)
+        val currentLang = (_uiState.value as? PlayerUiState.Success)?.currentAudioLang
+        val isSameLang = currentLang == audioLang
+        
+        if (!force && currentBvid == bvid && isSameLang && _uiState.value is PlayerUiState.Loading) {
             Logger.d("PlayerVM", " Already loading $bvid, skip")
             return
         }
@@ -634,6 +641,7 @@ class PlayerViewModel : ViewModel() {
                         finalQuality, 
                         audioQualityPreference,
                         videoCodecPreference,
+                        audioLang,  // [New] Pass audioLang
                         shouldAutoPlay  // Pass to UseCase (even if unused there)
                     )
                 }
@@ -711,9 +719,13 @@ class PlayerViewModel : ViewModel() {
                             allVideoUrls = allVideoUrls,
 
                             allAudioUrls = allAudioUrls,
+
                             // [New] Codec/Audio info
                             videoCodecId = result.videoCodecId,
-                            audioCodecId = result.audioCodecId
+                            audioCodecId = result.audioCodecId,
+                            // [New] AI Audio
+                            aiAudio = result.aiAudio,
+                            currentAudioLang = result.curAudioLang
                         )
                         
                         //  [新增] 异步加载关注列表（用于推荐视频的已关注标签）
@@ -770,6 +782,55 @@ class PlayerViewModel : ViewModel() {
             } catch (e: Exception) {
                 Logger.e("PlayerVM", "⚠️ Unexpected load exception", e)
                 _uiState.value = PlayerUiState.Error(VideoLoadError.UnknownError(e))
+            }
+        }
+    }
+    
+    /**
+     * [New] Change Audio Language (AI Translation)
+     */
+    fun changeAudioLanguage(lang: String?) {
+        val current = _uiState.value as? PlayerUiState.Success ?: return
+        if (current.currentAudioLang == lang) return
+        
+        Logger.d("PlayerVM", "🗣️ Changing audio language to: $lang")
+        
+        // Reload video with new language
+        // We set force=true to ensure it reloads even if bvid is same
+        // 🛠️ [修复] 切换语言时，不要自动连播，只是重新加载当前分P
+        loadVideo(current.info.bvid, current.info.aid, force = true, autoPlay = true, audioLang = lang)
+    }
+
+    /**
+     * 点赞弹幕
+     */
+    fun likeDanmaku(dmid: Long) {
+        val current = _uiState.value as? PlayerUiState.Success ?: return
+        val cid = current.info.cid
+        
+        viewModelScope.launch {
+            val result = com.android.purebilibili.data.repository.DanmakuRepository.likeDanmaku(cid, dmid)
+            result.onSuccess {
+                toast("点赞成功")
+            }.onFailure {
+                toast("点赞失败: ${it.message}")
+            }
+        }
+    }
+
+    /**
+     * 举报弹幕
+     */
+    fun reportDanmaku(dmid: Long, reason: Int) {
+        val current = _uiState.value as? PlayerUiState.Success ?: return
+        val cid = current.info.cid
+        
+        viewModelScope.launch {
+            val result = com.android.purebilibili.data.repository.DanmakuRepository.reportDanmaku(cid, dmid, reason)
+            result.onSuccess {
+                toast("举报提交成功")
+            }.onFailure {
+                toast("举报失败: ${it.message}")
             }
         }
     }

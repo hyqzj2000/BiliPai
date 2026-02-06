@@ -70,7 +70,10 @@ data class SearchVideoItem(
     val video_review: Int = 0,
     val duration: String = "",
     //  新增：发布时间戳（秒）
-    val pubdate: Long = 0
+    //  新增：发布时间戳（秒）
+    val pubdate: Long = 0,
+    //  [修复] 添加 mid 字段，用于屏蔽过滤
+    val mid: Long = 0
 ) {
     fun toVideoItem(): VideoItem {
         return VideoItem(
@@ -84,7 +87,7 @@ data class SearchVideoItem(
                 .replace("&gt;", ">"),        // 修复 > 符号
 
             pic = if (pic.startsWith("//")) "https:$pic" else pic,
-            owner = Owner(name = author),
+            owner = Owner(mid = mid, name = author),
             stat = Stat(view = play, danmaku = video_review),
             duration = parseDuration(duration),
             //  传递发布时间

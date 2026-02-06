@@ -64,7 +64,32 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     //  防抖任务
     private var suggestJob: Job? = null
 
+    private val blockedUpRepository = com.android.purebilibili.data.repository.BlockedUpRepository(application)
+    private var blockedMids: Set<Long> = emptySet()
+
     init {
+        viewModelScope.launch {
+            blockedUpRepository.getAllBlockedUps().collect { list ->
+                blockedMids = list.map { it.mid }.toSet()
+                // Re-filter results
+                val currentState = _uiState.value
+                val newVideos = currentState.searchResults.filter { it.owner.mid !in blockedMids }
+                val newUps = currentState.upResults.filter { it.mid !in blockedMids }
+                val newLives = currentState.liveResults.filter { it.uid !in blockedMids }
+                
+                if (newVideos.size != currentState.searchResults.size || 
+                    newUps.size != currentState.upResults.size ||
+                    newLives.size != currentState.liveResults.size) {
+                    _uiState.update { 
+                        it.copy(
+                            searchResults = newVideos,
+                            upResults = newUps,
+                            liveResults = newLives
+                        ) 
+                    }
+                }
+            }
+        }
         loadHotSearch()
         loadHistory()
     }
@@ -155,8 +180,9 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                     val result = SearchRepository.search(keyword, order, duration, page = 1)
                     result.onSuccess { (videos, pageInfo) ->
                         //  [修复] 应用插件过滤（UP主拉黑、关键词屏蔽等）
+                        val nativeFiltered = videos.filter { it.owner.mid !in blockedMids }
                         val filteredVideos = com.android.purebilibili.core.plugin.PluginManager
-                            .filterFeedItems(videos)
+                            .filterFeedItems(nativeFiltered)
                         _uiState.update { 
                             it.copy(
                                 isSearching = false, 
@@ -174,10 +200,11 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                 SearchType.UP -> {
                     val result = SearchRepository.searchUp(keyword)
                     result.onSuccess { ups ->
+                        val filteredUps = ups.filter { it.mid !in blockedMids }
                         _uiState.update { 
                             it.copy(
                                 isSearching = false, 
-                                upResults = ups, 
+                                upResults = filteredUps, 
                                 searchResults = emptyList(),
                                 bangumiResults = emptyList(),
                                 liveResults = emptyList(),
@@ -210,10 +237,11 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                 SearchType.LIVE -> {
                     val result = SearchRepository.searchLive(keyword, page = 1)
                     result.onSuccess { (liveRooms, pageInfo) ->
+                        val filteredLive = liveRooms.filter { it.uid !in blockedMids }
                         _uiState.update { 
                             it.copy(
                                 isSearching = false, 
-                                liveResults = liveRooms,
+                                liveResults = filteredLive,
                                 searchResults = emptyList(),
                                 upResults = emptyList(),
                                 bangumiResults = emptyList(),
@@ -250,8 +278,9 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             
             result.onSuccess { (videos, pageInfo) ->
                 //  应用插件过滤
+                val nativeFiltered = videos.filter { it.owner.mid !in blockedMids }
                 val filteredVideos = com.android.purebilibili.core.plugin.PluginManager
-                    .filterFeedItems(videos)
+                    .filterFeedItems(nativeFiltered)
                 
                 _uiState.update { 
                     it.copy(

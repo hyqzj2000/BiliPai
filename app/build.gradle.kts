@@ -22,8 +22,8 @@ android {
         targetSdk = 35  // 保持35以避免Android 16的新运行时行为
         // 🔥🔥 [版本号] 发布新版前记得更新！格式：versionCode +1, versionName 递增
         // 更新日志：CHANGELOG.md
-        versionCode = 55
-        versionName = "5.0.5"
+        versionCode = 56
+        versionName = "5.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -97,6 +97,8 @@ android {
             excludes += "/META-INF/*.kotlin_module"
             excludes += "/kotlin/**"
             excludes += "DebugProbesKt.bin"
+            // 📺 Cling DLNA 库冲突文件
+            excludes += "META-INF/beans.xml"
         }
     }
     
@@ -221,6 +223,19 @@ dependencies {
     
     // --- 8.1 WorkManager (后台下载任务) ---
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+    
+    // --- 8.2 DLNA & Local Proxy (投屏) ---
+    // DLNA Casting (Cling)
+    implementation("org.fourthline.cling:cling-core:2.1.2")
+    implementation("org.fourthline.cling:cling-support:2.1.2")
+    // Jetty (Cling 传输层依赖)
+    implementation("org.eclipse.jetty:jetty-server:8.1.22.v20160922")
+    implementation("org.eclipse.jetty:jetty-servlet:8.1.22.v20160922")
+    implementation("org.eclipse.jetty:jetty-client:8.1.22.v20160922")
+    implementation("javax.servlet:javax.servlet-api:3.1.0")
+    
+    // NanoHTTPD (Lightweight local proxy server)
+    implementation("org.nanohttpd:nanohttpd:2.3.1")
 
     implementation("androidx.navigation:navigation-compose:2.9.0")
     

@@ -107,7 +107,7 @@ fun DissolvableVideoCard(
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
     var shouldCollapse by remember { mutableStateOf(false) }
     
-    // 动画：完成/收起 - 使用更快的动画
+        // 动画：完成/收起 - 使用更快的动画
     val heightMultiplier by animateFloatAsState(
         targetValue = if (shouldCollapse) 0f else 1f,
         animationSpec = spring(
@@ -117,7 +117,9 @@ fun DissolvableVideoCard(
         label = "heightCollapse",
         finishedListener = {
              if (shouldCollapse) {
-                 // Animation fully done
+                 // Animation fully done, NOW we dismiss
+                 onDissolveComplete()
+                 DissolveAnimationManager.stopDissolving()
              }
         }
     )
@@ -158,7 +160,7 @@ fun DissolvableVideoCard(
                                 } else {
                                     // Fallback? Just collapse
                                     shouldCollapse = true
-                                    onDissolveComplete()
+                                    // onDissolveComplete() // Let animation listener handle it
                                 }
                             },
                             Handler(Looper.getMainLooper())
@@ -238,9 +240,9 @@ fun DissolvableVideoCard(
                         setBitmap(captureBitmap!!)
                         setCallbacks(
                             complete = {
-                                 onDissolveComplete()
-                                 DissolveAnimationManager.stopDissolving()
-                                 shouldCollapse = true
+                                 // onDissolveComplete() // REMOVED: Don't dismiss yet
+                                 // DissolveAnimationManager.stopDissolving() // REMOVED
+                                 shouldCollapse = true // Trigger collapse animation
                             },
                             firstFrame = {
                                 isGLContentReady = true

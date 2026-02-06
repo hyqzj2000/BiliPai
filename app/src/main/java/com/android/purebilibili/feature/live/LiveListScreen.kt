@@ -88,7 +88,8 @@ data class LiveListUiState(
     val isLoading: Boolean = false,
     val isAreaLoading: Boolean = false,
     val error: String? = null,
-    val currentTab: Int = 0  // 0=推荐, 1=分区, 2=关注
+    val currentTab: Int = 0,  // 0=推荐, 1=分区, 2=关注
+    val livingCount: Int = 0  // 正在直播的关注数
 )
 
 /**
@@ -108,12 +109,14 @@ class LiveListViewModel(application: Application) : AndroidViewModel(application
             try {
                 val api = NetworkModule.api
                 
-                // 并行加载推荐直播和分区列表
+                // 并行加载推荐直播、分区列表和关注列表（为了显示数字）
                 val recommendJob = launch { loadRecommendLive() }
                 val areaJob = launch { loadAreaList() }
+                val followJob = launch { loadFollowLive() }
                 
                 recommendJob.join()
                 areaJob.join()
+                followJob.join()
                 
                 _uiState.value = _uiState.value.copy(isLoading = false)
             } catch (e: Exception) {
@@ -178,7 +181,8 @@ class LiveListViewModel(application: Application) : AndroidViewModel(application
                             )
                         }
                     } ?: emptyList()
-                    _uiState.value = _uiState.value.copy(followItems = items)
+                    val count = response.data.livingNum
+                    _uiState.value = _uiState.value.copy(followItems = items, livingCount = count)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -191,9 +195,11 @@ class LiveListViewModel(application: Application) : AndroidViewModel(application
             _uiState.value = _uiState.value.copy(isAreaLoading = true, selectedAreaId = parentAreaId)
             try {
                 val api = NetworkModule.api
-                val response = api.getLiveSecondAreaList(parentAreaId = parentAreaId, page = 1)
-                if (response.code == 0 && response.data?.list != null) {
-                    val items = response.data.list.map { room ->
+                // [Fix] 使用 getLiveList 替代 getLiveSecondAreaList，因为后者可能返回不完整或错误的数据
+                // parent_area_id = 0 是全站，指定 ID 则为分区
+                val response = api.getLiveList(parentAreaId = parentAreaId, page = 1, pageSize = 30)
+                if (response.code == 0 && response.data != null) {
+                    val items = response.data.getAllRooms().map { room ->
                         LiveRoomItem(
                             roomId = room.roomid,
                             title = room.title,
@@ -333,7 +339,8 @@ fun LiveListScreen(
                             isSelected = state.currentTab == 2,
                             onClick = { viewModel.setTab(2) }
                         ) {
-                            Text("关注", fontSize = 14.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
+                            val title = if (state.livingCount > 0) "关注 (${state.livingCount})" else "关注"
+                            Text(title, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
                         }
                     }
                 }

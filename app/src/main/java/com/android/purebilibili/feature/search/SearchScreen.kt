@@ -209,6 +209,33 @@ fun SearchScreen(
                                         }
                                     }
                                     
+                                    // [新增] 空状态提示 (提示可能被屏蔽)
+                                    if (!state.isSearching && state.searchResults.isEmpty() && state.error == null) {
+                                        item(span = { GridItemSpan(maxLineSpan) }) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 64.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    Text(
+                                                        text = "未找到相关视频",
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        fontSize = 15.sp,
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                    Spacer(modifier = Modifier.height(8.dp))
+                                                    Text(
+                                                        text = "(已屏蔽的内容将不会显示)",
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                                        fontSize = 13.sp
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
                                     //  [新增] 加载更多指示器
                                     if (state.isLoadingMore) {
                                         item {
@@ -266,6 +293,23 @@ fun SearchScreen(
                                             onClick = { onUpClick(upItem.mid) }
                                         )
                                     }
+                                    
+                                     // [新增] 空状态提示
+                                    if (!state.isSearching && state.upResults.isEmpty() && state.error == null) {
+                                        item {
+                                            Box(
+                                                modifier = Modifier.fillMaxWidth().padding(vertical = 64.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                     text = "未找到相关UP主\n(已屏蔽的内容将不会显示)",
+                                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                                     fontSize = 13.sp,
+                                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             com.android.purebilibili.data.model.response.SearchType.BANGUMI -> {
@@ -317,6 +361,23 @@ fun SearchScreen(
                                             item = liveItem,
                                             onClick = { onLiveClick(liveItem.roomid, liveItem.title, liveItem.uname) }
                                         )
+                                    }
+                                    
+                                    // [新增] 空状态提示
+                                    if (!state.isSearching && state.liveResults.isEmpty() && state.error == null) {
+                                        item {
+                                            Box(
+                                                modifier = Modifier.fillMaxWidth().padding(vertical = 64.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                     text = "未找到相关直播\n(已屏蔽的内容将不会显示)",
+                                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                                     fontSize = 13.sp,
+                                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -495,8 +556,10 @@ fun SearchTopBar(
     
     //  自动聚焦并弹出键盘
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(100)  // 等待页面加载完成
-        focusRequester.requestFocus()
+        if (query.isEmpty()) {
+            kotlinx.coroutines.delay(100)  // 等待页面加载完成
+            focusRequester.requestFocus()
+        }
     }
     
     //  边框宽度动画

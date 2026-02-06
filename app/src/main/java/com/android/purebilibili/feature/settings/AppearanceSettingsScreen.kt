@@ -688,6 +688,89 @@ fun AppearanceSettingsContent(
                             onCheckedChange = { viewModel.toggleHeaderCollapse(it) },
                             iconTint = com.android.purebilibili.core.theme.iOSBlue
                         )
+                        
+                        // 网格列数设置 (仅在双列网格模式下显示)
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = isTablet && state.displayMode == 0,
+                            enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                            exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
+                        ) {
+                            Column {
+                                Divider(modifier = Modifier.padding(start = 16.dp))
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                                    ) {
+                                        Icon(
+                                            CupertinoIcons.Default.ListBullet,
+                                            contentDescription = null,
+                                            tint = com.android.purebilibili.core.theme.iOSBlue,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column {
+                                            Text(
+                                                text = "网格列数",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = if (state.gridColumnCount == 0) "自适应 (默认)" else "固定 ${state.gridColumnCount} 列",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                    
+                                    // 列数选择器
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        item {
+                                            // 自动
+                                            val isSelected = state.gridColumnCount == 0
+                                            Box(
+                                                modifier = Modifier
+                                                    .height(36.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                                    .clickable { viewModel.setGridColumnCount(0) }
+                                                    .padding(horizontal = 16.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = "自动",
+                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                                )
+                                            }
+                                        }
+                                        items(6) { i ->
+                                            val count = i + 1
+                                            val isSelected = state.gridColumnCount == count
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(36.dp) // Square for numbers
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                                    .clickable { viewModel.setGridColumnCount(count) },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = "$count",
+                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

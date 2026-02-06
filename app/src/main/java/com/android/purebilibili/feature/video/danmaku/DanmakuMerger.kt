@@ -84,12 +84,15 @@ object DanmakuMerger {
                 // 对同一内容的弹幕进行时间聚类
                 var currentBatch = mutableListOf<TextData>()
                 
+                // [优化] 高能弹幕使用更大的时间窗口 (3秒)，以便聚合更多的弹幕，减少零散的超级弹幕
+                val effectiveInterval = if (isHighEnergy) 3000L else intervalMs
+                
                 for (item in items) {
                     if (currentBatch.isEmpty()) {
                         currentBatch.add(item)
                     } else {
                         val lastItem = currentBatch.last()
-                        if (item.showAtTime - lastItem.showAtTime <= intervalMs) {
+                        if (item.showAtTime - lastItem.showAtTime <= effectiveInterval) {
                             currentBatch.add(item)
                         } else {
                             // 结算上一批
@@ -115,6 +118,10 @@ object DanmakuMerger {
         standardList.sortBy { it.showAtTime }
         advancedMergedList.sortBy { it.startTimeMs }
         
+        // [新增] 4. 解决高能弹幕时间重叠问题
+        // 如果两个高能弹幕在时间上重叠，延迟后者的开始时间
+        resolveHighEnergyOverlaps(advancedMergedList)
+        
         Log.d(TAG, "Merged result: ${standardList.size} standard, ${advancedMergedList.size} high-energy. Reduced $mergedCount items.")
         
         return Pair(standardList, advancedMergedList)
@@ -134,7 +141,10 @@ object DanmakuMerger {
         if (batch.size == 1) {
             standardOut.add(batch[0])
         } else {
-            if (isHighEnergy) {
+            // [优化] 必须达到一定数量 (>=5) 才触发超级弹幕，避免 "x2" 也触发全屏特效
+            val SUPER_DANMAKU_THRESHOLD = 5
+            
+            if (isHighEnergy && batch.size >= SUPER_DANMAKU_THRESHOLD) {
                 // [变更] 只有 Top 2 的刷屏才升级为高级弹幕（屏幕中央）
                 val base = batch[0]
                 val count = batch.size
@@ -160,8 +170,13 @@ object DanmakuMerger {
                     accumulationDurationMs = accumulationTime 
                 )
                 advancedOut.add(advanced)
+
+                // [新增] 即使生成了超级弹幕，也保留原始弹幕流，形成"弹幕海"效果
+                // 直接将原始的 TextData 加入标准列表，不进行合并
+                standardOut.addAll(batch)
             } else {
-                // [变更] 普通的重复弹幕（非 Top 2），只是普通的合并，不占领屏幕中央
+                // [变更] 普通的重复弹幕（非 Top 2）或者数量不够的高能弹幕
+                // 只是普通的合并，不占领屏幕中央
                 // 继续以标准弹幕形式存在，但带上 xN 标记
                 standardOut.add(combineBatch(batch))
             }
@@ -188,5 +203,40 @@ object DanmakuMerger {
         mergedText.typeface = base.typeface
             
         return mergedText
+    }
+    
+    /**
+     * 解决高能弹幕时间重叠问题
+     * 
+     * 遍历已排序的高能弹幕列表，如果发现两个弹幕在时间上重叠，
+     * 则将后者的开始时间延迟到前者结束之后。
+     * 
+     * @param list 已按 startTimeMs 排序的高能弹幕列表（会被原地修改）
+     */
+    private fun resolveHighEnergyOverlaps(list: MutableList<AdvancedDanmakuData>) {
+        if (list.size < 2) return
+        
+        // 最小间隔时间（毫秒），避免弹幕太紧凑
+        val MIN_GAP_MS = 500L
+        
+        for (i in 1 until list.size) {
+            val prev = list[i - 1]
+            val current = list[i]
+            
+            // 计算前一个高能弹幕的结束时间
+            val prevEndTime = prev.startTimeMs + prev.durationMs
+            
+            // 如果当前弹幕开始时间在前一个弹幕结束之前，产生重叠
+            if (current.startTimeMs < prevEndTime + MIN_GAP_MS) {
+                // 将当前弹幕延迟到前一个弹幕结束后
+                val newStartTime = prevEndTime + MIN_GAP_MS
+                
+                Log.d(TAG, "⏱️ High-energy overlap detected: '${current.content}' delayed from ${current.startTimeMs}ms to ${newStartTime}ms")
+                
+                // 创建新的弹幕数据（因为 data class 是 immutable）
+                val delayed = current.copy(startTimeMs = newStartTime)
+                list[i] = delayed
+            }
+        }
     }
 }

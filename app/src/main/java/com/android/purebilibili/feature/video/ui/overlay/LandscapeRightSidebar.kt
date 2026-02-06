@@ -129,7 +129,7 @@ fun LandscapeRightSidebar(
             
             // 点赞按钮
             SidebarActionButton(
-                icon = CupertinoIcons.Default.Heart,
+                icon = CupertinoIcons.Default.HandThumbsup,
                 label = FormatUtils.formatStat(likeCount),
                 isActive = isLiked,
                 activeColor = MaterialTheme.colorScheme.primary,

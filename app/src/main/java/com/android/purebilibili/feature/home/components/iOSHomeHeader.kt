@@ -64,6 +64,7 @@ fun iOSHomeHeader(
     categoryIndex: Int,
     onCategorySelected: (Int) -> Unit,
     onPartitionClick: () -> Unit = {},  //  新增：分区按钮回调
+    onLiveClick: () -> Unit = {},  // [新增] 直播分区点击回调
     hazeState: HazeState? = null,  // 保留参数兼容性，但不用于模糊
     onStatusBarDoubleTap: () -> Unit = {},
     //  [新增] 下拉刷新状态
@@ -260,6 +261,7 @@ fun iOSHomeHeader(
                 selectedIndex = categoryIndex,
                 onCategorySelected = onCategorySelected,
                 onPartitionClick = onPartitionClick,
+                onLiveClick = onLiveClick,
                 pagerState = pagerState
             )
         }

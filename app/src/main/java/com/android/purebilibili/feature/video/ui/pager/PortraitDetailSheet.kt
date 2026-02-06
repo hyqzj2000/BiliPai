@@ -27,6 +27,11 @@ import androidx.compose.material.icons.rounded.Close
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.shape.CircleShape
+import kotlinx.coroutines.launch
 
 /**
  * 竖屏视频详情页 (简介)
@@ -138,6 +143,49 @@ fun PortraitDetailSheet(
                                 .padding(16.dp)
                         ) {
                             // 标题
+                            val context = LocalContext.current
+                            val blockedUpRepository = remember { com.android.purebilibili.data.repository.BlockedUpRepository(context) }
+                            val isBlocked by blockedUpRepository.isBlocked(info.owner.mid).collectAsState(initial = false)
+                            val scope = rememberCoroutineScope()
+                            var showBlockConfirmDialog by remember { mutableStateOf(false) }
+                            
+                            val pubDateStr = try {
+                                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                                sdf.format(Date(info.pubdate * 1000))
+                            } catch (e: Exception) { "" }
+                            
+                            if (showBlockConfirmDialog) {
+                                com.android.purebilibili.core.ui.IOSAlertDialog(
+                                    onDismissRequest = { showBlockConfirmDialog = false },
+                                    title = { Text(if (isBlocked) "解除屏蔽" else "屏蔽 UP 主") },
+                                    text = { Text(if (isBlocked) "确定要解除对 ${info.owner.name} 的屏蔽吗？" else "屏蔽后，将不再推荐该 UP 主的视频。\n确定要屏蔽 ${info.owner.name} 吗？") },
+                                    confirmButton = {
+                                        com.android.purebilibili.core.ui.IOSDialogAction(
+                                            onClick = {
+                                                scope.launch {
+                                                    if (isBlocked) {
+                                                        blockedUpRepository.unblockUp(info.owner.mid)
+                                                        android.widget.Toast.makeText(context, "已解除屏蔽", android.widget.Toast.LENGTH_SHORT).show()
+                                                    } else {
+                                                        blockedUpRepository.blockUp(info.owner.mid, info.owner.name, info.owner.face)
+                                                        android.widget.Toast.makeText(context, "已屏蔽该 UP 主", android.widget.Toast.LENGTH_SHORT).show()
+                                                    }
+                                                    showBlockConfirmDialog = false
+                                                }
+                                            }
+                                        ) {
+                                            Text(
+                                                text = if (isBlocked) "解除屏蔽" else "屏蔽",
+                                                color = if (!isBlocked) Color.Red else com.android.purebilibili.core.theme.iOSBlue
+                                            )
+                                        }
+                                    },
+                                    dismissButton = {
+                                        com.android.purebilibili.core.ui.IOSDialogAction(onClick = { showBlockConfirmDialog = false }) { Text("取消") }
+                                    }
+                                )
+                            }
+
                             Text(
                                 text = info.title,
                                 fontSize = 18.sp,
@@ -151,27 +199,33 @@ fun PortraitDetailSheet(
                                 modifier = Modifier.padding(bottom = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = info.owner.name,
-                                    fontSize = 13.sp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Medium
+                                AsyncImage(
+                                    model = info.owner.face,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.Gray.copy(alpha = 0.2f)),
+                                    contentScale = ContentScale.Crop
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = try {
-                                        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                                        sdf.format(Date(info.pubdate * 1000))
-                                    } catch (e: Exception) { "" },
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.outline
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "${FormatUtils.formatStat(info.stat.view.toLong())}播放",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.outline
-                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = info.owner.name,
+                                        fontSize = 13.sp,
+                                        color = if (isBlocked) Color.Red else MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.clickable { showBlockConfirmDialog = true }
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${FormatUtils.formatStat(info.stat.view.toLong())}观看 · $pubDateStr",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                             
                             // VID Info

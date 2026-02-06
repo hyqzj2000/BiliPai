@@ -208,7 +208,8 @@ fun FeedApiSection(
 fun PrivacySection(
     privacyModeEnabled: Boolean,
     onPrivacyModeChange: (Boolean) -> Unit,
-    onPermissionClick: () -> Unit
+    onPermissionClick: () -> Unit,
+    onBlockedListClick: () -> Unit // [New]
 ) {
     SettingsGroup {
         SettingSwitchItem(
@@ -226,6 +227,14 @@ fun PrivacySection(
             value = "查看应用权限",
             onClick = onPermissionClick,
             iconTint = iOSTeal
+        )
+         SettingsDivider(startIndent = 66.dp)
+        SettingClickableItem(
+            icon = CupertinoIcons.Default.PersonCropCircle, // Fallback icon
+            title = "黑名单管理",
+            value = "管理已屏蔽的 UP 主",
+            onClick = onBlockedListClick,
+            iconTint = iOSRed
         )
     }
 }

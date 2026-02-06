@@ -118,6 +118,23 @@ class MainActivity : ComponentActivity() {
         
         //  [新增] 处理 deep link 或分享意图
         handleIntent(intent)
+        
+        // --- 📺 DLNA Service Init ---
+        // Android 12+ 需要运行时权限
+        // requestDlnaPermissionsAndBind()
+        
+        // Start Local Proxy Server (on IO thread)
+        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                // Singleton instance to prevent multiple servers? 
+                // Simple implementation for now: create and start.
+                val proxy = com.android.purebilibili.feature.cast.LocalProxyServer()
+                proxy.start()
+                com.android.purebilibili.core.util.Logger.d(TAG, "📺 Local Proxy Server started on port 8901")
+            } catch (e: Exception) {
+                com.android.purebilibili.core.util.Logger.e(TAG, "❌ Failed to start Local Proxy Server", e)
+            }
+        }
 
         setContent {
             val context = LocalContext.current
@@ -395,6 +412,11 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
     }
     
+    // 📺 [DLNA] 权限请求和服务绑定 - 移除自动请求，改为按需请求
+    // private val dlnaPermissionLauncher = ...
+    
+    // private fun requestDlnaPermissionsAndBind() { ... }
+    
     //  待导航的视频 ID（用于在 Compose 中触发导航）
     var pendingVideoId by mutableStateOf<String?>(null)
     var pendingRoute by mutableStateOf<String?>(null)  // 🚀 App Shortcuts: pending route
@@ -481,6 +503,11 @@ class MainActivity : ComponentActivity() {
                 Logger.w(TAG, "⚠️ 无法解析短链接: $shortUrl")
             }
         }
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        com.android.purebilibili.feature.cast.DlnaManager.unbindService(this)
     }
 }
 

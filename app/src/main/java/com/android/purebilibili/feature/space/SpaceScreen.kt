@@ -14,6 +14,7 @@ import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,7 +63,15 @@ fun SpaceScreen(
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    
+    // [Block] Repository & State
+    val blockedUpRepository = remember { com.android.purebilibili.data.repository.BlockedUpRepository(context) }
+    val isBlocked by blockedUpRepository.isBlocked(mid).collectAsState(initial = false)
+    val scope = rememberCoroutineScope()
+    var showBlockMenu by remember { mutableStateOf(false) }
+    var showBlockConfirmDialog by remember { mutableStateOf(false) }
     
     // [Blur] Haze State
     val hazeState = remember { HazeState() }
@@ -96,7 +105,37 @@ fun SpaceScreen(
                         containerColor = Color.Transparent,
                         scrolledContainerColor = Color.Transparent
                     ),
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
+                    actions = {
+                        IconButton(onClick = { showBlockMenu = true }) {
+                            Icon(CupertinoIcons.Default.Ellipsis, contentDescription = "更多")
+                        }
+                        
+                        DropdownMenu(
+                            expanded = showBlockMenu,
+                            onDismissRequest = { showBlockMenu = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(if (isBlocked) "解除屏蔽" else "屏蔽 UP 主") },
+                                onClick = { 
+                                    showBlockMenu = false
+                                    showBlockConfirmDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        if (isBlocked) CupertinoIcons.Default.Eye else CupertinoIcons.Default.EyeSlash,
+                                        contentDescription = null,
+                                        tint = if (isBlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                    )
+                                },
+                                colors = MenuDefaults.itemColors(
+                                    textColor = if (isBlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+                                    leadingIconColor = if (isBlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                )
+                            )
+                        }
+                    }
                 )
             }
         },
@@ -151,6 +190,41 @@ fun SpaceScreen(
                 }
             }
         }
+    }
+    
+    if (showBlockConfirmDialog) {
+        val userName = (uiState as? SpaceUiState.Success)?.userInfo?.name ?: "该用户"
+        val userFace = (uiState as? SpaceUiState.Success)?.userInfo?.face ?: ""
+        
+        com.android.purebilibili.core.ui.IOSAlertDialog(
+            onDismissRequest = { showBlockConfirmDialog = false },
+            title = { Text(if (isBlocked) "解除屏蔽" else "屏蔽 UP 主") },
+            text = { Text(if (isBlocked) "确定要解除对 $userName 的屏蔽吗？" else "屏蔽后，将不再推荐 $userName 的视频。\n确定要屏蔽吗？") },
+            confirmButton = {
+                com.android.purebilibili.core.ui.IOSDialogAction(
+                    onClick = {
+                        scope.launch {
+                            if (isBlocked) {
+                                blockedUpRepository.unblockUp(mid)
+                                android.widget.Toast.makeText(context, "已解除屏蔽", android.widget.Toast.LENGTH_SHORT).show()
+                            } else {
+                                blockedUpRepository.blockUp(mid, userName, userFace)
+                                android.widget.Toast.makeText(context, "已屏蔽该 UP 主", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                            showBlockConfirmDialog = false
+                        }
+                    }
+                ) {
+                    Text(
+                        text = if (isBlocked) "解除屏蔽" else "屏蔽",
+                        color = if (!isBlocked) Color.Red else com.android.purebilibili.core.theme.iOSBlue
+                    )
+                }
+            },
+            dismissButton = {
+                com.android.purebilibili.core.ui.IOSDialogAction(onClick = { showBlockConfirmDialog = false }) { Text("取消") }
+            }
+        )
     }
 }
 

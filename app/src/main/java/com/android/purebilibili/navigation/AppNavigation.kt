@@ -205,11 +205,21 @@ fun AppNavigation(
             // ScreenRoutes.PlaybackSettings.route, // [Modified] Hide bottom bar on Playback Settings
             ScreenRoutes.IconSettings.route,
             ScreenRoutes.AnimationSettings.route,
-            ScreenRoutes.PermissionSettings.route,
+            // ScreenRoutes.PermissionSettings.route, // [Modified] Hide bottom bar
             ScreenRoutes.PluginsSettings.route,
             ScreenRoutes.OpenSourceLicenses.route
         )
-        val showBottomBar = (isTopLevelDestination || currentRoute in settingsRoutes) && !useSideNavigation && currentRoute != ScreenRoutes.Story.route
+        
+        // [修复] 平板模式下(宽度>=600dp)，进入设置页(Settings.route)时隐藏底栏
+        // 因为平板设置页使用 SplitLayout，已经有自己的内部导航结构，不需要底栏
+        val isTabletLayout = screenWidthDp >= 600.dp
+        val isSettingsScreen = currentRoute == ScreenRoutes.Settings.route
+        val shouldHideBottomBarOnTablet = isTabletLayout && isSettingsScreen
+        
+        val showBottomBar = (isTopLevelDestination || currentRoute in settingsRoutes) 
+                && !useSideNavigation 
+                && currentRoute != ScreenRoutes.Story.route
+                && !shouldHideBottomBarOnTablet
         
         // 核心可见性逻辑：
         // 1. 永久隐藏模式 -> 始终隐藏

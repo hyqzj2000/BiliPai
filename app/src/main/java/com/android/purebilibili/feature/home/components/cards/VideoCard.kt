@@ -102,8 +102,12 @@ fun ElegantVideoCard(
     //  获取屏幕尺寸用于计算归一化坐标
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
-    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
-    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+    val screenWidthPx = remember(configuration.screenWidthDp, density) {
+        with(density) { configuration.screenWidthDp.dp.toPx() }
+    }
+    val screenHeightPx = remember(configuration.screenHeightDp, density) {
+        with(density) { configuration.screenHeightDp.dp.toPx() }
+    }
     val densityValue = density.density  //  [新增] 屏幕密度值
     
     //  记录卡片位置
@@ -114,8 +118,8 @@ fun ElegantVideoCard(
     val scale by androidx.compose.animation.core.animateFloatAsState(
         targetValue = if (isPressed) 0.95f else 1f, // [UX优化] 更明显的缩放反馈 (0.96 -> 0.95)
         animationSpec = androidx.compose.animation.core.spring(
-            dampingRatio = 0.6f,
-            stiffness = 500f // [UX优化] 更快的响应速度 (400 -> 500)
+            dampingRatio = 0.8f,   // 🚀 [性能优化] 减少回弹次数
+            stiffness = 600f       // 🚀 [性能优化] 更快完成动画
         ),
         label = "cardScale"
     )
@@ -133,7 +137,11 @@ fun ElegantVideoCard(
             )
             //  [新增] 记录卡片位置
             .onGloballyPositioned { coordinates ->
-                cardBounds = coordinates.boundsInRoot()
+                val newBounds = coordinates.boundsInRoot()
+                // 🚀 [性能优化] 仅当边界实际变化时才更新状态，减少无谓的重组
+                if (cardBounds != newBounds) {
+                    cardBounds = newBounds
+                }
             }
             //  [修改] 父级容器仅处理点击跳转 (或者点击由子 View 分别处理)
             //  为了避免冲突，我们将手势下放到子 View
@@ -271,8 +279,6 @@ fun ElegantVideoCard(
             }
             
         }
-        
-        Spacer(modifier = Modifier.height(8.dp))
         
         Spacer(modifier = Modifier.height(8.dp))
         

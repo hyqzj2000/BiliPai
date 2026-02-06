@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
+import io.github.alexzhirkevich.cupertino.icons.filled.Tv
+import io.github.alexzhirkevich.cupertino.icons.filled.Location
+import io.github.alexzhirkevich.cupertino.icons.filled.XmarkCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -151,16 +155,40 @@ fun PermissionSettingsContent(
                 isNormal = true,
                 alwaysGranted = true
             ),
-            //  存储权限（仅 Android 9 及以下需要）
+            //  DLNA 投屏所需权限
             PermissionInfo(
-                name = "存储权限",
-                permission = Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                description = "保存图片到相册（仅 Android 9 及以下需要）",
+                name = "设备发现 (DLNA)",
+                permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    Manifest.permission.NEARBY_WIFI_DEVICES
+                } else {
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                },
+                description = "用于扫描和连接附近的投屏设备 (DLNA)",
+                icon = CupertinoIcons.Default.Tv,
+                iconTint = iOSBlue,
+                isNormal = false,
+                alwaysGranted = false
+            ),
+             //  存储权限 (Android 11+ 所有文件访问 / Android 9- 读写 / Android 10 自动)
+            PermissionInfo(
+                name = "存储空间",
+                permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    Manifest.permission.MANAGE_EXTERNAL_STORAGE
+                } else {
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                },
+                description = "用于下载视频和保存图片到自定义目录",
                 icon = CupertinoIcons.Default.Folder,
-                iconTint = iOSPink,  // 存储权限图标
-                isNormal = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q,  // Android 10+ 自动授予
-                alwaysGranted = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-            )
+                iconTint = iOSPink,
+                isNormal = false,
+                alwaysGranted = Build.VERSION.SDK_INT == Build.VERSION_CODES.Q, // Android 10 也是 scoped storage，通常无需权限
+                customCheck = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    { Environment.isExternalStorageManager() }
+                } else {
+                    null
+                }
+            ),
+
         )
     }
     
@@ -173,7 +201,8 @@ fun PermissionSettingsContent(
             info.permission to if (info.alwaysGranted) {
                 true
             } else {
-                ContextCompat.checkSelfPermission(context, info.permission) == PackageManager.PERMISSION_GRANTED
+                info.customCheck?.invoke(context)
+                    ?: (ContextCompat.checkSelfPermission(context, info.permission) == PackageManager.PERMISSION_GRANTED)
             }
         }
         isVisible = true
@@ -216,12 +245,26 @@ fun PermissionSettingsContent(
                 Box(modifier = Modifier.staggeredEntrance(2, isVisible)) {
                     IOSGroup {
                         permissions.filter { !it.isNormal }.forEachIndexed { index, info ->
-                            if (index > 0) Divider()
+                            if (index > 0) HorizontalDivider()
                             PermissionItem(
                                 info = info,
                                 isGranted = permissionStates[info.permission] ?: false,
                                 onOpenSettings = {
-                                    openAppSettings(context)
+                                    // Android 11+ 存储权限跳转到专属设置页
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                                        info.permission == Manifest.permission.MANAGE_EXTERNAL_STORAGE
+                                    ) {
+                                        try {
+                                            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                                                data = Uri.fromParts("package", context.packageName, null)
+                                            }
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            openAppSettings(context)
+                                        }
+                                    } else {
+                                        openAppSettings(context)
+                                    }
                                 }
                             )
                         }
@@ -239,7 +282,7 @@ fun PermissionSettingsContent(
                 Box(modifier = Modifier.staggeredEntrance(4, isVisible)) {
                     IOSGroup {
                         permissions.filter { it.isNormal }.forEachIndexed { index, info ->
-                            if (index > 0) Divider()
+                            if (index > 0) HorizontalDivider()
                             PermissionItem(
                                 info = info,
                                 isGranted = true,
@@ -250,38 +293,13 @@ fun PermissionSettingsContent(
                 }
             }
             
-            // 打开系统设置按钮
+            // 隐私说明
             item {
                 Box(modifier = Modifier.staggeredEntrance(5, isVisible)) {
                     Column {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Button(
-                            onClick = { openAppSettings(context) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(
-                                CupertinoIcons.Default.SquareAndArrowUp,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("打开系统设置")
-                        }
-                    }
-                }
-            }
-            
-            // 隐私说明
-            item {
-                Box(modifier = Modifier.staggeredEntrance(6, isVisible)) {
-                    Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = " BiliPai 尊重您的隐私，不会请求位置、相机、通讯录等敏感权限。",
+                            text = "BiliPai 仅在必要功能的前提下申请部分敏感权限。",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             modifier = Modifier.padding(horizontal = 16.dp)
@@ -303,7 +321,8 @@ private data class PermissionInfo(
     val icon: ImageVector,
     val iconTint: Color,
     val isNormal: Boolean,  // 是否是普通权限（自动授予）
-    val alwaysGranted: Boolean = false  // 是否总是被授予
+    val alwaysGranted: Boolean = false,  // 是否总是被授予
+    val customCheck: ((Context) -> Boolean)? = null // 自定义检查逻辑
 )
 
 /**
@@ -364,18 +383,13 @@ private fun PermissionItem(
                 modifier = Modifier.size(22.dp)
             )
         } else {
-            // 未授权时显示警告色
-            Surface(
-                color = iOSOrange.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Text(
-                    "未授权",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = iOSOrange,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
+            // 未授权时显示红色的 X
+            Icon(
+                CupertinoIcons.Default.XmarkCircle,
+                contentDescription = "未授权",
+                tint = com.android.purebilibili.core.theme.iOSRed,
+                modifier = Modifier.size(22.dp)
+            )
         }
     }
 }

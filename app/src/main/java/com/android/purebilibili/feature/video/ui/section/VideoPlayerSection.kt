@@ -115,6 +115,10 @@ fun VideoPlayerSection(
     onCodecChange: (String) -> Unit = {},
     currentAudioQuality: Int = -1,
     onAudioQualityChange: (Int) -> Unit = {},
+    // [New] Audio Language
+    onAudioLangChange: (String) -> Unit = {},
+    // 👀 [新增] 在线观看人数
+    onlineCount: String = "",
     // [New Actions]
     onSaveCover: () -> Unit = {},
     onDownloadAudio: () -> Unit = {},
@@ -134,6 +138,7 @@ fun VideoPlayerSection(
     onToggleLike: () -> Unit = {},
     onCoin: () -> Unit = {},
     onToggleFavorite: () -> Unit = {},
+    onTriple: () -> Unit = {},  // [新增] 一键三连回调
 ) {
     val context = LocalContext.current
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
@@ -373,10 +378,20 @@ fun VideoPlayerSection(
                             if (!isGestureVisible && gestureMode == VideoGestureMode.None) {
                                 // do nothing
                             } else {
+                            
+                            // [修复] 累积拖动距离，用于更准确的方向判断
+                            totalDragDistanceX += dragAmount.x
+                            totalDragDistanceY += dragAmount.y
+                            
+                            // [修复] 等待累积一定距离后再确定手势类型，避免初始噪声导致误判
+                            val minDragThreshold = 20.dp.toPx()
+                            val totalDrag = kotlin.math.hypot(totalDragDistanceX, totalDragDistanceY)
 
-                            if (gestureMode == VideoGestureMode.None) {
-                                if (abs(dragAmount.x) > abs(dragAmount.y)) {
+                            if (gestureMode == VideoGestureMode.None && totalDrag >= minDragThreshold) {
+                                // [修复] 使用累积距离判断方向，而非单帧增量
+                                if (abs(totalDragDistanceX) > abs(totalDragDistanceY)) {
                                     gestureMode = VideoGestureMode.Seek
+                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection", "🎯 Gesture: Seek (cumDx=$totalDragDistanceX, cumDy=$totalDragDistanceY)")
                                 } else {
                                     // 根据起始 X 坐标判断区域 (左1/3=亮度, 右1/3=音量, 中间1/3=上滑全屏)
                                     val width = size.width.toFloat()
@@ -401,26 +416,26 @@ fun VideoPlayerSection(
                                              else -> VideoGestureMode.Volume
                                         }
                                     }
+                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection", "🎯 Gesture: $gestureMode (startX=$startX, width=$width, isFullscreen=$isFullscreen)")
                                 }
                             }
 
                             when (gestureMode) {
                                 VideoGestureMode.SwipeToFullscreen -> {
-                                    // 累积 Y 轴距离 (上滑为负)
-                                    totalDragDistanceY += dragAmount.y
+                                    // 累积 Y 轴距离已在上方处理
                                 }
                                 VideoGestureMode.Seek -> {
-                                    totalDragDistanceX += dragAmount.x
+                                    // 距离已在上方累积，直接计算目标位置
                                     val duration = playerState.player.duration.coerceAtLeast(0L)
                                     //  应用灵敏度
                                     val seekDelta = (totalDragDistanceX * 200 * gestureSensitivity).toLong()
                                     seekTargetTime = (startPosition + seekDelta).coerceIn(0L, duration)
                                 }
                                 VideoGestureMode.Brightness -> {
-                                    totalDragDistanceY -= dragAmount.y
+                                    // 距离已在上方累积，使用负值因为上滑是负 Y
                                     val screenHeight = context.resources.displayMetrics.heightPixels
                                     //  应用灵敏度
-                                    val deltaPercent = totalDragDistanceY / screenHeight * gestureSensitivity
+                                    val deltaPercent = -totalDragDistanceY / screenHeight * gestureSensitivity
                                     val newBrightness = (startBrightness + deltaPercent).coerceIn(0f, 1f)
                                     
                                     //  优化：仅在变化超过阈值时更新（减少 WindowManager 调用）
@@ -434,10 +449,10 @@ fun VideoPlayerSection(
                                     gestureIcon = CupertinoIcons.Default.SunMax
                                 }
                                 VideoGestureMode.Volume -> {
-                                    totalDragDistanceY -= dragAmount.y
+                                    // 距离已在上方累积，使用负值因为上滑是负 Y
                                     val screenHeight = context.resources.displayMetrics.heightPixels
                                     //  应用灵敏度
-                                    val deltaPercent = totalDragDistanceY / screenHeight * gestureSensitivity
+                                    val deltaPercent = -totalDragDistanceY / screenHeight * gestureSensitivity
                                     val newVolPercent = ((startVolume.toFloat() / maxVolume) + deltaPercent).coerceIn(0f, 1f)
                                     val targetVol = (newVolPercent * maxVolume).toInt()
                                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVol, 0)
@@ -1137,6 +1152,10 @@ fun VideoPlayerSection(
                 onCodecChange = onCodecChange,
                 currentAudioQuality = currentAudioQuality,
                 onAudioQualityChange = onAudioQualityChange,
+                // [New] AI Audio
+                aiAudioInfo = uiState.aiAudio,
+                currentAudioLang = uiState.currentAudioLang,
+                onAudioLangChange = onAudioLangChange,
                 // 👀 [新增] 在线观看人数
                 onlineCount = uiState.onlineCount,
                 // [New]
@@ -1157,6 +1176,7 @@ fun VideoPlayerSection(
                 onToggleLike = onToggleLike,
                 onCoin = onCoin,
                 onToggleFavorite = onToggleFavorite,
+                onTriple = onTriple,
                 onDrawerVideoClick = { vid ->
                     onRelatedVideoClick(vid, null) 
                 }

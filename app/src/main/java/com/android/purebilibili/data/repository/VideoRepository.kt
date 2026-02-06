@@ -307,7 +307,7 @@ object VideoRepository {
     }
 
     // [修复] 添加 aid 参数支持，修复移动端推荐流视频播放失败问题
-    suspend fun getVideoDetails(bvid: String, aid: Long = 0, targetQuality: Int? = null): Result<Pair<ViewInfo, PlayUrlData>> = withContext(Dispatchers.IO) {
+    suspend fun getVideoDetails(bvid: String, aid: Long = 0, targetQuality: Int? = null, audioLang: String? = null): Result<Pair<ViewInfo, PlayUrlData>> = withContext(Dispatchers.IO) {
         try {
             // [修复] 优先使用 bvid，如果为空则使用 aid
             val viewResp = if (bvid.isNotEmpty() && bvid.startsWith("BV")) {
@@ -331,8 +331,8 @@ object VideoRepository {
             // 🚀 [修复] 自动最高画质模式：跳过缓存，确保获取最新的高清流
             val isAutoHighestQuality = targetQuality != null && targetQuality >= 127
             
-            //  [优化] 使用缓存加速重复播放 (但自动最高画质模式除外)
-            if (!isAutoHighestQuality) {
+            //  [优化] 使用缓存加速重复播放 (但自动最高画质模式除外，或者是切换语言时)
+            if (!isAutoHighestQuality && audioLang == null) {
                 val cachedPlayData = PlayUrlCache.get(bvid, cid)
                 if (cachedPlayData != null) {
                     com.android.purebilibili.core.util.Logger.d("VideoRepo", " Using cached PlayUrlData for bvid=$bvid")
@@ -366,7 +366,7 @@ object VideoRepository {
             }
             com.android.purebilibili.core.util.Logger.d("VideoRepo", " Selected startQuality=$startQuality (userSetting=$targetQuality, isAutoHighest=$isAutoHighestQuality, isLogin=$isLogin, isVip=$isVip)")
 
-            val playData = fetchPlayUrlRecursive(bvid, cid, startQuality)
+            val playData = fetchPlayUrlRecursive(bvid, cid, startQuality, audioLang)
                 ?: throw Exception("无法获取任何画质的播放地址")
 
             //  支持 DASH 和 durl 两种格式
@@ -374,9 +374,11 @@ object VideoRepository {
             val hasDurl = !playData.durl.isNullOrEmpty()
             if (!hasDash && !hasDurl) throw Exception("播放地址解析失败 (无 dash/durl)")
 
-            //  [优化] 缓存结果
-            PlayUrlCache.put(bvid, cid, playData, playData.quality)
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", " Cached PlayUrlData for bvid=$bvid, cid=$cid")
+            //  [优化] 缓存结果 (仅默认语言缓存)
+            if (audioLang == null) {
+                PlayUrlCache.put(bvid, cid, playData, playData.quality)
+                com.android.purebilibili.core.util.Logger.d("VideoRepo", " Cached PlayUrlData for bvid=$bvid, cid=$cid")
+            }
 
             Result.success(Pair(info, playData))
         } catch (e: Exception) {
@@ -457,14 +459,14 @@ object VideoRepository {
         throw Exception("Wbi Keys Error after $maxRetries attempts: ${lastError?.message}")
     }
 
-    suspend fun getPlayUrlData(bvid: String, cid: Long, qn: Int): PlayUrlData? = withContext(Dispatchers.IO) {
+    suspend fun getPlayUrlData(bvid: String, cid: Long, qn: Int, audioLang: String? = null): PlayUrlData? = withContext(Dispatchers.IO) {
         //  [新增] 对于高画质请求 (>=112)，优先尝试 APP API
         val isHighQuality = qn >= 112
         val accessToken = TokenManager.accessTokenCache
         
         if (isHighQuality && !accessToken.isNullOrEmpty()) {
             com.android.purebilibili.core.util.Logger.d("VideoRepo", " High quality request (qn=$qn), trying APP API first...")
-            val appResult = fetchPlayUrlWithAccessToken(bvid, cid, qn)
+            val appResult = fetchPlayUrlWithAccessToken(bvid, cid, qn, audioLang = audioLang)
             if (appResult != null) {
                 com.android.purebilibili.core.util.Logger.d("VideoRepo", " APP API success for high quality")
                 return@withContext appResult
@@ -473,7 +475,7 @@ object VideoRepository {
         }
         
         //  [修复] 412 错误处理：清除 WBI 密钥缓存后重试
-        var result = fetchPlayUrlWithWbi(bvid, cid, qn)
+        var result = fetchPlayUrlWithWbiInternal(bvid, cid, qn, audioLang)
         if (result == null) {
             com.android.purebilibili.core.util.Logger.d("VideoRepo", " First attempt failed (likely 412), invalidating WBI keys and retrying...")
             // 清除 WBI 密钥缓存
@@ -481,23 +483,23 @@ object VideoRepository {
             wbiKeysTimestamp = 0
             // 短暂延迟后重试（让服务器恢复）
             kotlinx.coroutines.delay(500)
-            result = fetchPlayUrlWithWbi(bvid, cid, qn)
+            result = fetchPlayUrlWithWbiInternal(bvid, cid, qn, audioLang)
         }
         result
     }
 
 
     //  [v2 优化] 核心播放地址获取逻辑 - 根据登录状态区分策略
-    private suspend fun fetchPlayUrlRecursive(bvid: String, cid: Long, targetQn: Int): PlayUrlData? {
+    private suspend fun fetchPlayUrlRecursive(bvid: String, cid: Long, targetQn: Int, audioLang: String? = null): PlayUrlData? {
         //  关键：确保有正确的 buvid3 (来自 Bilibili SPI API)
         ensureBuvid3FromSpi()
         
         val isLoggedIn = !TokenManager.sessDataCache.isNullOrEmpty()
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", " fetchPlayUrlRecursive: bvid=$bvid, isLoggedIn=$isLoggedIn, targetQn=$targetQn")
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", " fetchPlayUrlRecursive: bvid=$bvid, isLoggedIn=$isLoggedIn, targetQn=$targetQn, audioLang=$audioLang")
         
         return if (isLoggedIn) {
             // 已登录：DASH 优先（风控宽松），HTML5 降级
-            fetchDashWithFallback(bvid, cid, targetQn)
+            fetchDashWithFallback(bvid, cid, targetQn, audioLang)
         } else {
             // 未登录：HTML5 优先（避免 412），DASH 降级
             fetchHtml5WithFallback(bvid, cid, targetQn)
@@ -505,14 +507,14 @@ object VideoRepository {
     }
     
     //  已登录用户：APP API 优先 -> DASH -> HTML5 降级策略
-    private suspend fun fetchDashWithFallback(bvid: String, cid: Long, targetQn: Int): PlayUrlData? {
+    private suspend fun fetchDashWithFallback(bvid: String, cid: Long, targetQn: Int, audioLang: String? = null): PlayUrlData? {
         com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] DASH-first strategy, qn=$targetQn")
         
         //  [新增] 如果有 access_token，优先使用 APP API 获取高画质
         val accessToken = TokenManager.accessTokenCache
         if (!accessToken.isNullOrEmpty()) {
             com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] Trying APP API first with access_token...")
-            val appResult = fetchPlayUrlWithAccessToken(bvid, cid, targetQn)
+            val appResult = fetchPlayUrlWithAccessToken(bvid, cid, targetQn, audioLang = audioLang)
             if (appResult != null && (!appResult.durl.isNullOrEmpty() || !appResult.dash?.video.isNullOrEmpty())) {
                 com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] APP API success: quality=${appResult.quality}")
                 return appResult
@@ -528,7 +530,7 @@ object VideoRepository {
                 kotlinx.coroutines.delay(delay)
             }
             try {
-                val data = fetchPlayUrlWithWbiInternal(bvid, cid, targetQn)
+                val data = fetchPlayUrlWithWbiInternal(bvid, cid, targetQn, audioLang)
                 if (data != null && (!data.durl.isNullOrEmpty() || !data.dash?.video.isNullOrEmpty())) {
                     com.android.purebilibili.core.util.Logger.d("VideoRepo", " [LoggedIn] DASH success: quality=${data.quality}")
                     return data
@@ -676,7 +678,7 @@ object VideoRepository {
         // 最后尝试 DASH (限 1 次)
         com.android.purebilibili.core.util.Logger.d("VideoRepo", " [Guest] HTML5 failed, trying DASH...")
         try {
-            val dashData = fetchPlayUrlWithWbiInternal(bvid, cid, targetQn)
+            val dashData = fetchPlayUrlWithWbiInternal(bvid, cid, targetQn, audioLang = null)
             if (dashData != null && (!dashData.durl.isNullOrEmpty() || !dashData.dash?.video.isNullOrEmpty())) {
                 com.android.purebilibili.core.util.Logger.d("VideoRepo", " [Guest] DASH fallback success: quality=${dashData.quality}")
                 return dashData
@@ -690,8 +692,8 @@ object VideoRepository {
     }
 
     //  内部方法：单次请求播放地址 (使用 fnval=4048 获取全部 DASH 流)
-    private suspend fun fetchPlayUrlWithWbiInternal(bvid: String, cid: Long, qn: Int): PlayUrlData? {
-        com.android.purebilibili.core.util.Logger.d("VideoRepo", "fetchPlayUrlWithWbiInternal: bvid=$bvid, cid=$cid, qn=$qn")
+    private suspend fun fetchPlayUrlWithWbiInternal(bvid: String, cid: Long, qn: Int, audioLang: String? = null): PlayUrlData? {
+        com.android.purebilibili.core.util.Logger.d("VideoRepo", "fetchPlayUrlWithWbiInternal: bvid=$bvid, cid=$cid, qn=$qn, audioLang=$audioLang")
         
         //  使用缓存的 Keys
         val (imgKey, subKey) = getWbiKeys()
@@ -713,11 +715,16 @@ object VideoRepository {
             "try_look" to "1",  //  允许未登录用户尝试获取更高画质 (64/80)
             //  [新增] session 参数 - VIP 画质可能需要
             "session" to session,
-            //  [参考 PiliPala] 以下参数经过用户验证，提高成功率
             "voice_balance" to "1",
             "gaia_source" to "pre-load",
             "web_location" to "1550101"
-        )
+        ).toMutableMap()
+        
+        if (!audioLang.isNullOrEmpty()) {
+            params["cur_language"] = audioLang
+            params["lang"] = audioLang
+        }
+        
         val signedParams = WbiUtils.sign(params, imgKey, subKey)
         val response = api.getPlayUrl(signedParams)
         
@@ -747,7 +754,7 @@ object VideoRepository {
     }
 
     //  [New] Use access_token to get high quality stream (4K/HDR/1080P60)
-    private suspend fun fetchPlayUrlWithAccessToken(bvid: String, cid: Long, qn: Int, allowRetry: Boolean = true): PlayUrlData? {
+    private suspend fun fetchPlayUrlWithAccessToken(bvid: String, cid: Long, qn: Int, allowRetry: Boolean = true, audioLang: String? = null): PlayUrlData? {
         val accessToken = com.android.purebilibili.core.store.TokenManager.accessTokenCache
         if (accessToken.isNullOrEmpty()) {
             com.android.purebilibili.core.util.Logger.d("VideoRepo", " No access_token available, fallback to Web API")
@@ -770,7 +777,12 @@ object VideoRepository {
             "platform" to "android",
             "mobi_app" to "android_tv_yst",
             "device" to "android"
-        )
+        ).toMutableMap()
+        
+        if (!audioLang.isNullOrEmpty()) {
+           params["cur_language"] = audioLang
+           params["lang"] = audioLang
+        }
         
         val signedParams = AppSignUtils.signForTvLogin(params)
         
@@ -783,7 +795,7 @@ object VideoRepository {
                 val success = com.android.purebilibili.core.network.TokenRefreshHelper.refresh(applicationContext!!)
                 if (success) {
                     com.android.purebilibili.core.util.Logger.i("VideoRepo", " Token refreshed successfully, retrying request...")
-                    return fetchPlayUrlWithAccessToken(bvid, cid, qn, false)
+                    return fetchPlayUrlWithAccessToken(bvid, cid, qn, false, audioLang)
                 } else {
                     com.android.purebilibili.core.util.Logger.e("VideoRepo", " Token refresh failed, aborting retry.")
                 }

@@ -36,11 +36,48 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     //  [新增] 会话级去重集合 (避免重复推荐)
     private val sessionSeenBvids = mutableSetOf<String>()
 
+    // [Feature] Blocked UPs
+    private val blockedUpRepository = com.android.purebilibili.data.repository.BlockedUpRepository(application)
+    private var blockedMids: Set<Long> = emptySet()
+
     init {
+        // Monitor blocked list
+        viewModelScope.launch {
+            blockedUpRepository.getAllBlockedUps().collect { list ->
+                blockedMids = list.map { it.mid }.toSet()
+                reFilterAllContent()
+            }
+        }
         loadData()
     }
+    
+    // [Feature] Re-filter all content when block list changes
+    private fun reFilterAllContent() {
+        val oldState = _uiState.value
+        val newCategoryStates = oldState.categoryStates.mapValues { (_, content) ->
+            content.copy(
+                videos = content.videos.filter { it.owner.mid !in blockedMids },
+                // Filter live rooms if possible (assuming uid matches mid)
+                liveRooms = content.liveRooms.filter { it.uid !in blockedMids },
+                followedLiveRooms = content.followedLiveRooms.filter { it.uid !in blockedMids }
+            )
+        }
+        
+        var newState = oldState.copy(categoryStates = newCategoryStates)
+        
+        // Sync legacy fields for current category
+        val currentContent = newCategoryStates[newState.currentCategory]
+        if (currentContent != null) {
+            newState = newState.copy(
+                videos = currentContent.videos,
+                liveRooms = currentContent.liveRooms,
+                followedLiveRooms = currentContent.followedLiveRooms
+            )
+        }
+        
+        _uiState.value = newState
+    }
 
-    //  [新增] 切换分类
     //  [新增] 切换分类
     fun switchCategory(category: HomeCategory) {
         val currentState = _uiState.value
@@ -233,6 +270,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             
             //  应用原生 FeedPlugin 过滤器
             val nativeFiltered = validVideos.filter { video ->
+                // [Feature] Block List Filter
+                if (video.owner.mid in blockedMids) return@filter false
+                
                 val plugins = PluginManager.getEnabledFeedPlugins()
                 if (plugins.isEmpty()) return@filter true
                 
@@ -351,6 +391,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         result.onSuccess { items ->
             //  将 DynamicItem 转换为 VideoItem（只保留视频类型）
             val videos = items.mapNotNull { item ->
+                // Check if author is blocked
+                if ((item.modules.module_author?.mid ?: 0) in blockedMids) return@mapNotNull null
+
                 val archive = item.modules.module_dynamic?.major?.archive
                 if (archive != null && archive.bvid.isNotEmpty()) {
                     com.android.purebilibili.data.model.response.VideoItem(
@@ -484,7 +527,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 if (rooms.isNotEmpty()) {
                     val currentLiveRooms = _uiState.value.categoryStates[HomeCategory.LIVE]?.liveRooms ?: emptyList()
                     val existingRoomIds = currentLiveRooms.map { it.roomid }.toSet()
-                    val newRooms = rooms.filter { it.roomid !in existingRoomIds }
+                    // [Feature] Block Filter
+                    val newRooms = rooms.filter { it.roomid !in existingRoomIds && it.uid !in blockedMids }
                     
                     if (newRooms.isEmpty()) {
                         hasMoreLiveData = false

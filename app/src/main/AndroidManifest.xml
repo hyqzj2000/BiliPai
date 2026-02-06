@@ -14,6 +14,17 @@
         android:maxSdkVersion="28" />
     <!-- 🔐 所有文件访问权限 (Android 11+ 用于自定义下载目录) -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
+    
+    <!-- 📺 DLNA 投屏所需网络权限 -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
+    <!-- Android 12+ 本地网络发现需要的权限 -->
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" 
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="s" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:name=".app.PureApplication"
@@ -31,6 +42,9 @@
         android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mnc|colorMode|density"
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="31">
+
+        <!-- 📺 DLNA Cling Service (JitPack/Cling) -->
+        <service android:name="org.fourthline.cling.android.AndroidUpnpServiceImpl"/>
 
         <activity
             android:name=".MainActivity"
@@ -364,7 +378,7 @@
                 <action android:name="androidx.media3.session.MediaSessionService" />
             </intent-filter>
         </service>
-
+        
         <!-- 📋 FileProvider for log export sharing -->
         <provider
             android:name="androidx.core.content.FileProvider"

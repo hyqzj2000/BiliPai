@@ -210,6 +210,7 @@ fun CategoryTabRow(
     selectedIndex: Int = 0,
     onCategorySelected: (Int) -> Unit = {},
     onPartitionClick: () -> Unit = {},
+    onLiveClick: () -> Unit = {},  // [新增] 直播分区点击回调
     pagerState: androidx.compose.foundation.pager.PagerState? = null // [New] PagerState for sync
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
@@ -348,7 +349,12 @@ fun CategoryTabRow(
                                 primaryColor = primaryColor,
                                 unselectedColor = unselectedColor,
                                 onClick = { 
-                                    onCategorySelected(index)
+                                    // [修复] 直播分区点击时跳转到独立页面
+                                    if (index == 3) { // 直播
+                                        onLiveClick()
+                                    } else {
+                                        onCategorySelected(index)
+                                    }
                                     haptic(com.android.purebilibili.core.util.HapticType.LIGHT)
                                     // Click usually triggers Pager scroll via onCategorySelected -> ViewModel -> HomeScreen LaunchedEffect
                                 },

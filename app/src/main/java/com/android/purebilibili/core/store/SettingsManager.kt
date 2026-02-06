@@ -39,6 +39,7 @@ data class HomeSettings(
     val isLiquidGlassEnabled: Boolean = true, // [New]
     val liquidGlassStyle: LiquidGlassStyle = LiquidGlassStyle.CLASSIC, // [New]
     val isHeaderCollapseEnabled: Boolean = true, // [New] 首页顶部栏自动收缩开关
+    val gridColumnCount: Int = 0, // [New] 网格列数 (0=自动, 1-6=固定)
     val cardAnimationEnabled: Boolean = false,    //  卡片进场动画（默认关闭）
     val cardTransitionEnabled: Boolean = true,    //  卡片过渡动画（默认开启）
     //  [修复] 默认值改为 true，避免在 Flow 加载实际值之前错误触发弹窗
@@ -100,6 +101,8 @@ object SettingsManager {
     private val KEY_BLUR_INTENSITY = stringPreferencesKey("blur_intensity")
     //  [合并] 首页展示模式 (0=Grid, 1=Story, 2=Glass)
     private val KEY_DISPLAY_MODE = intPreferencesKey("display_mode")
+    //  [新增] 网格列数 (0=Auto)
+    private val KEY_GRID_COLUMN_COUNT = intPreferencesKey("grid_column_count")
     //  [新增] 卡片动画开关
     private val KEY_CARD_ANIMATION_ENABLED = booleanPreferencesKey("card_animation_enabled")
     //  [新增] 卡片过渡动画开关
@@ -136,7 +139,12 @@ object SettingsManager {
         // Since we added liquidGlassFlow, we have 6 flows in total now for 'firstFive'.
         // Let's grouping: (Display, Floating, Label) + (HeaderBlur, BottomBlur, LiquidGlass, Style)
         
-        val layoutSettingsFlow = combine(displayModeFlow, bottomBarFloatingFlow, bottomBarLabelModeFlow) { d, f, l -> Triple(d, f, l) }
+        val gridColumnCountFlow = context.settingsDataStore.data.map { it[KEY_GRID_COLUMN_COUNT] ?: 0 }
+
+        val layoutSettingsFlow = combine(displayModeFlow, bottomBarFloatingFlow, bottomBarLabelModeFlow, gridColumnCountFlow) { d, f, l, g -> 
+            data class Layout(val d: Int, val f: Boolean, val l: Int, val g: Int)
+            Layout(d, f, l, g)
+        }
         val visualSettingsFlow = combine(headerBlurFlow, headerCollapseFlow, bottomBarBlurFlow, liquidGlassFlow, liquidGlassStyleFlow) { h, c, b, l, s -> 
             data class Visual(val h: Boolean, val c: Boolean, val b: Boolean, val l: Boolean, val s: LiquidGlassStyle)
             Visual(h, c, b, l, s)
@@ -144,9 +152,10 @@ object SettingsManager {
         
         val coreSettingsFlow = combine(layoutSettingsFlow, visualSettingsFlow) { layout, visual ->
              HomeSettings(
-                displayMode = layout.first,
-                isBottomBarFloating = layout.second,
-                bottomBarLabelMode = layout.third,
+                displayMode = layout.d,
+                isBottomBarFloating = layout.f,
+                bottomBarLabelMode = layout.l,
+                gridColumnCount = layout.g, // [New]
                 isHeaderBlurEnabled = visual.h,
                 isHeaderCollapseEnabled = visual.c, // [New]
                 isBottomBarBlurEnabled = visual.b,
@@ -346,6 +355,16 @@ object SettingsManager {
     suspend fun setDisplayMode(context: Context, mode: Int) {
         context.settingsDataStore.edit { preferences -> 
             preferences[KEY_DISPLAY_MODE] = mode
+        }
+    }
+
+    //  [新增] --- 网格列数 ---
+    fun getGridColumnCount(context: Context): Flow<Int> = context.settingsDataStore.data
+        .map { preferences -> preferences[KEY_GRID_COLUMN_COUNT] ?: 0 }
+
+    suspend fun setGridColumnCount(context: Context, count: Int) {
+        context.settingsDataStore.edit { preferences -> 
+            preferences[KEY_GRID_COLUMN_COUNT] = count
         }
     }
     

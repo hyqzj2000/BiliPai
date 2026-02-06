@@ -698,6 +698,8 @@ fun VideoDetailScreen(
                 onCodecChange = { viewModel.setVideoCodec(it) },
                 currentAudioQuality = audioQualityPreference,
                 onAudioQualityChange = { viewModel.setAudioQuality(it) },
+                // [New] Audio Language
+                onAudioLangChange = { viewModel.changeAudioLanguage(it) },
                 
                 //  [新增] 音频模式
                 isAudioOnly = false, // 全屏模式只有视频
@@ -739,6 +741,7 @@ fun VideoDetailScreen(
                 onToggleLike = { viewModel.toggleLike() },
                 onCoin = { viewModel.showCoinDialog() },
                 onToggleFavorite = { viewModel.showFavoriteFolderDialog() },
+                onTriple = { viewModel.doTripleAction() },
                 onRelatedVideoClick = onVideoClick
             )
         } else {
@@ -992,6 +995,8 @@ fun VideoDetailScreen(
                                 onCodecChange = { viewModel.setVideoCodec(it) },
                                 currentAudioQuality = audioQualityPreference,
                                 onAudioQualityChange = { viewModel.setAudioQuality(it) },
+                                // [New] Audio Language
+                                onAudioLangChange = { viewModel.changeAudioLanguage(it) },
                                 // [New Actions]
                                 onSaveCover = { viewModel.saveCover(context) },
                                 onDownloadAudio = { viewModel.downloadAudio(context) }

@@ -398,19 +398,14 @@ fun UpInfoSection(
                 )
             }
             Spacer(Modifier.height(2.dp))
-            // Blue UP tag
-            Surface(
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Text(
-                    text = "UP\u4e3b",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-            }
+            // Blue UP tag (Now plain text)
+            Text(
+                text = "UP\u4e3b",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 2.dp) // Slight horizontal padding for alignment
+            )
         }
         
         // Follow button
@@ -513,7 +508,8 @@ fun BgmInfoRow(
     val uriHandler = LocalUriHandler.current
     
     Surface(
-        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+        // Optimization: Use primary color with very low alpha for a subtle, branded look
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -524,20 +520,22 @@ fun BgmInfoRow(
             }
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = CupertinoIcons.Default.MusicNote, 
                 contentDescription = "BGM",
-                tint = MaterialTheme.colorScheme.secondary,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                 modifier = Modifier.size(14.dp)
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = bgmInfo.musicTitle.ifEmpty { "背景音乐" },
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.secondary,
+                text = bgmInfo.musicTitle.ifEmpty { "发现音乐" },
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Medium
+                ),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
@@ -546,8 +544,8 @@ fun BgmInfoRow(
                 Icon(
                     imageVector = CupertinoIcons.Default.ChevronForward,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
-                    modifier = Modifier.size(12.dp)
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    modifier = Modifier.size(14.dp)
                 )
             }
         }

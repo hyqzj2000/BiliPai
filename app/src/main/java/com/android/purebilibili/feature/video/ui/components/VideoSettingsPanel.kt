@@ -29,6 +29,7 @@ import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
+import com.android.purebilibili.data.model.response.AiAudioInfo
 
 /**
  *  视频设置面板 - 竖屏模式下的高级设置底部弹窗
@@ -75,6 +76,10 @@ fun VideoSettingsPanel(
     onCodecChange: (String) -> Unit = {},
     currentAudioQuality: Int = -1,
     onAudioQualityChange: (Int) -> Unit = {},
+    // [New] 音频语言 (AI Translation)
+    aiAudioInfo: AiAudioInfo? = null,
+    currentAudioLang: String? = null,
+    onAudioLangChange: (String) -> Unit = {},
     
     // 资源下载
     onSaveCover: () -> Unit = {},
@@ -474,6 +479,61 @@ fun VideoSettingsPanel(
                     }
                 }
                 SettingsDivider()
+            }
+            item { SettingsDivider() }
+
+             // [New] 音频语言选择 (AI Translation)
+            if (aiAudioInfo?.items?.isNotEmpty() == true) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "AI原生翻译",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            
+                            val currentLangItem = aiAudioInfo.items.find { it.langCode == currentAudioLang }
+                            val langLabel = currentLangItem?.langDoc ?: "原声"
+                            
+                            Text(
+                                text = langLabel,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            aiAudioInfo.items.forEach { item ->
+                                val isSelected = currentAudioLang == item.langCode
+                                Surface(
+                                    onClick = { onAudioLangChange(item.langCode) },
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier.height(32.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 12.dp)) {
+                                        Text(
+                                            text = item.langDoc,
+                                            fontSize = 13.sp,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    SettingsDivider()
+                }
             }
 
             //  播放线路 (CDN) - 仅在有多个线路时显示

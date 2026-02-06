@@ -7,7 +7,9 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import com.android.purebilibili.core.ui.blur.unifiedBlur
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import kotlinx.coroutines.flow.distinctUntilChanged // [Fix] Missing import
+import kotlinx.coroutines.flow.distinctUntilChanged
+import androidx.compose.ui.platform.LocalContext // [New]
+import com.android.purebilibili.core.store.SettingsManager // [New]
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,7 +18,10 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.DisposableEffect // [Fix] Missing import
+import kotlinx.coroutines.launch // [Fix] Import
 //  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
@@ -56,8 +61,14 @@ fun CommonListScreen(
     // 📱 响应式布局参数
     // Fix: 手机端(Compact)使用较小的最小宽度以保证2列显示 (360dp / 170dp = 2.1 -> 2列)
     // 平板端(Expanded)使用较大的最小宽度以避免卡片过小
+    val context = LocalContext.current
+    val homeSettings by SettingsManager.getHomeSettings(context).collectAsState(initial = com.android.purebilibili.core.store.HomeSettings())
+    
     val minColWidth = rememberResponsiveValue(compact = 170.dp, medium = 170.dp, expanded = 240.dp)
-    val columns = rememberAdaptiveGridColumns(minColumnWidth = minColWidth)
+    val adaptiveColumns = rememberAdaptiveGridColumns(minColumnWidth = minColWidth)
+    
+    // [新增] 优先使用用户设置的列数
+    val columns = if (homeSettings.gridColumnCount > 0) homeSettings.gridColumnCount else adaptiveColumns
     val spacing = rememberResponsiveSpacing()
     
     //  [修复] 分页支持：收藏 + 历史记录
@@ -140,12 +151,24 @@ fun CommonListScreen(
             setBottomBarVisible(true)
         }
     }
+    
+    // [Fix] Import for launch
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     // 📁 [新增] 收藏夹切换 Tab
     val foldersState by favoriteViewModel?.folders?.collectAsState() 
         ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(emptyList()) }
     val selectedFolderIndex by favoriteViewModel?.selectedFolderIndex?.collectAsState() 
         ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    
+    // [新增] Pager State (仅当有多个文件夹时使用)
+    // 尽管 compose 会自动处理 rememberKey，但这里用 foldersState.size 作为 key 确保变化时重置
+    val pagerState = rememberPagerState(initialPage = 0) {
+        if (favoriteViewModel != null && foldersState.size > 1) foldersState.size else 0
+    }
+    
+    // [Fix] 协程作用域 (用于 UI 事件触发的滚动)
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     // [优化] Haze 性能优化：优先使用全局 HazeState，避免双重 Source 导致的过度绘制
@@ -213,8 +236,10 @@ fun CommonListScreen(
                                 Tab(
                                     selected = selectedFolderIndex == index,
                                     onClick = { 
-                                        favoriteViewModel?.switchFolder(index) 
-                                        // 切换收藏夹时清空搜索，避免混淆
+                                        // 
+                                        scope.launch {
+                                            pagerState.animateScrollToPage(index)
+                                        }
                                         searchQuery = ""
                                     },
                                     text = {
@@ -239,98 +264,182 @@ fun CommonListScreen(
                 .fillMaxSize()
                 .hazeSource(state = activeHazeState) // [优化] 仅使用统一的 activeHazeState
         ) {
-            if (state.isLoading) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(columns),
-                    contentPadding = PaddingValues(
-                        start = spacing.medium,
-                        end = spacing.medium,
-                        top = padding.calculateTopPadding() + spacing.medium,
-                        bottom = padding.calculateBottomPadding() + spacing.medium
-                    ),
-                    horizontalArrangement = Arrangement.spacedBy(spacing.medium),
-                    verticalArrangement = Arrangement.spacedBy(spacing.medium),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(columns * 4) { VideoGridItemSkeleton() } // 根据列数生成骨架屏数量
-                }
-            } else if (state.error != null) {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = state.error ?: "未知错误", color = Color.Gray)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = { viewModel.loadData() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
-                        Text("重试")
-                    }
-                }
-            } else if (state.items.isEmpty()) {
-                Box(modifier = Modifier.align(Alignment.Center)) {
-                    Text("暂无数据", color = Color.Gray)
-                }
-            } else {
-                // 🔍 过滤列表
-                val filteredItems = androidx.compose.runtime.remember(state.items, searchQuery) {
-                    if (searchQuery.isBlank()) state.items
-                    else {
-                        state.items.filter { 
-                            PinyinUtils.matches(it.title, searchQuery) ||
-                            PinyinUtils.matches(it.owner.name, searchQuery)
-                        }
+            
+            // [新增] 如果是收藏页面且有多个文件夹，显示 HorizontalPager
+            if (favoriteViewModel != null && foldersState.size > 1) {
+                // [Feature] 联动 Pager -> ViewModel
+                // 仅当 isUserAction 为 true 时才允许 Pager 驱动 ViewModel 变更
+                var isUserAction by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
+                LaunchedEffect(pagerState) {
+                    pagerState.interactionSource.interactions.collect { interaction ->
+                         if (interaction is androidx.compose.foundation.interaction.DragInteraction.Start) {
+                             isUserAction = true
+                         }
                     }
                 }
 
-                if (filteredItems.isEmpty() && searchQuery.isNotEmpty()) {
-                     Box(Modifier.align(Alignment.Center)) {
-                        Text("没有找到相关视频", color = Color.Gray)
-                     }
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(columns),
-                        state = gridState,
-                        contentPadding = PaddingValues(
-                            start = spacing.medium,
-                            end = spacing.medium,
-                            top = padding.calculateTopPadding() + spacing.medium,
-                            bottom = padding.calculateBottomPadding() + spacing.medium + 80.dp // [调整] 增加底部 padding 防止底栏遮挡
-                        ),
-                        horizontalArrangement = Arrangement.spacedBy(spacing.medium),
-                        verticalArrangement = Arrangement.spacedBy(spacing.medium),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        itemsIndexed(
-                            items = filteredItems,
-                            key = { _, item -> item.bvid.ifEmpty { item.id.toString() } } // 确保 key 唯一且不为空
-                        ) { index, video ->
-                            ElegantVideoCard(
-                                video = video,
-                                index = index,
-                                animationEnabled = true,
-                                transitionEnabled = true, // 启用共享元素过渡
-                                onClick = { bvid, cid -> onVideoClick(bvid, cid) },
-                                onUnfavorite = if (favoriteViewModel != null) { 
-                                    { favoriteViewModel.removeVideo(video) } 
-                                } else null
-                            )
-                        }
-                        
-                        //  加载更多指示器 (仅在未搜索时显示)
-                        if (searchQuery.isEmpty()) {
-                            if (isLoadingMore) {
-                                item(span = { GridItemSpan(columns) }) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CupertinoActivityIndicator()
-                                    }
-                                }
+                LaunchedEffect(pagerState) {
+                    snapshotFlow { pagerState.settledPage }
+                        .collect { page ->
+                            if (isUserAction) {
+                                favoriteViewModel.switchFolder(page)
+                                isUserAction = false
                             }
                         }
+                }
+                
+                // 联动 ViewModel -> Pager (Tab click)
+                LaunchedEffect(selectedFolderIndex) {
+                    if (pagerState.currentPage != selectedFolderIndex) {
+                        pagerState.animateScrollToPage(selectedFolderIndex)
                     }
+                }
+
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    beyondViewportPageCount = 1 // 预加载
+                ) { page ->
+                    // 获取当前页面的状态
+                    val folderUiState by favoriteViewModel.getFolderUiState(page).collectAsState()
+                    
+                    // 确保数据加载
+                    LaunchedEffect(page) {
+                        favoriteViewModel.loadFolder(page)
+                    }
+                    
+                    // 渲染通用列表内容 (复用下方逻辑，提取为组件)
+                    CommonListContent(
+                        items = folderUiState.items,
+                        isLoading = folderUiState.isLoading,
+                        error = folderUiState.error,
+                        searchQuery = searchQuery,
+                        columns = columns,
+                        spacing = spacing.medium,
+                        padding = padding,
+                        onVideoClick = onVideoClick,
+                         onLoadMore = { favoriteViewModel.loadMoreForFolder(page) },
+                        onUnfavorite = { video -> favoriteViewModel.removeVideo(video) }
+                    )
+                }
+            } else {
+                // 原有逻辑 (历史记录 或 单个收藏夹)
+                 CommonListContent(
+                    items = state.items,
+                    isLoading = state.isLoading,
+                    error = state.error,
+                    searchQuery = searchQuery,
+                    columns = columns,
+                    spacing = spacing.medium,
+                    padding = padding,
+                    onVideoClick = onVideoClick,
+                    onLoadMore = { 
+                        favoriteViewModel?.loadMore()
+                        historyViewModel?.loadMore()
+                    },
+                    onUnfavorite = if (favoriteViewModel != null) { 
+                        { favoriteViewModel.removeVideo(it) } 
+                    } else null
+                )
+            }
+        }
+    }
+}
+
+// 提取通用列表内容组件
+@Composable
+fun CommonListContent(
+    items: List<com.android.purebilibili.data.model.response.VideoItem>,
+    isLoading: Boolean,
+    error: String?,
+    searchQuery: String,
+    columns: Int,
+    spacing: androidx.compose.ui.unit.Dp,
+    padding: PaddingValues,
+    onVideoClick: (String, Long) -> Unit,
+    onLoadMore: () -> Unit,
+    onUnfavorite: ((com.android.purebilibili.data.model.response.VideoItem) -> Unit)?
+) {
+    if (isLoading && items.isEmpty()) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(columns),
+            contentPadding = PaddingValues(
+                start = spacing,
+                end = spacing,
+                top = padding.calculateTopPadding() + spacing,
+                bottom = padding.calculateBottomPadding() + spacing
+            ),
+            horizontalArrangement = Arrangement.spacedBy(spacing),
+            verticalArrangement = Arrangement.spacedBy(spacing),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(columns * 4) { VideoGridItemSkeleton() }
+        }
+    } else if (error != null && items.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(text = error, color = Color.Gray)
+        }
+    } else if (items.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+             Text("暂无数据", color = Color.Gray)
+        }
+    } else {
+        val filteredItems = androidx.compose.runtime.remember(items, searchQuery) {
+            if (searchQuery.isBlank()) items
+            else {
+                items.filter { 
+                    PinyinUtils.matches(it.title, searchQuery) ||
+                    PinyinUtils.matches(it.owner.name, searchQuery)
+                }
+            }
+        }
+
+        if (filteredItems.isEmpty() && searchQuery.isNotEmpty()) {
+             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("没有找到相关视频", color = Color.Gray)
+             }
+        } else {
+            val gridState = rememberLazyGridState()
+            
+            // 自动加载更多
+            val shouldLoadMore = androidx.compose.runtime.remember {
+                androidx.compose.runtime.derivedStateOf {
+                    val layoutInfo = gridState.layoutInfo
+                    val total = layoutInfo.totalItemsCount
+                    val last = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                    total > 0 && last >= total - 4
+                }
+            }
+            LaunchedEffect(shouldLoadMore.value) {
+                if (shouldLoadMore.value) onLoadMore()
+            }
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(columns),
+                state = gridState,
+                contentPadding = PaddingValues(
+                    start = spacing,
+                    end = spacing,
+                    top = padding.calculateTopPadding() + spacing,
+                    bottom = padding.calculateBottomPadding() + spacing + 80.dp 
+                ),
+                horizontalArrangement = Arrangement.spacedBy(spacing),
+                verticalArrangement = Arrangement.spacedBy(spacing),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                 itemsIndexed(
+                    items = filteredItems,
+                    key = { _, item -> item.bvid.ifEmpty { item.id.toString() } }
+                ) { index, video ->
+                    ElegantVideoCard(
+                        video = video,
+                        index = index,
+                        animationEnabled = true,
+                        transitionEnabled = true,
+                        onClick = { bvid, cid -> onVideoClick(bvid, cid) },
+                        onUnfavorite = if (onUnfavorite != null) { { onUnfavorite(video) } } else null
+                    )
                 }
             }
         }

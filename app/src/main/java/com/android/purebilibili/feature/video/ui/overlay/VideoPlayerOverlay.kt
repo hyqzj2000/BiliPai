@@ -59,7 +59,23 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import io.github.alexzhirkevich.cupertino.icons.filled.HandThumbsup
 import io.github.alexzhirkevich.cupertino.icons.outlined.HandThumbsup
+import io.github.alexzhirkevich.cupertino.icons.outlined.HandThumbsup
 import com.android.purebilibili.core.ui.AppIcons
+import com.android.purebilibili.core.util.HapticType
+import com.android.purebilibili.core.util.rememberHapticFeedback
+import com.android.purebilibili.feature.cast.DeviceListDialog
+import com.android.purebilibili.feature.cast.DlnaManager
+import com.android.purebilibili.feature.cast.LocalProxyServer
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 
 
 @Composable
@@ -150,6 +166,10 @@ fun VideoPlayerOverlay(
     onCodecChange: (String) -> Unit = {},
     currentAudioQuality: Int = -1,
     onAudioQualityChange: (Int) -> Unit = {},
+    // [New] AI Audio Translation
+    aiAudioInfo: com.android.purebilibili.data.model.response.AiAudioInfo? = null,
+    currentAudioLang: String? = null,
+    onAudioLangChange: (String) -> Unit = {},
     // 👀 [新增] 在线观看人数
     onlineCount: String = "",
     // [New Actions]
@@ -170,6 +190,7 @@ fun VideoPlayerOverlay(
     onToggleLike: () -> Unit = {},
     onCoin: () -> Unit = {},
     onToggleFavorite: () -> Unit = {},
+    onTriple: () -> Unit = {},  // [新增] 一键三连回调
     // 复用 onRelatedVideoClick 或 onVideoClick
     onDrawerVideoClick: (String) -> Unit = {},
 ) {
@@ -181,6 +202,7 @@ fun VideoPlayerOverlay(
     var showDanmakuSettings by remember { mutableStateOf(false) }
     var showVideoSettings by remember { mutableStateOf(false) }  //  新增
     var showChapterList by remember { mutableStateOf(false) }  // 📖 章节列表
+    var showCastDialog by remember { mutableStateOf(false) }   // 📺 投屏对话框
     var currentSpeed by remember { mutableFloatStateOf(1.0f) }
     //  使用传入的比例状态
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
@@ -188,9 +210,53 @@ fun VideoPlayerOverlay(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     
+
     //  双击检测状态
     var lastTapTime by remember { mutableLongStateOf(0L) }
     var showLikeAnimation by remember { mutableStateOf(false) }
+
+    // 📺 [DLNA] 按需权限请求
+    val dlnaPermissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val isGranted = permissions.values.all { it }
+        if (isGranted) {
+            // 权限授予，绑定服务并显示对话框
+            DlnaManager.bindService(context)
+            DlnaManager.refresh() // 刷新列表
+            showCastDialog = true
+        } else {
+            // 权限被拒绝，提示用户（可选）
+             com.android.purebilibili.core.util.Logger.d("VideoPlayerOverlay", "DLNA permissions denied")
+        }
+    }
+
+    val onCastClickAction = {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+: NEARBY_WIFI_DEVICES
+            if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.NEARBY_WIFI_DEVICES) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                 DlnaManager.bindService(context)
+                 DlnaManager.refresh()
+                 showCastDialog = true
+            } else {
+                dlnaPermissionLauncher.launch(arrayOf(android.Manifest.permission.NEARBY_WIFI_DEVICES))
+            }
+        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            // Android 12: ACCESS_FINE_LOCATION
+            if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                 DlnaManager.bindService(context)
+                 DlnaManager.refresh()
+                 showCastDialog = true
+            } else {
+                dlnaPermissionLauncher.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION))
+            }
+        } else {
+            // Android 11-: 无需运行时权限（除了 Internet/WifiState）
+            DlnaManager.bindService(context)
+            DlnaManager.refresh()
+            showCastDialog = true
+        }
+    }
 
     val progressState by produceState(initialValue = PlayerProgress(), key1 = player, key2 = isVisible) {
         while (isActive) {
@@ -295,16 +361,20 @@ fun VideoPlayerOverlay(
                         title = title,
                         onlineCount = onlineCount,
                         isFullscreen = isFullscreen,
-                        currentQualityLabel = currentQualityLabel,
                         onBack = onBack,
-                        onQualityClick = { showQualityMenu = true },
-                        //  弹幕开关和设置
-                        danmakuEnabled = danmakuEnabled,
-                        onDanmakuToggle = onDanmakuToggle,
-                        onDanmakuSettingsClick = { showDanmakuSettings = true },
-                        //  [新增] 侧边栏回调
-                        onDrawerClick = { showEndDrawer = true },
-                        //  [修复] 传入 modifier 确保在顶部
+                        // Interactions
+                        isLiked = isLiked,
+                        isCoined = isCoined,
+                        onLikeClick = onToggleLike,
+                        onDislikeClick = {}, // TODO: Implement dislike
+                        onCoinClick = onCoin,
+                        onShareClick = {
+                            if (bvid.isNotEmpty()) {
+                                ShareUtils.shareVideo(context, title, bvid)
+                            }
+                        },
+                        onCastClick = onCastClickAction,
+                        onMoreClick = { showEndDrawer = true },
                         modifier = Modifier.align(Alignment.TopCenter)
                     )
                 } else {
@@ -321,6 +391,8 @@ fun VideoPlayerOverlay(
                         },
                         onAudioMode = onAudioOnlyToggle,
                         isAudioOnly = isAudioOnly,
+                        //  [新增] 投屏按钮
+                        onCastClick = onCastClickAction,
                         // 📱 [新增] 画质选择移到左上角
                         currentQualityLabel = currentQualityLabel,
                         onQualityClick = { showQualityMenu = true },
@@ -358,6 +430,7 @@ fun VideoPlayerOverlay(
                     //  [新增] 竖屏模式弹幕和清晰度控制
                     danmakuEnabled = danmakuEnabled,
                     onDanmakuToggle = onDanmakuToggle,
+                    onDanmakuSettingsClick = { showDanmakuSettings = true },
                     currentQualityLabel = currentQualityLabel,
                     onQualityClick = { showQualityMenu = true },
                     // 🖼️ [新增] 视频预览图数据
@@ -614,6 +687,13 @@ fun VideoPlayerOverlay(
                     onAudioQualityChange(quality)
                     showVideoSettings = false
                 },
+                // [New] AI Audio
+                aiAudioInfo = aiAudioInfo,
+                currentAudioLang = currentAudioLang,
+                onAudioLangChange = { lang ->
+                    onAudioLangChange(lang)
+                    showVideoSettings = false
+                },
 
                 onSaveCover = {
                     onSaveCover()
@@ -655,12 +735,27 @@ fun VideoPlayerOverlay(
             onToggleLike = onToggleLike,
             onCoin = onCoin,
             onToggleFavorite = onToggleFavorite,
+            onTripleLike = onTriple,
             onVideoClick = { vid ->
                 onDrawerVideoClick(vid)
                 showEndDrawer = false
             },
             modifier = Modifier.align(Alignment.CenterEnd)
         )
+        
+        // --- 12. 📺 投屏对话框 ---
+        if (showCastDialog) {
+            DeviceListDialog(
+                onDismissRequest = { showCastDialog = false },
+                onDeviceSelected = { device ->
+                    showCastDialog = false
+                    // Generate Proxy URL
+                    val proxyUrl = LocalProxyServer.getProxyUrl(context, currentVideoUrl)
+                    // Cast!
+                    DlnaManager.cast(device, proxyUrl, videoTitle, videoOwnerName)
+                }
+            )
+        }
     }
 }
 
@@ -677,6 +772,8 @@ private fun PortraitTopBar(
     onShare: () -> Unit,
     onAudioMode: () -> Unit,
     isAudioOnly: Boolean,
+    // 📺 [新增] 投屏
+    onCastClick: () -> Unit = {},
     // 📱 [新增] 画质选择 - 移到左上角
     currentQualityLabel: String = "",
     onQualityClick: () -> Unit = {},
@@ -757,6 +854,19 @@ private fun PortraitTopBar(
                 )
             }
 
+            // 📺 投屏按钮 - 无背景
+            IconButton(
+                onClick = onCastClick,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = io.github.alexzhirkevich.cupertino.icons.CupertinoIcons.Default.Tv,
+                    contentDescription = "投屏",
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            
             //  设置按钮 - 无背景
             IconButton(
                 onClick = onSettings,
@@ -808,6 +918,7 @@ fun LandscapeEndDrawer(
     onToggleLike: () -> Unit,
     onCoin: () -> Unit,
     onToggleFavorite: () -> Unit,
+    onTripleLike: () -> Unit = {},  // [新增] 一键三连回调
     onVideoClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -900,28 +1011,15 @@ fun LandscapeEndDrawer(
                             horizontalArrangement = Arrangement.SpaceAround,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // 点赞
-                            InteractionButton(
-                                icon = if (isLiked) CupertinoIcons.Filled.HandThumbsup else CupertinoIcons.Outlined.HandThumbsup,
-                                label = "点赞",
-                                isActive = isLiked,
-                                onClick = onToggleLike
-                            )
-                            
-                            // 投币
-                            InteractionButton(
-                                icon = AppIcons.BiliCoin,
-                                label = "投币",
-                                isActive = isCoined,
-                                onClick = onCoin
-                            )
-                            
-                            // 收藏
-                            InteractionButton(
-                                icon = if (isFavorited) CupertinoIcons.Filled.Star else CupertinoIcons.Default.Star,
-                                label = "收藏",
-                                isActive = isFavorited,
-                                onClick = onToggleFavorite
+                            // 点赞 - 支持长按三连
+                            TripleLikeInteractionButton(
+                                isLiked = isLiked,
+                                isCoined = isCoined,
+                                isFavorited = isFavorited,
+                                onLikeClick = onToggleLike,
+                                onCoinClick = onCoin,
+                                onFavoriteClick = onToggleFavorite,
+                                onTripleComplete = onTripleLike
                             )
                         }
                     }
@@ -1040,6 +1138,189 @@ private fun InteractionButton(
         Text(
             text = label,
             color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 10.sp
+        )
+    }
+}
+
+/**
+ * 一键三连长按按钮 (横屏版) - 长按显示点赞、投币、收藏三个图标的圆形进度条
+ */
+@Composable
+private fun TripleLikeInteractionButton(
+    isLiked: Boolean,
+    isCoined: Boolean,
+    isFavorited: Boolean,
+    onLikeClick: () -> Unit,
+    onCoinClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
+    onTripleComplete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val haptic = rememberHapticFeedback()
+    
+    var isLongPressing by remember { mutableStateOf(false) }
+    var longPressProgress by remember { mutableFloatStateOf(0f) }
+    val progressDuration = 1500
+    
+    val animatedProgress by animateFloatAsState(
+        targetValue = if (isLongPressing) 1f else 0f,
+        animationSpec = if (isLongPressing) {
+            androidx.compose.animation.core.tween(durationMillis = progressDuration, easing = LinearEasing)
+        } else {
+            androidx.compose.animation.core.tween(durationMillis = 200, easing = FastOutSlowInEasing)
+        },
+        label = "tripleLikeProgress",
+        finishedListener = { progress ->
+            if (progress >= 1f && isLongPressing) {
+                haptic(HapticType.MEDIUM)
+                onTripleComplete()
+                isLongPressing = false
+            }
+        }
+    )
+    
+    LaunchedEffect(animatedProgress) {
+        longPressProgress = animatedProgress
+    }
+    
+    LaunchedEffect(isLongPressing) {
+        if (isLongPressing) {
+            haptic(HapticType.LIGHT)
+        }
+    }
+    
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+    ) {
+        // 点赞
+        LandscapeProgressIcon(
+            icon = if (isLiked) CupertinoIcons.Filled.HandThumbsup else CupertinoIcons.Outlined.HandThumbsup,
+            label = "点赞",
+            progress = longPressProgress,
+            progressColor = MaterialTheme.colorScheme.primary,
+            isActive = isLiked,
+            onClick = onLikeClick,
+            onLongPress = { isLongPressing = true },
+            onRelease = { 
+                if (longPressProgress < 0.1f) onLikeClick()
+                isLongPressing = false 
+            }
+        )
+        
+        // 投币 (显示时带进度)
+        LandscapeProgressIcon(
+            icon = AppIcons.BiliCoin,
+            label = "投币",
+            progress = longPressProgress,
+            progressColor = Color(0xFFFFB300),
+            isActive = isCoined,
+            onClick = onCoinClick,
+            showProgress = longPressProgress > 0.05f
+        )
+        
+        // 收藏 (显示时带进度)
+        LandscapeProgressIcon(
+            icon = if (isFavorited) CupertinoIcons.Filled.Star else CupertinoIcons.Default.Star,
+            label = "收藏",
+            progress = longPressProgress,
+            progressColor = Color(0xFFFFC107),
+            isActive = isFavorited,
+            onClick = onFavoriteClick,
+            showProgress = longPressProgress > 0.05f
+        )
+    }
+}
+
+/**
+ * 横屏带进度环的交互图标
+ */
+@Composable
+private fun LandscapeProgressIcon(
+    icon: ImageVector,
+    label: String,
+    progress: Float,
+    progressColor: Color,
+    isActive: Boolean,
+    onClick: () -> Unit,
+    onLongPress: (() -> Unit)? = null,
+    onRelease: (() -> Unit)? = null,
+    showProgress: Boolean = true,
+    modifier: Modifier = Modifier
+) {
+    val iconSize = 24.dp
+    val ringSize = iconSize + 12.dp
+    val strokeWidth = 2.5.dp
+    
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .then(
+                if (onLongPress != null && onRelease != null) {
+                    Modifier.pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                onLongPress()
+                                tryAwaitRelease()
+                                onRelease()
+                            }
+                        )
+                    }
+                } else {
+                    Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onClick
+                    )
+                }
+            )
+    ) {
+        Box(
+            modifier = Modifier.size(ringSize),
+            contentAlignment = Alignment.Center
+        ) {
+            if (showProgress && progress > 0f) {
+                Canvas(modifier = Modifier.size(ringSize)) {
+                    val stroke = strokeWidth.toPx()
+                    val diameter = size.minDimension - stroke
+                    val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
+                    
+                    drawArc(
+                        color = progressColor.copy(alpha = 0.2f),
+                        startAngle = -90f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = Size(diameter, diameter),
+                        style = Stroke(width = stroke, cap = StrokeCap.Round)
+                    )
+                    
+                    drawArc(
+                        color = progressColor,
+                        startAngle = -90f,
+                        sweepAngle = 360f * progress,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = Size(diameter, diameter),
+                        style = Stroke(width = stroke, cap = StrokeCap.Round)
+                    )
+                }
+            }
+            
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (isActive) progressColor else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(iconSize)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            color = if (isActive) progressColor else MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 10.sp
         )
     }

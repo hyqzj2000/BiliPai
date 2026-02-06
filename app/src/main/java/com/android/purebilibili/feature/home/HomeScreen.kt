@@ -317,13 +317,21 @@ fun HomeScreen(
     // 是否为单列模式 (Story or Cinematic)
     val isSingleColumnMode = displayMode == 1
     
-    val adaptiveColumns = remember(contentWidth, displayMode) {
+    val adaptiveColumns = remember(contentWidth, displayMode, homeSettings.gridColumnCount) {
+        // [新增] 如果用户自定义了列数 (且非单列模式)，优先使用用户设置
+        if (!isSingleColumnMode && homeSettings.gridColumnCount > 0) {
+            return@remember homeSettings.gridColumnCount
+        }
+
         val minColumnWidth = if (isSingleColumnMode) 280.dp else 180.dp // 单列模式给更宽的基准
         val maxColumns = if (isSingleColumnMode) 2 else 6
         val columns = (contentWidth / minColumnWidth).toInt()
         columns.coerceIn(1, maxColumns)
     }
-    val gridColumns = if (windowSizeClass.isExpandedScreen) {
+    
+    val gridColumns = if (!isSingleColumnMode && homeSettings.gridColumnCount > 0) {
+        homeSettings.gridColumnCount
+    } else if (windowSizeClass.isExpandedScreen) {
         adaptiveColumns
     } else {
         com.android.purebilibili.core.util.rememberResponsiveValue(
@@ -785,7 +793,10 @@ fun HomeScreen(
                         .collect { page ->
                             if (isUserAction) {
                                 val category = HomeCategory.entries[page]
-                                if (state.currentCategory != category) {
+                                // [简化] 直播分类直接导航到独立页面，不做回滚
+                                if (category == HomeCategory.LIVE) {
+                                    onLiveListClick()
+                                } else if (state.currentCategory != category) {
                                     viewModel.switchCategory(category)
                                 }
                                 // 重置标记，等待下一次手势
@@ -1003,6 +1014,7 @@ fun HomeScreen(
                 }
             },
             onPartitionClick = onPartitionClick,
+            onLiveClick = onLiveListClick,  // [修复] 直播分区点击导航到独立页面
             // isScrollingUp = isHeaderVisible, // [Removed] logic moved to offset
             hazeState = if (isHeaderBlurEnabled) hazeState else null,
             onStatusBarDoubleTap = {

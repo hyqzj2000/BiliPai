@@ -94,6 +94,9 @@ fun SettingsScreen(
     // [新增] 打赏对话框
     var showDonateDialog by remember { mutableStateOf(false) }
     
+    // [新增] 黑名单页面状态
+    var showBlockedList by remember { mutableStateOf(false) }
+
     // Haze State for this screen
     val activeHazeState = mainHazeState ?: remember { dev.chrisbanes.haze.HazeState() }
 
@@ -138,6 +141,7 @@ fun SettingsScreen(
     val onTelegramClick: () -> Unit = { uriHandler.openUri("https://t.me/BiliPai") }
     val onTwitterClick: () -> Unit = { uriHandler.openUri("https://x.com/YangY_0x00") }
     val onGithubClick: () -> Unit = { uriHandler.openUri(GITHUB_URL) }
+    val onBlockedListClickAction: () -> Unit = { showBlockedList = true }
 
     // Effects
     LaunchedEffect(showCacheAnimation) {
@@ -300,92 +304,99 @@ fun SettingsScreen(
         }
     }
 
-    // Layout Switching
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .hazeSource(state = activeHazeState)
-    ) {
-        if (windowSizeClass.shouldUseSplitLayout) {
-            TabletSettingsLayout(
-                onBack = onBack,
-                onAppearanceClick = onAppearanceClick,
-                onPlaybackClick = onPlaybackClick,
-                onPermissionClick = onPermissionClick,
-                onPluginsClick = onPluginsClick,
-                onExportLogsClick = onExportLogsAction,
-                onLicenseClick = onOpenSourceLicensesClick,
-                onGithubClick = onGithubClick,
-                onVersionClick = onVersionClickAction,
-                onReplayOnboardingClick = onReplayOnboardingClick,
-                onTipsClick = onTipsClick, // [Feature]
-                onTelegramClick = onTelegramClick,
-                onTwitterClick = onTwitterClick,
-                onDownloadPathClick = onDownloadPathAction,
-                onClearCacheClick = onClearCacheAction,
-                onPrivacyModeChange = onPrivacyModeChange,
-                onCrashTrackingChange = onCrashTrackingChange,
-                onAnalyticsChange = onAnalyticsChange,
-                onEasterEggChange = onEasterEggChange,
-                privacyModeEnabled = privacyModeEnabled,
-                customDownloadPath = customDownloadPath,
-                cacheSize = state.cacheSize,
-                crashTrackingEnabled = crashTrackingEnabled,
-                analyticsEnabled = analyticsEnabled,
-                pluginCount = PluginManager.getEnabledCount(),
-                versionName = com.android.purebilibili.BuildConfig.VERSION_NAME,
-                easterEggEnabled = easterEggEnabled,
-                onDonateClick = { showDonateDialog = true },
-                onOpenLinksClick = onOpenLinksAction // [Fix] Pass missing parameter
-            )
-        } else {
-            MobileSettingsLayout(
-                onBack = onBack,
-                onAppearanceClick = onAppearanceClick,
-                onPlaybackClick = onPlaybackClick,
-                onPermissionClick = onPermissionClick,
-                onNavigateToBottomBarSettings = onNavigateToBottomBarSettings,
-                onPluginsClick = onPluginsClick,
-                onExportLogsClick = onExportLogsAction,
-                onLicenseClick = onOpenSourceLicensesClick,
-                onGithubClick = onGithubClick,
-                onVersionClick = onVersionClickAction,
-                onTipsClick = onTipsClick, // [Feature]
-                onReplayOnboardingClick = onReplayOnboardingClick,
-                onTelegramClick = onTelegramClick,
-                onTwitterClick = onTwitterClick,
-                onDownloadPathClick = onDownloadPathAction,
-                onClearCacheClick = onClearCacheAction,
-                onPrivacyModeChange = onPrivacyModeChange,
-                onCrashTrackingChange = onCrashTrackingChange,
-                onAnalyticsChange = onAnalyticsChange,
-                onEasterEggChange = onEasterEggChange,
-                privacyModeEnabled = privacyModeEnabled,
-                customDownloadPath = customDownloadPath,
-                cacheSize = state.cacheSize,
-                crashTrackingEnabled = crashTrackingEnabled,
-                analyticsEnabled = analyticsEnabled,
-                pluginCount = PluginManager.getEnabledCount(),
-                versionName = com.android.purebilibili.BuildConfig.VERSION_NAME,
-                easterEggEnabled = easterEggEnabled,
-                feedApiType = feedApiType,
-                onFeedApiTypeChange = { type ->
-                    scope.launch {
-                        SettingsManager.setFeedApiType(context, type)
-                        android.widget.Toast.makeText(
-                            context, 
-                            "已切换为${type.label}，下拉刷新生效", 
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                },
-                onDonateClick = { showDonateDialog = true },
-                onOpenLinksClick = onOpenLinksAction // Pass the new action
-            )
+    // 页面跳转逻辑
+    if (showBlockedList) {
+        BlockedListScreen(onBack = { showBlockedList = false })
+    } else {
+        // Layout Switching
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(state = activeHazeState)
+        ) {
+            if (windowSizeClass.shouldUseSplitLayout) {
+                TabletSettingsLayout(
+                    onBack = onBack,
+                    onAppearanceClick = onAppearanceClick,
+                    onPlaybackClick = onPlaybackClick,
+                    onPermissionClick = onPermissionClick,
+                    onPluginsClick = onPluginsClick,
+                    onExportLogsClick = onExportLogsAction,
+                    onLicenseClick = onOpenSourceLicensesClick,
+                    onGithubClick = onGithubClick,
+                    onVersionClick = onVersionClickAction,
+                    onReplayOnboardingClick = onReplayOnboardingClick,
+                    onTipsClick = onTipsClick, // [Feature]
+                    onTelegramClick = onTelegramClick,
+                    onTwitterClick = onTwitterClick,
+                    onDownloadPathClick = onDownloadPathAction,
+                    onClearCacheClick = onClearCacheAction,
+                    onPrivacyModeChange = onPrivacyModeChange,
+                    onCrashTrackingChange = onCrashTrackingChange,
+                    onAnalyticsChange = onAnalyticsChange,
+                    onEasterEggChange = onEasterEggChange,
+                    privacyModeEnabled = privacyModeEnabled,
+                    customDownloadPath = customDownloadPath,
+                    cacheSize = state.cacheSize,
+                    crashTrackingEnabled = crashTrackingEnabled,
+                    analyticsEnabled = analyticsEnabled,
+                    pluginCount = PluginManager.getEnabledCount(),
+                    versionName = com.android.purebilibili.BuildConfig.VERSION_NAME,
+                    easterEggEnabled = easterEggEnabled,
+                    onDonateClick = { showDonateDialog = true },
+                    onOpenLinksClick = onOpenLinksAction,
+                    onBlockedListClick = onBlockedListClickAction // Pass to tablet layout
+                )
+            } else {
+                MobileSettingsLayout(
+                    onBack = onBack,
+                    onAppearanceClick = onAppearanceClick,
+                    onPlaybackClick = onPlaybackClick,
+                    onPermissionClick = onPermissionClick,
+                    onNavigateToBottomBarSettings = onNavigateToBottomBarSettings,
+                    onPluginsClick = onPluginsClick,
+                    onExportLogsClick = onExportLogsAction,
+                    onLicenseClick = onOpenSourceLicensesClick,
+                    onGithubClick = onGithubClick,
+                    onVersionClick = onVersionClickAction,
+                    onTipsClick = onTipsClick, // [Feature]
+                    onReplayOnboardingClick = onReplayOnboardingClick,
+                    onTelegramClick = onTelegramClick,
+                    onTwitterClick = onTwitterClick,
+                    onDownloadPathClick = onDownloadPathAction,
+                    onClearCacheClick = onClearCacheAction,
+                    onPrivacyModeChange = onPrivacyModeChange,
+                    onCrashTrackingChange = onCrashTrackingChange,
+                    onAnalyticsChange = onAnalyticsChange,
+                    onEasterEggChange = onEasterEggChange,
+                    privacyModeEnabled = privacyModeEnabled,
+                    customDownloadPath = customDownloadPath,
+                    cacheSize = state.cacheSize,
+                    crashTrackingEnabled = crashTrackingEnabled,
+                    analyticsEnabled = analyticsEnabled,
+                    pluginCount = PluginManager.getEnabledCount(),
+                    versionName = com.android.purebilibili.BuildConfig.VERSION_NAME,
+                    easterEggEnabled = easterEggEnabled,
+                    feedApiType = feedApiType,
+                    onFeedApiTypeChange = { type ->
+                        scope.launch {
+                            SettingsManager.setFeedApiType(context, type)
+                            android.widget.Toast.makeText(
+                                context, 
+                                "已切换为${type.label}，下拉刷新生效", 
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
+                    onDonateClick = { showDonateDialog = true },
+                    onOpenLinksClick = onOpenLinksAction,
+                    onBlockedListClick = onBlockedListClickAction // Pass to mobile layout
+                )
+            }
+            
+            // Onboarding Bottom Sheet (Shared)
+    
         }
-        
-        // Onboarding Bottom Sheet (Shared)
-
     }
 }
 
@@ -411,6 +422,7 @@ private fun MobileSettingsLayout(
     onClearCacheClick: () -> Unit,
     onDonateClick: () -> Unit,
     onOpenLinksClick: () -> Unit, // [New]
+    onBlockedListClick: () -> Unit, // [New]
     
     // Logic Callbacks
     onPrivacyModeChange: (Boolean) -> Unit,
@@ -516,7 +528,7 @@ private fun MobileSettingsLayout(
             }
             item { 
                 Box(modifier = Modifier.staggeredEntrance(7, isVisible)) {
-                    PrivacySection(privacyModeEnabled, onPrivacyModeChange, onPermissionClick)
+                    PrivacySection(privacyModeEnabled, onPrivacyModeChange, onPermissionClick, onBlockedListClick)
                 }
             }
             

@@ -32,12 +32,36 @@ data class PlayUrlData(
     @SerialName("last_play_time")
     val lastPlayTime: Int? = null,
     @SerialName("last_play_cid")
-    val lastPlayCid: Long? = null
+    val lastPlayCid: Long? = null,
+    
+    // [New] AI Original Sound Translation
+    @SerialName("cur_language")
+    val curLanguage: String? = null,
+    @SerialName("dolby_type")
+    val dolbyType: Int? = null,
+    @SerialName("ai_audio")
+    val aiAudio: AiAudioInfo? = null
 ) {
     //  PiliPala 风格：提供便捷的访问方法
     val accept_quality: List<Int> get() = acceptQuality
     val accept_description: List<String> get() = acceptDescription
 }
+
+@Serializable
+data class AiAudioInfo(
+    val title: String = "",
+    val items: List<AiAudioItem> = emptyList()
+)
+
+@Serializable
+data class AiAudioItem(
+    @SerialName("lang_code")
+    val langCode: String = "",
+    @SerialName("lang_doc")
+    val langDoc: String = "",
+    @SerialName("stream_url")
+    val streamUrl: String = "" // Usually empty in playurl response, just indicates availability
+)
 
 @Serializable
 data class Durl(
