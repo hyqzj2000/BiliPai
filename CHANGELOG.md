@@ -1,5 +1,15 @@
 # Changelog
 
+## [5.3.2] - 2026-02-13
+
+### 🛠 Improvements & Fixes (优化与修复)
+
+- **Top/Bottom Label Alignment Rework**:
+  - reduced top-tab selected-state scaling in `图标+文字` mode to remove visual drop/misalignment
+  - normalized top-tab icon/text metrics (icon size, line-height, spacing) for consistent optical center
+  - adjusted bottom-bar icon+text metrics and baseline to improve icon/title alignment consistency
+- **Version Bump**: Updated app version to `5.3.2` (`versionCode` `68`).
+
 ## [5.3.1] - 2026-02-13
 
 ### ✨ New Features (新增功能)

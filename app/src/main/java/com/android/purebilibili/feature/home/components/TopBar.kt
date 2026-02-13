@@ -675,10 +675,19 @@ fun CategoryTabItem(
      val showIcon = shouldShowTopTabIcon(normalizedLabelMode)
      val showText = shouldShowTopTabText(normalizedLabelMode)
      val icon = resolveTopTabCategoryIcon(category)
+     val iconSize = if (showText) 16.dp else 18.dp
+     val textSize = 11.sp
+     val textLineHeight = 11.sp
+     val contentMinHeight = 34.dp
      
      // [Updated] Louder Scale Effect
      val smoothFraction = androidx.compose.animation.core.FastOutSlowInEasing.transform(selectionFraction)
-     val targetScale = androidx.compose.ui.util.lerp(1.0f, 1.08f, smoothFraction)
+     val targetScale = if (showIcon && showText) {
+         // 图标+文字模式不放大，避免“选中项视觉下坠”导致看起来不齐。
+         1.0f
+     } else {
+         androidx.compose.ui.util.lerp(1.0f, 1.04f, smoothFraction)
+     }
      
      // Font weight change still triggers relayout, but it's discrete (only happens at 0.6 threshold)
      // This is acceptable as it doesn't happen every frame.
@@ -696,7 +705,7 @@ fun CategoryTabItem(
                  onDoubleClick = onDoubleTap
              )
              .padding(horizontal = 8.dp, vertical = 4.dp)
-             .heightIn(min = 34.dp),
+             .heightIn(min = contentMinHeight),
          contentAlignment = Alignment.Center
      ) {
          if (showIcon && showText) {
@@ -709,19 +718,21 @@ fun CategoryTabItem(
                      transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
                  }
              ) {
-                 Icon(
+                Icon(
                      imageVector = icon,
                      contentDescription = null,
                      tint = contentColor,
-                     modifier = Modifier.size(13.dp)
+                     modifier = Modifier
+                         .size(iconSize)
+                         .offset(y = (-0.5).dp)
                  )
-                 Spacer(modifier = Modifier.height(1.dp))
+                 Spacer(modifier = Modifier.height(2.dp))
                  Text(
                      text = category,
                      color = contentColor,
-                     fontSize = 12.sp,
+                     fontSize = textSize,
                      fontWeight = fontWeight,
-                     lineHeight = 12.sp,
+                     lineHeight = textLineHeight,
                      maxLines = 1,
                      overflow = TextOverflow.Ellipsis
                  )
@@ -732,7 +743,7 @@ fun CategoryTabItem(
                  contentDescription = null,
                  tint = contentColor,
                  modifier = Modifier
-                     .size(18.dp)
+                     .size(iconSize)
                      .graphicsLayer {
                          scaleX = targetScale
                          scaleY = targetScale
@@ -743,8 +754,9 @@ fun CategoryTabItem(
              Text(
                  text = category,
                  color = contentColor,
-                 fontSize = 14.sp,
+                 fontSize = textSize,
                  fontWeight = fontWeight,
+                 lineHeight = textLineHeight,
                  modifier = Modifier.graphicsLayer {
                      scaleX = targetScale
                      scaleY = targetScale

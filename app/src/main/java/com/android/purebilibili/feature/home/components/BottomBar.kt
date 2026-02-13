@@ -90,13 +90,13 @@ enum class BottomNavItem(
 ) {
     HOME(
         "首页",
-        { Icon(CupertinoIcons.Filled.House, contentDescription = "首页") },
+        { Icon(CupertinoIcons.Outlined.House, contentDescription = "首页") },
         { Icon(CupertinoIcons.Outlined.House, contentDescription = "首页") },
         ScreenRoutes.Home.route
     ),
     DYNAMIC(
         "动态",
-        { Icon(CupertinoIcons.Filled.BellBadge, contentDescription = "动态") },
+        { Icon(CupertinoIcons.Outlined.Bell, contentDescription = "动态") },
         { Icon(CupertinoIcons.Outlined.Bell, contentDescription = "动态") },
         ScreenRoutes.Dynamic.route
     ),
@@ -114,7 +114,7 @@ enum class BottomNavItem(
     ),
     PROFILE(
         "我的",
-        { Icon(CupertinoIcons.Filled.PersonCircle, contentDescription = "个人中心") },
+        { Icon(CupertinoIcons.Outlined.Person, contentDescription = "个人中心") },
         { Icon(CupertinoIcons.Outlined.Person, contentDescription = "个人中心") },
         ScreenRoutes.Profile.route
     ),
@@ -726,7 +726,7 @@ private fun BottomBarContent(
                 labelMode = labelMode,
                 colorIndex = itemColorIndex,
                 hasCustomAccent = hasCustomAccent,
-                iconSize = if (labelMode == 0) 24.dp else 26.dp,
+                iconSize = if (labelMode == 0) 20.dp else 24.dp,
                 contentVerticalOffset = contentVerticalOffset,
                 modifier = Modifier.weight(1f),
                 hazeState = hazeState,
@@ -969,6 +969,7 @@ private fun BottomBarItem(
                 Box(
                     modifier = Modifier
                         .size(iconSize)
+                        .offset(y = (-0.5).dp)
                         .graphicsLayer {
                             scaleX = scale
                             scaleY = scale
@@ -987,8 +988,8 @@ private fun BottomBarItem(
                     style = MaterialTheme.typography.labelSmall,
                     color = iconColor,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                    fontSize = if (isTablet) 12.sp else 10.sp,
-                    lineHeight = if (isTablet) 12.sp else 10.sp,
+                    fontSize = if (isTablet) 12.sp else 11.sp,
+                    lineHeight = if (isTablet) 12.sp else 11.sp,
                     maxLines = 1
                 )
             }
