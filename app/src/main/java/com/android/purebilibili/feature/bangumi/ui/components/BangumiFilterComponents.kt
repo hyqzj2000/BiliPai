@@ -10,16 +10,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronDown
 import com.android.purebilibili.data.model.response.BangumiFilter
 import com.android.purebilibili.feature.bangumi.BangumiDisplayMode
+import com.android.purebilibili.feature.bangumi.resolveBangumiTopModes
 import androidx.compose.ui.text.font.FontWeight
 
 /**
- * 模式切换 Tabs (索引/时间表/我的追番)
+ * 模式切换 Tabs (索引/时间表)
  */
 @Composable
 fun BangumiModeTabs(
@@ -27,31 +29,48 @@ fun BangumiModeTabs(
     onModeChange: (BangumiDisplayMode) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val modes = listOf(
-        BangumiDisplayMode.LIST to "索引",
-        BangumiDisplayMode.TIMELINE to "时间表",
-        BangumiDisplayMode.MY_FOLLOW to "我的追番"
-    )
+    val modes = resolveBangumiTopModes().map { mode ->
+        mode to when (mode) {
+            BangumiDisplayMode.LIST -> "索引"
+            BangumiDisplayMode.TIMELINE -> "时间表"
+            else -> mode.name
+        }
+    }
     
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    Surface(
         modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
     ) {
-        items(modes) { (mode, label) ->
-            val isSelected = currentMode == mode
-            Surface(
-                onClick = { onModeChange(mode) },
-                shape = RoundedCornerShape(20.dp),
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-            ) {
-                Text(
-                    text = label,
-                    fontSize = 13.sp,
-                    fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            modes.forEach { (mode, label) ->
+                val isSelected = currentMode == mode
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    onClick = { onModeChange(mode) },
+                    shape = RoundedCornerShape(14.dp),
+                    color = if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent,
+                    shadowElevation = if (isSelected) 1.dp else 0.dp
+                ) {
+                    Box(
+                        modifier = Modifier.padding(vertical = 9.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = label,
+                            fontSize = 13.sp,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }

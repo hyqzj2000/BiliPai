@@ -188,6 +188,8 @@ fun BottomBarSettingsContent(
                         val scope = rememberCoroutineScope()
                         val visibilityMode by SettingsManager.getBottomBarVisibilityMode(context).collectAsState(initial = SettingsManager.BottomBarVisibilityMode.ALWAYS_VISIBLE)
                         val labelMode by SettingsManager.getBottomBarLabelMode(context).collectAsState(initial = 0)
+                        val topTabLabelMode by SettingsManager.getTopTabLabelMode(context)
+                            .collectAsState(initial = SettingsManager.TopTabLabelMode.TEXT_ONLY)
                         
                         //  底栏显示模式选择（抽屉式）
                         var visibilityModeExpanded by remember { mutableStateOf(false) }
@@ -352,6 +354,80 @@ fun BottomBarSettingsContent(
                                             style = MaterialTheme.typography.labelSmall,
                                             color = if (isSelected) MaterialTheme.colorScheme.primary
                                                     else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Divider()
+
+                        //  顶部标签样式（选择器）
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    CupertinoIcons.Default.ListBullet,
+                                    contentDescription = null,
+                                    tint = com.android.purebilibili.core.theme.iOSBlue,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column {
+                                    Text(
+                                        text = "顶部标签样式",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = when (topTabLabelMode) {
+                                            SettingsManager.TopTabLabelMode.ICON_AND_TEXT -> "图标 + 文字"
+                                            SettingsManager.TopTabLabelMode.ICON_ONLY -> "仅图标"
+                                            else -> "仅文字"
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                listOf(
+                                    Triple(SettingsManager.TopTabLabelMode.ICON_AND_TEXT, "图标+文字", CupertinoIcons.Default.ListBullet),
+                                    Triple(SettingsManager.TopTabLabelMode.ICON_ONLY, "仅图标", CupertinoIcons.Default.Tag),
+                                    Triple(SettingsManager.TopTabLabelMode.TEXT_ONLY, "仅文字", CupertinoIcons.Default.Character)
+                                ).forEach { (mode, label, icon) ->
+                                    val isSelected = topTabLabelMode == mode
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable {
+                                                scope.launch { SettingsManager.setTopTabLabelMode(context, mode) }
+                                            }
+                                            .background(
+                                                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                else Color.Transparent
+                                            )
+                                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    ) {
+                                        Icon(
+                                            icon,
+                                            contentDescription = null,
+                                            tint = if (isSelected) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                                         )
                                     }

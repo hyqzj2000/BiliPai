@@ -109,6 +109,14 @@ class BangumiViewModel : ViewModel() {
     //  新增：我的追番状态
     private val _myFollowState = MutableStateFlow<MyFollowState>(MyFollowState.Loading)
     val myFollowState: StateFlow<MyFollowState> = _myFollowState.asStateFlow()
+
+    //  我的追番类型 (1=追番 2=追剧)
+    private val _myFollowType = MutableStateFlow(defaultMyFollowTypeForSeasonType(1))
+    val myFollowType: StateFlow<Int> = _myFollowType.asStateFlow()
+
+    //  我的追番统计（来自 API total，更接近真实数据）
+    private val _myFollowStats = MutableStateFlow(MyFollowStats())
+    val myFollowStats: StateFlow<MyFollowStats> = _myFollowStats.asStateFlow()
     
     //  新增：筛选条件
     private val _filter = MutableStateFlow(BangumiFilter())
@@ -131,7 +139,7 @@ class BangumiViewModel : ViewModel() {
     
     //  [修复] 预加载的已追番 seasonId 集合（从"我的追番"API 获取）
     private val followedSeasonIds = mutableSetOf<Long>()
-    private var hasPreloadedFollowList = false
+    private val loadedFollowTypes = mutableSetOf<Int>()
     
     init {
         loadBangumiList()
@@ -144,27 +152,38 @@ class BangumiViewModel : ViewModel() {
      */
     private fun preloadFollowedSeasons() {
         viewModelScope.launch {
-            // 加载追番 (type=1)
-            BangumiRepository.getMyFollowBangumi(type = 1, page = 1, pageSize = 100).fold(
-                onSuccess = { data ->
-                    data.list?.forEach { item ->
-                        followedSeasonIds.add(item.seasonId)
-                    }
-                    android.util.Log.d("BangumiVM", "📌 预加载追番列表: ${followedSeasonIds.size} 部")
-                },
-                onFailure = { }
+            val bangumiTotal = ensureFollowedSeasonsLoaded(MY_FOLLOW_TYPE_BANGUMI)
+            val cinemaTotal = ensureFollowedSeasonsLoaded(MY_FOLLOW_TYPE_CINEMA)
+            _myFollowStats.value = buildMyFollowStats(
+                bangumiTotal = bangumiTotal,
+                cinemaTotal = cinemaTotal
             )
-            // 加载追剧 (type=2)
-            BangumiRepository.getMyFollowBangumi(type = 2, page = 1, pageSize = 100).fold(
-                onSuccess = { data ->
-                    data.list?.forEach { item ->
-                        followedSeasonIds.add(item.seasonId)
-                    }
-                },
-                onFailure = { }
-            )
-            hasPreloadedFollowList = true
         }
+    }
+
+    private suspend fun ensureFollowedSeasonsLoaded(type: Int): Int {
+        if (loadedFollowTypes.contains(type)) {
+            return if (type == MY_FOLLOW_TYPE_BANGUMI) {
+                _myFollowStats.value.bangumiTotal
+            } else {
+                _myFollowStats.value.cinemaTotal
+            }
+        }
+
+        val preloadResult = preloadFollowedSeasonsForType(
+            type = type,
+            followedSeasonIds = followedSeasonIds
+        )
+        if (preloadResult.requestSucceeded) {
+            loadedFollowTypes.add(type)
+            android.util.Log.d(
+                "BangumiVM",
+                "📌 预加载追番列表完成: type=$type, total=${preloadResult.total}, followedCache=${followedSeasonIds.size}"
+            )
+        } else {
+            android.util.Log.w("BangumiVM", "⚠️ 预加载追番列表失败: type=$type")
+        }
+        return preloadResult.total
     }
     
     /**
@@ -175,14 +194,22 @@ class BangumiViewModel : ViewModel() {
         when (mode) {
             BangumiDisplayMode.TIMELINE -> {
                 if (_timelineState.value is TimelineState.Loading) {
-                    loadTimeline()
+                    loadTimeline(timelineTypeForSelectedType(_selectedType.value))
                 }
             }
             BangumiDisplayMode.MY_FOLLOW -> {
-                loadMyFollowBangumi()
+                loadMyFollowBangumi(type = _myFollowType.value)
             }
             else -> {}
         }
+    }
+
+    fun openMyFollowEntry() {
+        val preferredType = defaultMyFollowTypeForSeasonType(_selectedType.value)
+        if (_myFollowType.value != preferredType) {
+            _myFollowType.value = preferredType
+        }
+        setDisplayMode(BangumiDisplayMode.MY_FOLLOW)
     }
     
     /**
@@ -191,8 +218,28 @@ class BangumiViewModel : ViewModel() {
     fun selectType(type: Int) {
         if (_selectedType.value != type) {
             _selectedType.value = type
+            _myFollowType.value = defaultMyFollowTypeForSeasonType(type)
             currentPage = 1
             loadBangumiList()
+            if (_displayMode.value == BangumiDisplayMode.TIMELINE) {
+                loadTimeline(timelineTypeForSelectedType(type))
+            }
+        }
+    }
+
+    fun selectMyFollowType(type: Int) {
+        if (_myFollowType.value == type) return
+        _myFollowType.value = type
+        if (_displayMode.value == BangumiDisplayMode.MY_FOLLOW) {
+            loadMyFollowBangumi(type)
+        }
+    }
+
+    private fun timelineTypeForSelectedType(seasonType: Int): Int {
+        return when (seasonType) {
+            BangumiType.MOVIE.value -> 3
+            BangumiType.GUOCHUANG.value -> 4
+            else -> 1
         }
     }
     
@@ -316,6 +363,15 @@ class BangumiViewModel : ViewModel() {
                 onSuccess = { detail ->
                     //  获取真实的 seasonId (如果传入的是 0 或错误的 ID，这里会纠正)
                     val realSeasonId = detail.seasonId
+                    val followType = defaultMyFollowTypeForSeasonType(detail.seasonType)
+
+                    //  [修复] 如果当前类型的追番列表还没加载，先按分页预加载，避免仅第一页导致误判
+                    if (!loadedFollowTypes.contains(followType)) {
+                        val total = ensureFollowedSeasonsLoaded(followType)
+                        if (total > 0) {
+                            updateMyFollowStatsForType(type = followType, total = total)
+                        }
+                    }
                     
                     //  [修复] 确定追番状态的优先级：
                     // 1. 本地缓存（用户在本次会话中点击追番/取消追番）
@@ -331,15 +387,21 @@ class BangumiViewModel : ViewModel() {
                             true
                         }
                         else -> {
-                            detail.userStatus?.follow == 1
+                            isBangumiFollowed(detail.userStatus)
                         }
                     }
                     
                     val correctedDetail = detail.copy(
                         userStatus = detail.userStatus?.copy(
-                            follow = if (isFollowed) 1 else 0
+                            follow = if (isFollowed) 1 else 0,
+                            followStatus = if (isFollowed) {
+                                maxOf(detail.userStatus?.followStatus ?: 0, 1)
+                            } else {
+                                0
+                            }
                         ) ?: com.android.purebilibili.data.model.response.UserStatus(
-                            follow = if (isFollowed) 1 else 0
+                            follow = if (isFollowed) 1 else 0,
+                            followStatus = if (isFollowed) 1 else 0
                         )
                     )
                     _detailState.value = BangumiDetailState.Success(correctedDetail)
@@ -461,17 +523,20 @@ class BangumiViewModel : ViewModel() {
     /**
      *  加载我的追番列表
      */
-    fun loadMyFollowBangumi(type: Int = 1) {
+    fun loadMyFollowBangumi(type: Int? = null) {
+        val targetType = resolveMyFollowRequestType(type, _myFollowType.value)
+        _myFollowType.value = targetType
         myFollowPage = 1
         
         viewModelScope.launch {
             _myFollowState.value = MyFollowState.Loading
             
             BangumiRepository.getMyFollowBangumi(
-                type = type,
+                type = targetType,
                 page = myFollowPage
             ).fold(
                 onSuccess = { data ->
+                    updateMyFollowStatsForType(type = targetType, total = data.total)
                     _myFollowState.value = MyFollowState.Success(
                         items = data.list ?: emptyList(),
                         hasMore = (data.list?.size ?: 0) >= data.ps,
@@ -497,9 +562,11 @@ class BangumiViewModel : ViewModel() {
         
         viewModelScope.launch {
             BangumiRepository.getMyFollowBangumi(
+                type = _myFollowType.value,
                 page = myFollowPage
             ).fold(
                 onSuccess = { data ->
+                    updateMyFollowStatsForType(type = _myFollowType.value, total = data.total)
                     _myFollowState.value = MyFollowState.Success(
                         items = currentState.items + (data.list ?: emptyList()),
                         hasMore = (data.list?.size ?: 0) >= data.ps,
@@ -511,6 +578,22 @@ class BangumiViewModel : ViewModel() {
                 }
             )
             isLoadingMore = false
+        }
+    }
+
+    private fun updateMyFollowStatsForType(type: Int, total: Int) {
+        val current = _myFollowStats.value
+        val normalized = total.coerceAtLeast(0)
+        _myFollowStats.value = if (type == MY_FOLLOW_TYPE_BANGUMI) {
+            buildMyFollowStats(
+                bangumiTotal = normalized,
+                cinemaTotal = current.cinemaTotal
+            )
+        } else {
+            buildMyFollowStats(
+                bangumiTotal = current.bangumiTotal,
+                cinemaTotal = normalized
+            )
         }
     }
 }

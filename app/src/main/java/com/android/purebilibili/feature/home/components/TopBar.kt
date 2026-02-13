@@ -44,14 +44,17 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.vector.ImageVector
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.feature.home.UserState
 import com.android.purebilibili.feature.home.HomeCategory
+import com.android.purebilibili.feature.home.resolveHomeTopCategories
 import com.android.purebilibili.core.store.LiquidGlassStyle
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
@@ -64,6 +67,7 @@ import kotlinx.coroutines.Job
 import androidx.compose.ui.platform.LocalDensity
 import kotlinx.coroutines.flow.map
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import com.android.purebilibili.core.ui.animation.rememberDampedDragAnimationState
 import com.android.purebilibili.core.ui.animation.horizontalDragGesture
 import androidx.compose.foundation.combinedClickable // [Added]
@@ -77,6 +81,56 @@ internal fun resolveFloatingIndicatorStartPaddingPx(
 
 internal fun resolveTopTabRowHorizontalPaddingDp(isFloatingStyle: Boolean): Float {
     return if (isFloatingStyle) 0f else 4f
+}
+
+internal fun resolveTopTabVisibleSlots(categoryCount: Int): Int {
+    return categoryCount.coerceIn(4, 5)
+}
+
+internal fun resolveTopTabMinItemWidthDp(isFloatingStyle: Boolean): Float {
+    return if (isFloatingStyle) 72f else 64f
+}
+
+internal fun resolveTopTabItemWidthDp(
+    containerWidthDp: Float,
+    categoryCount: Int,
+    isFloatingStyle: Boolean
+): Float {
+    if (containerWidthDp <= 0f) return resolveTopTabMinItemWidthDp(isFloatingStyle)
+    val slots = resolveTopTabVisibleSlots(categoryCount).coerceAtLeast(1)
+    val baseWidth = containerWidthDp / slots
+    return baseWidth.coerceAtLeast(resolveTopTabMinItemWidthDp(isFloatingStyle))
+}
+
+internal fun normalizeTopTabLabelMode(mode: Int): Int {
+    return when (mode) {
+        0, 1, 2 -> mode
+        else -> 2
+    }
+}
+
+internal fun shouldShowTopTabIcon(mode: Int): Boolean {
+    val normalized = normalizeTopTabLabelMode(mode)
+    return normalized == 0 || normalized == 1
+}
+
+internal fun shouldShowTopTabText(mode: Int): Boolean {
+    val normalized = normalizeTopTabLabelMode(mode)
+    return normalized == 0 || normalized == 2
+}
+
+internal fun resolveTopTabCategoryIcon(category: String): ImageVector {
+    return when (category) {
+        "推荐" -> CupertinoIcons.Default.House
+        "关注" -> CupertinoIcons.Default.Bell
+        "热门" -> CupertinoIcons.Default.Newspaper
+        "直播" -> CupertinoIcons.Default.Video
+        "追番" -> CupertinoIcons.Default.Tv
+        "游戏" -> CupertinoIcons.Default.PlayCircle
+        "知识" -> CupertinoIcons.Default.Character
+        "科技" -> CupertinoIcons.Default.Gearshape
+        else -> CupertinoIcons.Default.ListBullet
+    }
 }
 
 /**
@@ -224,12 +278,13 @@ fun FluidHomeTopBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryTabRow(
-    categories: List<String> = HomeCategory.entries.map { it.label },
+    categories: List<String> = resolveHomeTopCategories().map { it.label },
     selectedIndex: Int = 0,
     onCategorySelected: (Int) -> Unit = {},
     onPartitionClick: () -> Unit = {},
     onLiveClick: () -> Unit = {},  // [新增] 直播分区点击回调
     pagerState: androidx.compose.foundation.pager.PagerState? = null, // [New] PagerState for sync
+    labelMode: Int = 2,
     isLiquidGlassEnabled: Boolean = false,
     liquidGlassStyle: LiquidGlassStyle = LiquidGlassStyle.CLASSIC,
     backdrop: LayerBackdrop? = null,
@@ -272,7 +327,11 @@ fun CategoryTabRow(
                 .weight(1f)
                 .fillMaxHeight()
         ) {
-            val tabWidth = maxWidth / 5 // 每个 Tab 占用 1/5 宽度
+            val tabWidth = resolveTopTabItemWidthDp(
+                containerWidthDp = maxWidth.value,
+                categoryCount = categories.size,
+                isFloatingStyle = isFloatingStyle
+            ).dp
             val localDensity = LocalDensity.current
             val tabListState = rememberLazyListState()
             
@@ -374,7 +433,16 @@ fun CategoryTabRow(
 
             Box(modifier = Modifier.fillMaxSize()) {
                 val tabContentBackdrop = rememberLayerBackdrop()
-                val indicatorBackdrop = if (isLiquidGlassEnabled) tabContentBackdrop else backdrop
+                val shouldRefract = shouldTopTabIndicatorUseRefraction(
+                    position = currentPosition,
+                    interacting = isInteracting,
+                    velocityPxPerSecond = indicatorVelocityPxPerSecond
+                )
+                val indicatorBackdrop = if (shouldRefract) {
+                    if (isLiquidGlassEnabled) tabContentBackdrop else backdrop
+                } else {
+                    null
+                }
 
                 // 1. [Layer] Background Liquid Indicator
                 // [修复] 使用 layoutInfo 动态计算滚动偏移
@@ -473,6 +541,7 @@ fun CategoryTabRow(
                                     currentPosition = currentPosition,
                                     primaryColor = primaryColor,
                                     unselectedColor = unselectedColor,
+                                    labelMode = labelMode,
                                     onClick = {
                                         // [修复] 直播索引特殊处理
                                         if (index == 3) {
@@ -543,6 +612,19 @@ internal fun shouldTopTabIndicatorBeInteracting(
     return abs(combinedVelocityPxPerSecond) > combinedThreshold
 }
 
+internal fun shouldTopTabIndicatorUseRefraction(
+    position: Float,
+    interacting: Boolean,
+    velocityPxPerSecond: Float,
+    positionEpsilon: Float = 0.001f,
+    velocityEpsilon: Float = 45f
+): Boolean {
+    if (interacting) return true
+    val fractional = abs(position - position.roundToInt().toFloat()) > positionEpsilon
+    if (fractional) return true
+    return abs(velocityPxPerSecond) > velocityEpsilon
+}
+
 internal fun resolveTopTabHorizontalDeltaPx(
     positionDeltaPages: Float,
     tabWidthPx: Float,
@@ -573,6 +655,7 @@ fun CategoryTabItem(
     currentPosition: Float,
     primaryColor: Color,
     unselectedColor: Color,
+    labelMode: Int,
     onClick: () -> Unit,
     onDoubleTap: () -> Unit = {}
 ) {
@@ -582,12 +665,20 @@ fun CategoryTabItem(
          (1f - distance).coerceIn(0f, 1f)
      }
 
-     // [Optimized] Removed Color Interpolation to avoid Recomposition
-     // val targetTextColor = androidx.compose.ui.graphics.lerp(unselectedColor, primaryColor, selectionFraction)
+     // 单层文本渲染，避免双层交叉透明带来的发虚/重影。
+     val contentColor = androidx.compose.ui.graphics.lerp(
+         unselectedColor,
+         primaryColor,
+         selectionFraction
+     )
+     val normalizedLabelMode = normalizeTopTabLabelMode(labelMode)
+     val showIcon = shouldShowTopTabIcon(normalizedLabelMode)
+     val showText = shouldShowTopTabText(normalizedLabelMode)
+     val icon = resolveTopTabCategoryIcon(category)
      
      // [Updated] Louder Scale Effect
      val smoothFraction = androidx.compose.animation.core.FastOutSlowInEasing.transform(selectionFraction)
-     val targetScale = androidx.compose.ui.util.lerp(1.0f, 1.25f, smoothFraction)
+     val targetScale = androidx.compose.ui.util.lerp(1.0f, 1.08f, smoothFraction)
      
      // Font weight change still triggers relayout, but it's discrete (only happens at 0.6 threshold)
      // This is acceptable as it doesn't happen every frame.
@@ -604,37 +695,62 @@ fun CategoryTabItem(
                  onClick = { onClick() },
                  onDoubleClick = onDoubleTap
              )
-             .padding(horizontal = 10.dp, vertical = 6.dp), 
+             .padding(horizontal = 8.dp, vertical = 6.dp),
          contentAlignment = Alignment.Center
      ) {
-         // [Optimization] Double Text Layer with Alpha Cross-fade
-         // This avoids creating a new TextLayoutResult every frame due to color change.
-         // Layer 1: Unselected Text (Base)
-         Text(
-             text = category,
-             color = unselectedColor,
-             fontSize = 15.sp,
-             fontWeight = fontWeight,
-             modifier = Modifier.graphicsLayer {
-                 scaleX = targetScale
-                 scaleY = targetScale
-                 alpha = 1f - selectionFraction // Fade out as selected
-                 transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
+         if (showIcon && showText) {
+             Row(
+                 horizontalArrangement = Arrangement.Center,
+                 verticalAlignment = Alignment.CenterVertically,
+                 modifier = Modifier.graphicsLayer {
+                     scaleX = targetScale
+                     scaleY = targetScale
+                     transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
+                 }
+             ) {
+                 Icon(
+                     imageVector = icon,
+                     contentDescription = null,
+                     tint = contentColor,
+                     modifier = Modifier.size(14.dp)
+                 )
+                 Spacer(modifier = Modifier.width(4.dp))
+                 Text(
+                     text = category,
+                     color = contentColor,
+                     fontSize = 14.sp,
+                     fontWeight = fontWeight,
+                     maxLines = 1,
+                     overflow = TextOverflow.Ellipsis
+                 )
              }
-         )
-         
-         // Layer 2: Selected Text (Overlay)
-         Text(
-             text = category,
-             color = primaryColor,
-             fontSize = 15.sp,
-             fontWeight = fontWeight,
-             modifier = Modifier.graphicsLayer {
-                 scaleX = targetScale
-                 scaleY = targetScale
-                 alpha = selectionFraction // Fade in as selected
-                 transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
-             }
-         )
+         } else if (showIcon) {
+             Icon(
+                 imageVector = icon,
+                 contentDescription = null,
+                 tint = contentColor,
+                 modifier = Modifier
+                     .size(18.dp)
+                     .graphicsLayer {
+                         scaleX = targetScale
+                         scaleY = targetScale
+                         transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
+                     }
+             )
+         } else {
+             Text(
+                 text = category,
+                 color = contentColor,
+                 fontSize = 14.sp,
+                 fontWeight = fontWeight,
+                 modifier = Modifier.graphicsLayer {
+                     scaleX = targetScale
+                     scaleY = targetScale
+                     transformOrigin = androidx.compose.ui.graphics.TransformOrigin.Center
+                 },
+                 maxLines = 1,
+                 overflow = TextOverflow.Ellipsis
+             )
+         }
      }
 }

@@ -384,6 +384,8 @@ fun iOSHomeHeader(
                     onPartitionClick = onPartitionClick,
                     onLiveClick = onLiveClick,
                     pagerState = pagerState,
+                    labelMode = homeSettings?.topTabLabelMode
+                        ?: com.android.purebilibili.core.store.SettingsManager.TopTabLabelMode.TEXT_ONLY,
                     isLiquidGlassEnabled = isTabGlassEnabled && isGlassSupported,
                     liquidGlassStyle = liquidStyle,
                     backdrop = backdrop,

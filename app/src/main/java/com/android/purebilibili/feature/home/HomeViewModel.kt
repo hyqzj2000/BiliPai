@@ -362,7 +362,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = currentState.copy(
                 currentCategory = category,
                 liveSubCategory = liveSubCategory,
-                displayedTabIndex = category.ordinal
+                displayedTabIndex = resolveHomeTopTabIndex(category)
             )
 
             //  [修复] 恢复“追番”分类的数据拉取逻辑，确保滑动到这些页面时有内容显示
@@ -385,7 +385,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     
     //  [新增] 更新显示的标签页索引（用于特殊分类，不改变内容只更新标签高亮）
     fun updateDisplayedTabIndex(index: Int) {
-        _uiState.value = _uiState.value.copy(displayedTabIndex = index)
+        val normalized = index.coerceIn(0, (resolveHomeTopCategories().size - 1).coerceAtLeast(0))
+        _uiState.value = _uiState.value.copy(displayedTabIndex = normalized)
     }
     
     //  [新增] 开始消散动画（触发 UI 播放粒子动画）

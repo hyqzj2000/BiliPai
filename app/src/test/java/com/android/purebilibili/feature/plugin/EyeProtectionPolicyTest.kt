@@ -93,4 +93,40 @@ class EyeProtectionPolicyTest {
             )
         )
     }
+
+    @Test
+    fun `preview mode should always activate visual state with clamped values`() {
+        val visualState = resolveEyeVisualState(
+            settingsPreviewEnabled = true,
+            forceEnabled = false,
+            nightModeEnabled = false,
+            currentHour = 14,
+            startHour = 22,
+            endHour = 7,
+            brightnessLevel = 0.1f,
+            warmFilterStrength = 0.8f
+        )
+
+        assertTrue(visualState.isActive)
+        assertEquals(0.3f, visualState.brightnessLevel)
+        assertEquals(0.5f, visualState.warmFilterStrength)
+    }
+
+    @Test
+    fun `non-preview mode should reset to defaults when inactive`() {
+        val visualState = resolveEyeVisualState(
+            settingsPreviewEnabled = false,
+            forceEnabled = false,
+            nightModeEnabled = false,
+            currentHour = 14,
+            startHour = 22,
+            endHour = 7,
+            brightnessLevel = 0.75f,
+            warmFilterStrength = 0.2f
+        )
+
+        assertFalse(visualState.isActive)
+        assertEquals(1.0f, visualState.brightnessLevel)
+        assertEquals(0f, visualState.warmFilterStrength)
+    }
 }

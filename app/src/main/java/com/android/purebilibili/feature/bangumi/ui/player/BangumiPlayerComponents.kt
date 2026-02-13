@@ -9,6 +9,9 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 //  Cupertino Icons - iOS SF Symbols 风格图标
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
@@ -24,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +45,8 @@ import com.android.purebilibili.feature.video.ui.components.SpeedButton
 import com.android.purebilibili.feature.video.ui.components.PlaybackSpeed
 import com.android.purebilibili.feature.video.ui.components.DanmakuSettingsPanel
 import com.android.purebilibili.data.model.response.SponsorSegment
+import com.android.purebilibili.feature.bangumi.resolveBangumiDanmakuTopInsetDp
+import com.android.purebilibili.feature.bangumi.resolveBangumiPlayerTopControlsPaddingTopDp
 
 /**
  * 手势模式枚举
@@ -78,12 +84,26 @@ fun BangumiPlayerView(
     danmakuFontScale: Float = 1.0f,
     danmakuSpeed: Float = 1.0f,
     danmakuDisplayArea: Float = 0.5f,
+    danmakuMergeDuplicates: Boolean = true,
     onDanmakuOpacityChange: (Float) -> Unit = {},
     onDanmakuFontScaleChange: (Float) -> Unit = {},
     onDanmakuSpeedChange: (Float) -> Unit = {},
-    onDanmakuDisplayAreaChange: (Float) -> Unit = {}
+    onDanmakuDisplayAreaChange: (Float) -> Unit = {},
+    onDanmakuMergeDuplicatesChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val statusBarsInsetTopDp = WindowInsets.statusBars
+        .asPaddingValues()
+        .calculateTopPadding()
+        .value
+    val topControlsPaddingTop = resolveBangumiPlayerTopControlsPaddingTopDp(
+        isFullscreen = isFullscreen,
+        statusBarsInsetDp = statusBarsInsetTopDp
+    ).dp
+    val danmakuTopInset = resolveBangumiDanmakuTopInsetDp(
+        isFullscreen = isFullscreen,
+        statusBarsInsetDp = statusBarsInsetTopDp
+    ).dp
     
     // 音频管理
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager }
@@ -261,11 +281,18 @@ fun BangumiPlayerView(
                 },
                 update = { view ->
                     if (view.width > 0 && view.height > 0) {
-                        android.util.Log.d("BangumiPlayer", " DanmakuView update: size=${view.width}x${view.height}")
-                        danmakuManager.attachView(view)
+                        val sizeTag = "${view.width}x${view.height}"
+                        if (view.tag != sizeTag) {
+                            view.tag = sizeTag
+                            android.util.Log.d("BangumiPlayer", " DanmakuView update: size=${view.width}x${view.height}")
+                            danmakuManager.attachView(view)
+                        }
                     }
                 },
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = danmakuTopInset)
+                    .clipToBounds()
             )
         }
         
@@ -300,7 +327,7 @@ fun BangumiPlayerView(
                     onClick = onBack,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(8.dp)
+                        .padding(start = 8.dp, end = 8.dp, top = topControlsPaddingTop, bottom = 8.dp)
                 ) {
                     Icon(CupertinoIcons.Default.ChevronBackward, "返回", tint = Color.White)
                 }
@@ -309,7 +336,7 @@ fun BangumiPlayerView(
                 Row(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(8.dp),
+                        .padding(start = 8.dp, end = 8.dp, top = topControlsPaddingTop, bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // 弹幕开关按钮
@@ -506,10 +533,12 @@ fun BangumiPlayerView(
                 fontScale = danmakuFontScale,
                 speed = danmakuSpeed,
                 displayArea = danmakuDisplayArea,
+                mergeDuplicates = danmakuMergeDuplicates,
                 onOpacityChange = onDanmakuOpacityChange,
                 onFontScaleChange = onDanmakuFontScaleChange,
                 onSpeedChange = onDanmakuSpeedChange,
                 onDisplayAreaChange = onDanmakuDisplayAreaChange,
+                onMergeDuplicatesChange = onDanmakuMergeDuplicatesChange,
                 onDismiss = { showDanmakuSettings = false }
             )
         }

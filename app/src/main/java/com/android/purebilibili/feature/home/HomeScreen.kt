@@ -56,6 +56,7 @@ import com.android.purebilibili.feature.home.components.FrostedSideBar
 import com.android.purebilibili.feature.home.components.CategoryTabRow
 import com.android.purebilibili.feature.home.components.iOSHomeHeader  //  iOS 大标题头部
 import com.android.purebilibili.feature.home.components.iOSRefreshIndicator  //  iOS 下拉刷新指示器
+import com.android.purebilibili.feature.home.components.resolveHomeDrawerScrimAlpha
 import com.android.purebilibili.feature.home.components.resolveTopTabStyle
 //  从 cards 子包导入卡片组件
 import com.android.purebilibili.feature.home.components.cards.ElegantVideoCard
@@ -179,19 +180,20 @@ fun HomeScreen(
 
     // [Refactor] Hoist PagerState to be available for both Content and Header
     // 确保 pagerState 在所有作用域均可见，以便传给 iOSHomeHeader
-    val initialPage = HomeCategory.entries.indexOf(state.currentCategory).coerceAtLeast(0)
-    val pagerState = androidx.compose.foundation.pager.rememberPagerState(initialPage = initialPage) { HomeCategory.entries.size }
+    val topCategories = remember { resolveHomeTopCategories() }
+    val initialPage = resolveHomeTopTabIndex(state.currentCategory)
+    val pagerState = androidx.compose.foundation.pager.rememberPagerState(initialPage = initialPage) { topCategories.size }
     
     // [修复] 监听 Pager 滑动，同步更新 ViewModel 分类
     LaunchedEffect(pagerState.currentPage) {
-        val targetCategory = HomeCategory.entries[pagerState.currentPage]
+        val targetCategory = resolveHomeCategoryForTopTab(pagerState.currentPage)
         viewModel.switchCategory(targetCategory)
     }
 
     // [修复] 监听 ViewModel 状态变化，同步更新 Pager 位置
     // 当点击 Tab 导致 state.currentCategory 变化时，让 Pager 自动跟随滚动
     LaunchedEffect(state.currentCategory) {
-        val targetPage = HomeCategory.entries.indexOf(state.currentCategory)
+        val targetPage = topCategories.indexOf(state.currentCategory)
         if (targetPage >= 0 && targetPage != pagerState.currentPage && !pagerState.isScrollInProgress) {
             pagerState.animateScrollToPage(targetPage)
         }
@@ -629,7 +631,7 @@ fun HomeScreen(
     
     //  [修复] 使用 ViewModel 中的标签页显示索引（跨导航保持）
     // 当用户滑动到特殊分类时，标签页位置更新，但内容分类保持不变
-    val displayedTabIndex = state.displayedTabIndex
+    val displayedTabIndex = state.displayedTabIndex.coerceIn(0, (topCategories.size - 1).coerceAtLeast(0))
 
     //  根据滚动距离动态调整 BottomBar 可见性
     //  逻辑优化：使用 nestedScrollConnection 监听滚动
@@ -778,9 +780,9 @@ fun HomeScreen(
                             beyondViewportPageCount = 1, // [Optimization] Preload adjacent pages to prevent swipe lag
                             modifier = Modifier
                                 .fillMaxSize(),
-                            key = { index -> HomeCategory.entries[index].ordinal }
+                            key = { index -> topCategories[index].ordinal }
                         ) { page ->
-                        val category = HomeCategory.entries[page]
+                        val category = topCategories[page]
                         val categoryState = state.categoryStates[category] ?: com.android.purebilibili.feature.home.CategoryContent()
                         
                         //  独立的 PullToRefreshState，避免所有页面共享一个状态导致冲突
@@ -968,11 +970,7 @@ fun HomeScreen(
             categoryIndex = displayedTabIndex,
             onCategorySelected = { index ->
                 viewModel.updateDisplayedTabIndex(index)
-                val category = HomeCategory.entries[index]
-                when (category) {
-                    HomeCategory.ANIME -> onBangumiClick(1)
-                    else -> viewModel.switchCategory(category)
-                }
+                viewModel.switchCategory(resolveHomeCategoryForTopTab(index))
             },
             onPartitionClick = onPartitionClick,
             onLiveClick = onLiveListClick,  // [修复] 直播分区点击导航到独立页面
@@ -1077,6 +1075,7 @@ fun HomeScreen(
             ModalNavigationDrawer(
                 drawerState = drawerState,
                 gesturesEnabled = true,
+                scrimColor = Color.Black.copy(alpha = resolveHomeDrawerScrimAlpha(isHeaderBlurEnabled)),
                 drawerContent = {
                     MineSideDrawer(
                         drawerState = drawerState,
@@ -1084,6 +1083,7 @@ fun HomeScreen(
                         onLogout = { /* 登出后由 ProfileScreen 处理 */ },
                         onHistoryClick = onHistoryClick,
                         onFavoriteClick = onFavoriteClick,
+                        onBangumiClick = { onBangumiClick(1) },
                         onDownloadClick = onDownloadClick,
                         onWatchLaterClick = onWatchLaterClick,
                         onInboxClick = onInboxClick,

@@ -294,6 +294,25 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                         _uiState.update { it.copy(isSearching = false, error = e.message ?: "搜索失败") }
                     }
                 }
+                SearchType.MEDIA_FT -> {
+                    val result = SearchRepository.searchMediaFt(keyword, page = 1)
+                    result.onSuccess { (items, pageInfo) ->
+                        _uiState.update {
+                            it.copy(
+                                isSearching = false,
+                                bangumiResults = items,
+                                searchResults = emptyList(),
+                                upResults = emptyList(),
+                                liveResults = emptyList(),
+                                currentPage = pageInfo.currentPage,
+                                totalPages = pageInfo.totalPages,
+                                hasMoreResults = pageInfo.hasMore
+                            )
+                        }
+                    }.onFailure { e ->
+                        _uiState.update { it.copy(isSearching = false, error = e.message ?: "搜索失败") }
+                    }
+                }
                 SearchType.LIVE -> {
                     val result = SearchRepository.searchLive(
                         keyword = keyword,
@@ -394,6 +413,22 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                             it.copy(
                                 isLoadingMore = false,
                                 bangumiResults = (it.bangumiResults + bangumis).distinctBy { item -> item.seasonId },
+                                currentPage = pageInfo.currentPage,
+                                totalPages = pageInfo.totalPages,
+                                hasMoreResults = pageInfo.hasMore
+                            )
+                        }
+                    }.onFailure { e ->
+                        _uiState.update { it.copy(isLoadingMore = false, error = "加载更多失败: ${e.message}") }
+                    }
+                }
+                SearchType.MEDIA_FT -> {
+                    val result = SearchRepository.searchMediaFt(state.query, page = nextPage)
+                    result.onSuccess { (items, pageInfo) ->
+                        _uiState.update {
+                            it.copy(
+                                isLoadingMore = false,
+                                bangumiResults = (it.bangumiResults + items).distinctBy { item -> item.seasonId },
                                 currentPage = pageInfo.currentPage,
                                 totalPages = pageInfo.totalPages,
                                 hasMoreResults = pageInfo.hasMore

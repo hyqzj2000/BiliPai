@@ -125,6 +125,8 @@ fun IOSClickableItem(
     onClick: (() -> Unit)? = null,
     iconTint: Color = MaterialTheme.colorScheme.primary,
     textColor: Color = MaterialTheme.colorScheme.onSurface,
+    valueColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    chevronTint: Color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
     centered: Boolean = false,
     enableCopy: Boolean = false,
     showChevron: Boolean = true
@@ -187,7 +189,7 @@ fun IOSClickableItem(
                     Text(
                         text = value, 
                         style = MaterialTheme.typography.bodyMedium, 
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = valueColor,
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         modifier = if (enableCopy) Modifier.copyOnLongPress(value, title) else Modifier
@@ -195,7 +197,7 @@ fun IOSClickableItem(
                 }
                 if (onClick != null && showChevron) {
                     Spacer(modifier = Modifier.width(6.dp))
-                    Icon(CupertinoIcons.Default.ChevronForward, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.5f), modifier = Modifier.size(20.dp))
+                    Icon(CupertinoIcons.Default.ChevronForward, null, tint = chevronTint, modifier = Modifier.size(20.dp))
                 }
             }
         }

@@ -37,6 +37,7 @@ import com.android.purebilibili.navigation.ScreenRoutes
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.alpha
@@ -378,7 +379,8 @@ fun FrostedBottomBar(
         labelMode == 0 -> 58.dp
         else -> 54.dp
     }
-    val bottomIndicatorYOffset = if (labelMode == 0) 2.dp else 0.dp
+    // Keep indicator vertically centered; avoid extra offset that breaks top/bottom spacing.
+    val bottomIndicatorYOffset = 0.dp
     
     // 🟢 最外层容器
     Box(
@@ -460,23 +462,21 @@ fun FrostedBottomBar(
                                     )
                                 }
                                 LiquidGlassStyle.IOS26 -> {
-                                    // [Style: iOS26] 恢复随纵向滚动变化的液态折射
-                                    val dynamicRefractionAmount = 44f + (scrollValue * 0.028f).coerceIn(0f, 22f)
+                                    // [Style: iOS26] Keep lens stable; no vertical-scroll driven refraction.
                                     this.drawBackdrop(
                                         backdrop = backdrop,
                                         shape = { barShape },
                                         effects = {
                                             lens(
                                                 refractionHeight = 148f,
-                                                refractionAmount = dynamicRefractionAmount,
+                                                refractionAmount = 44f,
                                                 depthEffect = isFloating,
                                                 chromaticAberration = false
                                             )
                                         },
                                         onDrawSurface = {
                                             val baseAlpha = if (isDark) 0.46f else 0.63f
-                                            val scrollImpact = (scrollValue * 0.00028f).coerceIn(0f, 0.05f)
-                                            drawRect(barColor.copy(alpha = baseAlpha + scrollImpact))
+                                            drawRect(barColor.copy(alpha = baseAlpha))
                                             drawRect(Color.White.copy(alpha = if (isDark) 0.06f else 0.10f))
                                         }
                                     )
@@ -517,7 +517,10 @@ fun FrostedBottomBar(
                                  )
                                 .liquidGlassBackground(
                                     refractIntensity = 0.6f,
-                                    scrollOffsetProvider = { scrollState.floatValue },
+                                    scrollOffsetProvider = {
+                                        if (homeSettings.liquidGlassStyle == LiquidGlassStyle.IOS26) 0f
+                                        else scrollState.floatValue
+                                    },
                                     backgroundColor = barColor.copy(alpha = 0.1f)
                                 )
                         } else {
@@ -557,8 +560,49 @@ fun FrostedBottomBar(
                     ) {
                         // 关键修复：
                         // 1) 先把底栏图标层捕获到 local backdrop
-                        // 2) 指示器再基于该层做折射
+                        // 2) 指示器使用全局 backdrop 并绘制在图标层下方，避免文字/图标发虚
                         val iconBackdrop = rememberLayerBackdrop()
+                        val isDark = isSystemInDarkTheme()
+                        val movingIndicatorColor = if (homeSettings.liquidGlassStyle == LiquidGlassStyle.IOS26) {
+                            resolveIos26BottomIndicatorGrayColor(isDarkTheme = isDark)
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        }
+                        val indicatorPosition = dampedDragState.value
+                        val indicatorFractional =
+                            abs(indicatorPosition - indicatorPosition.roundToInt().toFloat()) > 0.001f
+                        val indicatorInMotion =
+                            dampedDragState.isDragging || indicatorFractional || abs(dampedDragState.velocity) > 45f
+                        val indicatorBackdrop = if (indicatorInMotion) iconBackdrop else null
+
+                        LiquidIndicator(
+                            position = indicatorPosition,
+                            itemWidth = itemWidth,
+                            itemCount = itemCount,
+                            // Keep refraction active during in-flight horizontal motion (drag + settle).
+                            isDragging = indicatorInMotion,
+                            velocity = dampedDragState.velocity,
+                            startPadding = rowPadding,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .offset(y = bottomIndicatorYOffset)
+                                .alpha(indicatorAlpha),
+                            indicatorHeight = bottomIndicatorHeight,
+                            isLiquidGlassEnabled = showGlassEffect,
+                            lensIntensityBoost = if (homeSettings.liquidGlassStyle == LiquidGlassStyle.IOS26) 1.35f else 1.85f,
+                            edgeWarpBoost = if (homeSettings.liquidGlassStyle == LiquidGlassStyle.IOS26) 1.38f else 1.92f,
+                            chromaticBoost = if (homeSettings.liquidGlassStyle == LiquidGlassStyle.IOS26) 1.08f else 1.75f,
+                            liquidGlassStyle = homeSettings.liquidGlassStyle, // [New] Pass style
+                            // Dynamic refraction: moving -> refract icons/text/cover, static -> keep pure color.
+                            backdrop = indicatorBackdrop,
+                            color = movingIndicatorColor.copy(
+                                alpha = if (homeSettings.liquidGlassStyle == LiquidGlassStyle.IOS26) {
+                                    if (isDark) 0.30f else 0.38f
+                                } else {
+                                    0.14f
+                                }
+                            )
+                        )
 
                         Box(
                             modifier = Modifier
@@ -592,31 +636,6 @@ fun FrostedBottomBar(
                                 liquidGlassStyle = homeSettings.liquidGlassStyle
                             )
                         }
-
-                        LiquidIndicator(
-                            position = dampedDragState.value,
-                            itemWidth = itemWidth,
-                            itemCount = itemCount,
-                            isDragging = dampedDragState.isDragging,
-                            velocity = dampedDragState.velocity,
-                            startPadding = rowPadding,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .offset(y = contentVerticalOffset + bottomIndicatorYOffset)
-                                .alpha(indicatorAlpha),
-                            indicatorHeight = bottomIndicatorHeight,
-                            isLiquidGlassEnabled = showGlassEffect,
-                            lensIntensityBoost = if (homeSettings.liquidGlassStyle == LiquidGlassStyle.IOS26) 1.35f else 1.85f,
-                            edgeWarpBoost = if (homeSettings.liquidGlassStyle == LiquidGlassStyle.IOS26) 1.38f else 1.92f,
-                            chromaticBoost = if (homeSettings.liquidGlassStyle == LiquidGlassStyle.IOS26) 1.08f else 1.75f,
-                            liquidGlassStyle = homeSettings.liquidGlassStyle, // [New] Pass style
-                            backdrop = iconBackdrop, // 使用图标层 backdrop，确保滑动时折射图标
-                            color = if (homeSettings.liquidGlassStyle == LiquidGlassStyle.IOS26) {
-                                Color.White.copy(alpha = if (isSystemInDarkTheme()) 0.09f else 0.14f)
-                            } else {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                            }
-                        )
                     }
                         
                         if (!isFloating) {
@@ -698,6 +717,7 @@ private fun BottomBarContent(
         visibleItems.forEachIndexed { index, item ->
             val isSelected = selectedIndex == index
             val itemColorIndex = itemColorIndices[item.name] ?: 0
+            val hasCustomAccent = itemColorIndices.containsKey(item.name)
             
             // [核心逻辑] 计算每个 Item 的选中分数 (0f..1f)
             // 根据当前位置 currentPosition 和 item index 的距离计算
@@ -712,6 +732,7 @@ private fun BottomBarContent(
                 onClick = { if (isInteractive) onItemClick(item) },
                 labelMode = labelMode,
                 colorIndex = itemColorIndex,
+                hasCustomAccent = hasCustomAccent,
                 iconSize = if (labelMode == 0) 24.dp else 26.dp,
                 contentVerticalOffset = contentVerticalOffset,
                 modifier = Modifier.weight(1f),
@@ -767,13 +788,7 @@ private fun BottomBarContent(
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "侧边栏",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            shadow = if (isTablet) androidx.compose.ui.graphics.Shadow(
-                                color = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.75f),
-                                offset = androidx.compose.ui.geometry.Offset(0f, 1f),
-                                blurRadius = 3f
-                            ) else null
-                        ),
+                        style = MaterialTheme.typography.labelSmall,
                         color = iconColor,
                         fontWeight = FontWeight.Medium,
                         fontSize = if (isTablet) 12.sp else 10.sp
@@ -793,6 +808,7 @@ private fun BottomBarItem(
     onClick: () -> Unit,
     labelMode: Int,
     colorIndex: Int,
+    hasCustomAccent: Boolean,
     iconSize: androidx.compose.ui.unit.Dp,
     contentVerticalOffset: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
@@ -807,7 +823,6 @@ private fun BottomBarItem(
 ) {
     val scope = rememberCoroutineScope()
     var isPending by remember { mutableStateOf(false) }
-    val isDarkTheme = isSystemInDarkTheme()
     
     val primaryColor = MaterialTheme.colorScheme.primary
     
@@ -838,11 +853,17 @@ private fun BottomBarItem(
         }
     }
     
+    val selectedAccent = if (hasCustomAccent) {
+        BottomBarColors.getColorByIndex(colorIndex)
+    } else {
+        primaryColor
+    }
+
     // [修改] 颜色插值：根据 selectionFraction 在 unselected 和 selected 之间混合
     // 还要考虑 isPending (点击态)
     val targetIconColor = androidx.compose.ui.graphics.lerp(
         unselectedColor, 
-        primaryColor, 
+        selectedAccent, 
         if (isPending) 1f else selectionFraction
     )
     
@@ -970,14 +991,7 @@ private fun BottomBarItem(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = item.label,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        // [Fix] Add Shadow for Liquid Glass Readability (Both Tablet & Phone)
-                        shadow = androidx.compose.ui.graphics.Shadow(
-                            color = if (isDarkTheme) androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.8f) else androidx.compose.ui.graphics.Color.White.copy(alpha = 0.6f),
-                            offset = androidx.compose.ui.geometry.Offset(0f, 1f),
-                            blurRadius = 3f
-                        )
-                    ),
+                    style = MaterialTheme.typography.labelSmall,
                     color = iconColor,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                     fontSize = if (isTablet) 12.sp else 10.sp
@@ -1015,5 +1029,15 @@ private fun BottomBarItem(
                 }
             }
         }
+    }
+}
+
+internal fun resolveIos26BottomIndicatorGrayColor(isDarkTheme: Boolean): Color {
+    return if (isDarkTheme) {
+        // Dark mode: brighter neutral gray to float above dark glass.
+        Color(0xFFC8CDD6)
+    } else {
+        // Light mode: deeper neutral gray to stay visible on bright background.
+        Color(0xFF9BA5B4)
     }
 }

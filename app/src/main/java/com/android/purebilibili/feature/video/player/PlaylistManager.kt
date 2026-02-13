@@ -1,19 +1,23 @@
 // 文件路径: feature/video/player/PlaylistManager.kt
 package com.android.purebilibili.feature.video.player
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import android.content.Context
 import com.android.purebilibili.core.util.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 private const val TAG = "PlaylistManager"
+private const val PREFS_NAME = "playlist_manager_state"
+private const val KEY_SNAPSHOT = "snapshot_json"
 
 /**
  * 播放列表项
  */
+@Serializable
 data class PlaylistItem(
     val bvid: String,
     val title: String,
@@ -29,6 +33,7 @@ data class PlaylistItem(
 /**
  * 播放模式
  */
+@Serializable
 enum class PlayMode {
     SEQUENTIAL,   // 顺序播放
     SHUFFLE,      // 随机播放  
@@ -41,6 +46,13 @@ enum class PlayMode {
  * 管理播放队列、播放模式和上下曲切换
  */
 object PlaylistManager {
+    @Serializable
+    private data class PlaylistSnapshot(
+        val playlist: List<PlaylistItem> = emptyList(),
+        val currentIndex: Int = -1,
+        val playMode: PlayMode = PlayMode.SEQUENTIAL,
+        val isExternalPlaylist: Boolean = false
+    )
     
     // ========== 状态 ==========
     
@@ -61,6 +73,14 @@ object PlaylistManager {
     // 已播放的随机索引（用于随机模式历史）
     private val shuffleHistory = mutableListOf<Int>()
     private var shuffleHistoryIndex = -1
+
+    private var appContext: Context? = null
+    private val json = Json { ignoreUnknownKeys = true }
+
+    fun init(context: Context) {
+        appContext = context.applicationContext
+        restoreState()
+    }
     
     // ========== 公共 API ==========
     
@@ -73,15 +93,11 @@ object PlaylistManager {
     fun setPlaylist(items: List<PlaylistItem>, startIndex: Int = 0) {
         Logger.d(TAG, "🎵 设置播放列表: ${items.size} 项, 从索引 $startIndex 开始")
         _playlist.value = items
-        _currentIndex.value = startIndex.coerceIn(0, items.lastIndex.coerceAtLeast(0))
+        _currentIndex.value = resolveStartIndex(items, startIndex)
         _isExternalPlaylist.value = false  // 重置外部播放列表标志
         
-        // 重置随机历史
-        shuffleHistory.clear()
-        if (startIndex >= 0 && startIndex < items.size) {
-            shuffleHistory.add(startIndex)
-            shuffleHistoryIndex = 0
-        }
+        resetShuffleHistoryForCurrentIndex()
+        persistState()
     }
     
     /**
@@ -93,15 +109,11 @@ object PlaylistManager {
     fun setExternalPlaylist(items: List<PlaylistItem>, startIndex: Int = 0) {
         Logger.d(TAG, "🔒 设置外部播放列表: ${items.size} 项, 从索引 $startIndex 开始")
         _playlist.value = items
-        _currentIndex.value = startIndex.coerceIn(0, items.lastIndex.coerceAtLeast(0))
+        _currentIndex.value = resolveStartIndex(items, startIndex)
         _isExternalPlaylist.value = true  // 标记为外部播放列表
         
-        // 重置随机历史
-        shuffleHistory.clear()
-        if (startIndex >= 0 && startIndex < items.size) {
-            shuffleHistory.add(startIndex)
-            shuffleHistoryIndex = 0
-        }
+        resetShuffleHistoryForCurrentIndex()
+        persistState()
     }
     
     /**
@@ -114,6 +126,7 @@ object PlaylistManager {
         }
         _playlist.value = _playlist.value + item
         Logger.d(TAG, "➕ 添加到播放列表: ${item.title}")
+        persistState()
     }
     
     /**
@@ -125,6 +138,7 @@ object PlaylistManager {
         if (newItems.isNotEmpty()) {
             _playlist.value = _playlist.value + newItems
             Logger.d(TAG, "➕ 批量添加 ${newItems.size} 项到播放列表")
+            persistState()
         }
     }
     
@@ -142,6 +156,7 @@ object PlaylistManager {
                 _currentIndex.value = _playlist.value.lastIndex.coerceAtLeast(0)
             }
             Logger.d(TAG, "➖ 从播放列表移除: $bvid")
+            persistState()
         }
     }
     
@@ -151,9 +166,11 @@ object PlaylistManager {
     fun clearPlaylist() {
         _playlist.value = emptyList()
         _currentIndex.value = -1
+        _isExternalPlaylist.value = false
         shuffleHistory.clear()
         shuffleHistoryIndex = -1
         Logger.d(TAG, " 清空播放列表")
+        persistState()
     }
     
     /**
@@ -162,6 +179,7 @@ object PlaylistManager {
     fun setPlayMode(mode: PlayMode) {
         _playMode.value = mode
         Logger.d(TAG, " 播放模式: $mode")
+        persistState()
     }
     
     /**
@@ -175,6 +193,7 @@ object PlaylistManager {
         }
         _playMode.value = newMode
         Logger.d(TAG, " 切换播放模式: $newMode")
+        persistState()
         return newMode
     }
     
@@ -233,6 +252,7 @@ object PlaylistManager {
         return if (nextIndex != null && nextIndex in list.indices) {
             _currentIndex.value = nextIndex
             Logger.d(TAG, " 播放下一曲: ${list[nextIndex].title} (索引: $nextIndex)")
+            persistState()
             list[nextIndex]
         } else {
             Logger.d(TAG, "⏹️ 播放列表结束")
@@ -267,6 +287,7 @@ object PlaylistManager {
         return if (prevIndex != null && prevIndex in list.indices) {
             _currentIndex.value = prevIndex
             Logger.d(TAG, "⏮️ 播放上一曲: ${list[prevIndex].title} (索引: $prevIndex)")
+            persistState()
             list[prevIndex]
         } else {
             Logger.d(TAG, "⏹️ 已是第一曲")
@@ -290,6 +311,7 @@ object PlaylistManager {
         }
         
         Logger.d(TAG, "🎯 跳转到: ${list[index].title} (索引: $index)")
+        persistState()
         return list[index]
     }
     
@@ -338,6 +360,70 @@ object PlaylistManager {
             PlayMode.SEQUENTIAL -> "🔂"
             PlayMode.SHUFFLE -> "🔀"
             PlayMode.REPEAT_ONE -> ""
+        }
+    }
+
+    private fun resolveStartIndex(items: List<PlaylistItem>, requested: Int): Int {
+        if (items.isEmpty()) return -1
+        return requested.coerceIn(0, items.lastIndex)
+    }
+
+    private fun resetShuffleHistoryForCurrentIndex() {
+        shuffleHistory.clear()
+        val current = _currentIndex.value
+        val list = _playlist.value
+        if (current in list.indices) {
+            shuffleHistory.add(current)
+            shuffleHistoryIndex = 0
+        } else {
+            shuffleHistoryIndex = -1
+        }
+    }
+
+    private fun persistState() {
+        val context = appContext ?: return
+        runCatching {
+            val snapshot = PlaylistSnapshot(
+                playlist = _playlist.value,
+                currentIndex = _currentIndex.value,
+                playMode = _playMode.value,
+                isExternalPlaylist = _isExternalPlaylist.value
+            )
+            val raw = json.encodeToString(snapshot)
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_SNAPSHOT, raw)
+                .apply()
+        }.onFailure { e ->
+            Logger.e(TAG, "⚠️ Failed to persist playlist state", e)
+        }
+    }
+
+    private fun restoreState() {
+        val context = appContext ?: return
+        val raw = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_SNAPSHOT, null)
+            .orEmpty()
+        if (raw.isBlank()) return
+
+        runCatching {
+            json.decodeFromString<PlaylistSnapshot>(raw)
+        }.onSuccess { snapshot ->
+            _playlist.value = snapshot.playlist
+            _playMode.value = snapshot.playMode
+            _isExternalPlaylist.value = snapshot.isExternalPlaylist
+            _currentIndex.value = resolveStartIndex(snapshot.playlist, snapshot.currentIndex)
+            resetShuffleHistoryForCurrentIndex()
+            Logger.d(
+                TAG,
+                "♻️ Restored playlist: size=${snapshot.playlist.size}, index=${_currentIndex.value}, external=${snapshot.isExternalPlaylist}"
+            )
+        }.onFailure { e ->
+            Logger.e(TAG, "⚠️ Failed to restore playlist state, clearing cache", e)
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .remove(KEY_SNAPSHOT)
+                .apply()
         }
     }
 }

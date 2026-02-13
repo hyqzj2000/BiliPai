@@ -247,6 +247,7 @@ enum class SearchType(val value: String, val displayName: String) {
     VIDEO("video", "视频"),
     UP("bili_user", "UP主"),
     BANGUMI("media_bangumi", "番剧"),
+    MEDIA_FT("media_ft", "影视"),
     LIVE("live_room", "直播");
     
     companion object {

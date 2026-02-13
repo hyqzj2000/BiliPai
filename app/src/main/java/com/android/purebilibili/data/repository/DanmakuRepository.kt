@@ -16,6 +16,9 @@ internal data class DanmakuThumbupState(
     val liked: Boolean
 )
 
+internal const val DANMAKU_SEGMENT_DURATION_MS = 360000L
+internal const val DANMAKU_SEGMENT_SAFE_FALLBACK_COUNT = 3
+
 internal fun resolveDanmakuThumbupState(
     dmid: Long,
     data: Map<String, DanmakuThumbupStatsItem>
@@ -51,6 +54,24 @@ internal fun mapSendDanmakuErrorMessage(code: Int, fallbackMessage: String): Str
         36718 -> "当前账号不是大会员，无法发送渐变彩色弹幕"
         else -> fallbackMessage.ifEmpty { "发送弹幕失败 ($code)" }
     }
+}
+
+internal fun resolveDanmakuSegmentCount(
+    durationMs: Long,
+    metadataSegmentCount: Int?
+): Int {
+    val fromDuration = if (durationMs > 0) {
+        ((durationMs + DANMAKU_SEGMENT_DURATION_MS - 1) / DANMAKU_SEGMENT_DURATION_MS).toInt()
+    } else {
+        0
+    }
+    if (fromDuration > 0) return fromDuration
+
+    val fromMetadata = metadataSegmentCount?.coerceAtLeast(0) ?: 0
+    if (fromMetadata > 0) return fromMetadata
+
+    // duration 与 metadata 同时缺失时，默认预取 3 段，避免从非首段位置进入时“无弹幕”
+    return DANMAKU_SEGMENT_SAFE_FALLBACK_COUNT
 }
 
 /**
@@ -210,9 +231,14 @@ object DanmakuRepository {
      * 
      * @param cid 视频 cid
      * @param durationMs 视频时长 (毫秒)，用于计算所需分段数
+     * @param metadataSegmentCount 弹幕元数据返回的总分段数（可选）
      * @return 所有分段的 Protobuf 数据列表
      */
-    suspend fun getDanmakuSegments(cid: Long, durationMs: Long): List<ByteArray> = withContext(Dispatchers.IO) {
+    suspend fun getDanmakuSegments(
+        cid: Long,
+        durationMs: Long,
+        metadataSegmentCount: Int? = null
+    ): List<ByteArray> = withContext(Dispatchers.IO) {
         com.android.purebilibili.core.util.Logger.d("DanmakuRepo", "🎯 getDanmakuSegments: cid=$cid, duration=${durationMs}ms")
         
         // 检查缓存
@@ -223,11 +249,13 @@ object DanmakuRepository {
             }
         }
         
-        // 计算所需分段数 (每段 6 分钟 = 360000ms)
-        val segmentDurationMs = 360000L
-        val segmentCount = ((durationMs + segmentDurationMs - 1) / segmentDurationMs).toInt().coerceAtLeast(1)
+        // 计算所需分段数（优先 duration，其次 metadata，最后安全默认值）
+        val segmentCount = resolveDanmakuSegmentCount(durationMs, metadataSegmentCount)
         
-        com.android.purebilibili.core.util.Logger.d("DanmakuRepo", " Fetching $segmentCount segments for ${durationMs}ms video")
+        com.android.purebilibili.core.util.Logger.d(
+            "DanmakuRepo",
+            " Fetching $segmentCount segments for ${durationMs}ms video (metadata=$metadataSegmentCount)"
+        )
         
         data class SegmentResult(val index: Int, val bytes: ByteArray)
         

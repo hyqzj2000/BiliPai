@@ -257,31 +257,20 @@ class EyeProtectionPlugin : Plugin {
     }
 
     private fun applyVisualState() {
-        if (_settingsPreviewEnabled.value) {
-            _isNightModeActive.value = true
-            _brightnessLevel.value = config.brightnessLevel.coerceIn(0.3f, 1.0f)
-            _warmFilterStrength.value = config.warmFilterStrength.coerceIn(0f, 0.5f)
-            return
-        }
-
         val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        val visualActive = isVisualEffectActive(
+        val visualState = resolveEyeVisualState(
+            settingsPreviewEnabled = _settingsPreviewEnabled.value,
             forceEnabled = config.forceEnabled,
             nightModeEnabled = config.nightModeEnabled,
             currentHour = currentHour,
             startHour = config.nightModeStartHour,
-            endHour = config.nightModeEndHour
+            endHour = config.nightModeEndHour,
+            brightnessLevel = config.brightnessLevel,
+            warmFilterStrength = config.warmFilterStrength
         )
-
-        if (visualActive) {
-            _isNightModeActive.value = true
-            _brightnessLevel.value = config.brightnessLevel.coerceIn(0.3f, 1.0f)
-            _warmFilterStrength.value = config.warmFilterStrength.coerceIn(0f, 0.5f)
-        } else {
-            _isNightModeActive.value = false
-            _brightnessLevel.value = 1.0f
-            _warmFilterStrength.value = 0f
-        }
+        _isNightModeActive.value = visualState.isActive
+        _brightnessLevel.value = visualState.brightnessLevel
+        _warmFilterStrength.value = visualState.warmFilterStrength
     }
 
     private suspend fun loadConfigSuspend() {
@@ -371,6 +360,7 @@ class EyeProtectionPlugin : Plugin {
         LaunchedEffect(Unit) {
             loadConfigSuspend()
             uiConfig = config
+            applyVisualState()
         }
         DisposableEffect(Unit) {
             setSettingsPreviewEnabled(true)

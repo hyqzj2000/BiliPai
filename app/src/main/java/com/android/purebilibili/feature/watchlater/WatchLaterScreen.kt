@@ -239,19 +239,20 @@ fun WatchLaterScreen(
                         if (state.items.isNotEmpty()) {
                             IconButton(
                                 onClick = {
-                                    // 设置外部播放列表
-                                    val playlistItems = state.items.map { video ->
-                                        com.android.purebilibili.feature.video.player.PlaylistItem(
-                                            bvid = video.bvid,
-                                            title = video.title,
-                                            cover = video.pic,
-                                            owner = video.owner?.name ?: "",
-                                            duration = video.duration.toLong()
-                                        )
-                                    }
-                                    com.android.purebilibili.feature.video.player.PlaylistManager.setExternalPlaylist(playlistItems, 0)
-                                    // 导航到第一个视频
-                                    onVideoClick(state.items.first().bvid, 0L)
+                                    val externalPlaylist = buildExternalPlaylistFromWatchLater(
+                                        items = state.items,
+                                        clickedBvid = state.items.firstOrNull()?.bvid
+                                    ) ?: return@IconButton
+
+                                    com.android.purebilibili.feature.video.player.PlaylistManager.setExternalPlaylist(
+                                        externalPlaylist.playlistItems,
+                                        externalPlaylist.startIndex
+                                    )
+
+                                    onVideoClick(
+                                        state.items[externalPlaylist.startIndex].bvid,
+                                        0L
+                                    )
                                 }
                             ) {
                                 Icon(
@@ -361,7 +362,20 @@ fun WatchLaterScreen(
                                     dismissMenuText = "\uD83D\uDDD1\uFE0F 删除",
                                     // 触发 Thanos 响指动画 (开始消散)
                                     onDismiss = { viewModel.startVideoDissolve(item.bvid) },  
-                                    onClick = { bvid, _ -> onVideoClick(bvid, 0L) }
+                                    onClick = { bvid, _ ->
+                                        val externalPlaylist = buildExternalPlaylistFromWatchLater(
+                                            items = state.items,
+                                            clickedBvid = bvid
+                                        )
+                                        if (externalPlaylist != null) {
+                                            com.android.purebilibili.feature.video.player.PlaylistManager.setExternalPlaylist(
+                                                externalPlaylist.playlistItems,
+                                                externalPlaylist.startIndex
+                                            )
+                                        }
+
+                                        onVideoClick(bvid, 0L)
+                                    }
                                 )
                             }
                         }

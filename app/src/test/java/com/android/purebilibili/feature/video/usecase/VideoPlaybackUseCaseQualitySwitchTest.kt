@@ -5,6 +5,7 @@ import com.android.purebilibili.data.model.response.DashVideo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class VideoPlaybackUseCaseQualitySwitchTest {
@@ -46,5 +47,31 @@ class VideoPlaybackUseCaseQualitySwitchTest {
 
         assertNotNull(result)
         assertEquals(64, result?.actualQuality)
+    }
+
+    @Test
+    fun `mergeQualityOptions keeps api high tiers when dash list misses them`() {
+        val useCase = VideoPlaybackUseCase()
+
+        val result = useCase.mergeQualityOptions(
+            apiQualities = listOf(120, 116, 80, 64, 32, 16),
+            dashVideoIds = listOf(80, 64, 32, 16)
+        )
+
+        assertEquals(listOf(120, 116, 80, 64, 32, 16), result.mergedQualityIds)
+        assertEquals(listOf(120, 116), result.apiOnlyHighQualities)
+    }
+
+    @Test
+    fun `mergeQualityOptions uses dash list when api list is empty`() {
+        val useCase = VideoPlaybackUseCase()
+
+        val result = useCase.mergeQualityOptions(
+            apiQualities = emptyList(),
+            dashVideoIds = listOf(80, 64)
+        )
+
+        assertEquals(listOf(80, 64, 32, 16), result.mergedQualityIds)
+        assertTrue(result.apiOnlyHighQualities.isEmpty())
     }
 }

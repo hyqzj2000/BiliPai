@@ -91,6 +91,7 @@ data class BangumiItem(
     val seasonType: Int = 0,          // 1=番剧 2=电影 3=纪录片 4=国创 5=电视剧
     @SerialName("season_type_name")
     val seasonTypeName: String = "",
+    @SerialName("subTitle")
     val subtitle: String = "",        // 副标题
     val styles: String = ""           // 风格标签
 )
@@ -459,12 +460,34 @@ data class BangumiFilter(
     val seasonStatus: Int = -1,          // 付费类型，-1=全部
     val order: Int = 2                   // 排序，2=播放量, 0=更新时间
 ) {
+    fun toApiYear(seasonType: Int): String {
+        return if (seasonType == BangumiType.ANIME.value || seasonType == BangumiType.GUOCHUANG.value) {
+            year
+        } else {
+            "-1"
+        }
+    }
+
+    fun toApiReleaseDate(seasonType: Int): String {
+        val shouldUseReleaseDate = seasonType == BangumiType.MOVIE.value ||
+            seasonType == BangumiType.DOCUMENTARY.value ||
+            seasonType == BangumiType.TV_SHOW.value
+        if (!shouldUseReleaseDate || year == "-1") return "-1"
+
+        val range = Regex("""^\[(.*?),(.*?)\)$""").matchEntire(year) ?: return "-1"
+        val rawStart = range.groupValues[1].trim()
+        val rawEnd = range.groupValues[2].trim()
+        val start = rawStart.takeIf { it.isNotEmpty() }?.let { "$it-01-01 00:00:00" } ?: ""
+        val end = rawEnd.takeIf { it.isNotEmpty() }?.let { "$it-01-01 00:00:00" } ?: ""
+        return "[$start,$end)"
+    }
+
     companion object {
         val ORDER_OPTIONS = listOf(
             0 to "更新时间",
             2 to "播放数量",
-            4 to "追番人数",
-            3 to "最高评分"
+            3 to "追番人数",
+            4 to "最高评分"
         )
         
         val AREA_OPTIONS = listOf(
@@ -473,7 +496,8 @@ data class BangumiFilter(
             2 to "日本",
             3 to "美国",
             4 to "英国",
-            5 to "其他"
+            5 to "加拿大",
+            16 to "其他"
         )
         
         val STATUS_OPTIONS = listOf(
@@ -484,23 +508,23 @@ data class BangumiFilter(
         
         val YEAR_OPTIONS = listOf(
             "-1" to "全部年份",
-            "2025" to "2025",
-            "2024" to "2024",
-            "2023" to "2023",
-            "2022" to "2022",
-            "2021" to "2021",
-            "2020" to "2020",
-            "2019" to "2019",
-            "2018" to "2018",
-            "2017" to "2017",
-            "2016" to "2016",
-            "2015" to "2015",
-            "2010-2014" to "2010-2014",
-            "2005-2009" to "2005-2009",
-            "2000-2004" to "2000-2004",
-            "90年代" to "90年代",
-            "80年代" to "80年代",
-            "更早" to "更早"
+            "[2025,2026)" to "2025",
+            "[2024,2025)" to "2024",
+            "[2023,2024)" to "2023",
+            "[2022,2023)" to "2022",
+            "[2021,2022)" to "2021",
+            "[2020,2021)" to "2020",
+            "[2019,2020)" to "2019",
+            "[2018,2019)" to "2018",
+            "[2017,2018)" to "2017",
+            "[2016,2017)" to "2016",
+            "[2015,2016)" to "2015",
+            "[2010,2015)" to "2010-2014",
+            "[2005,2010)" to "2005-2009",
+            "[2000,2005)" to "2000-2004",
+            "[1990,2000)" to "90年代",
+            "[1980,1990)" to "80年代",
+            "[,1980)" to "更早"
         )
     }
 }

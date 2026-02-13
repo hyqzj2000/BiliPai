@@ -44,4 +44,17 @@ class DanmakuRepositoryPolicyTest {
 
         assertNull(state)
     }
+
+    @Test
+    fun resolveDanmakuSegmentCount_prefersDurationWhenAvailable() {
+        assertEquals(1, resolveDanmakuSegmentCount(durationMs = 1000L, metadataSegmentCount = null))
+        assertEquals(3, resolveDanmakuSegmentCount(durationMs = 720_001L, metadataSegmentCount = 1))
+    }
+
+    @Test
+    fun resolveDanmakuSegmentCount_fallsBackToMetadataAndSafeDefault() {
+        assertEquals(5, resolveDanmakuSegmentCount(durationMs = 0L, metadataSegmentCount = 5))
+        assertEquals(3, resolveDanmakuSegmentCount(durationMs = 0L, metadataSegmentCount = null))
+        assertEquals(3, resolveDanmakuSegmentCount(durationMs = -1L, metadataSegmentCount = 0))
+    }
 }

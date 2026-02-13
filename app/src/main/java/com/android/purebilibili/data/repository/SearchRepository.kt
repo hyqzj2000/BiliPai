@@ -214,6 +214,50 @@ object SearchRepository {
             Result.failure(e)
         }
     }
+
+    //  [新增] 影视搜索
+    suspend fun searchMediaFt(
+        keyword: String,
+        page: Int = 1
+    ): Result<Pair<List<com.android.purebilibili.data.model.response.BangumiSearchItem>, SearchPageInfo>> = withContext(Dispatchers.IO) {
+        try {
+            val params = mutableMapOf(
+                "keyword" to keyword,
+                "search_type" to "media_ft",
+                "page" to page.toString()
+            )
+
+            val signedParams = signWithWbi(params)
+            val response = api.searchMediaFt(signedParams)
+            if (response.code != 0) {
+                return@withContext Result.failure(createSearchError(response.code, response.message))
+            }
+
+            val resultList = response.data?.result?.map { item ->
+                item.copy(
+                    title = item.title.replace(Regex("<.*?>"), ""),
+                    cover = if (item.cover.startsWith("//")) "https:${item.cover}" else item.cover
+                )
+            } ?: emptyList()
+
+            val pageInfo = SearchPageInfo(
+                currentPage = response.data?.page ?: page,
+                totalPages = response.data?.numPages ?: 1,
+                totalResults = response.data?.numResults ?: resultList.size,
+                hasMore = (response.data?.page ?: page) < (response.data?.numPages ?: 1)
+            )
+
+            com.android.purebilibili.core.util.Logger.d(
+                "SearchRepo",
+                "🔍 MediaFT search result: ${resultList.size} items, page ${pageInfo.currentPage}/${pageInfo.totalPages}"
+            )
+
+            Result.success(Pair(resultList, pageInfo))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
     
     //  [新增] 直播搜索
     suspend fun searchLive(

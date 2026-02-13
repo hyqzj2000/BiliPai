@@ -1,5 +1,76 @@
 # Changelog
 
+## [5.3.1] - 2026-02-13
+
+### ✨ New Features (新增功能)
+
+- **Bangumi Policy Layer**: Added dedicated policy modules to split view logic from screens/viewmodels:
+  - `BangumiFollowStatusPolicy`
+  - `BangumiModePolicy`
+  - `BangumiPlaybackUrlPolicy`
+  - `BangumiSeasonActionPolicy`
+  - `BangumiUiPolicy`
+  - `MyFollowPolicy`
+  - `MyFollowStats`
+  - `MyFollowStatsDetailPolicy`
+  - `MyFollowWatchInsightPolicy`
+- **Home Top Category Policy**: Added `HomeTopCategoryPolicy` to centralize top-tab category order/mapping.
+- **Mine Drawer Visual Policy**: Added `MineSideDrawerVisualPolicy` for blur/opacity/scrim tuning in one place.
+- **Danmaku Settings Policy**: Added `DanmakuSettingsPolicy` for opacity normalization and boundary handling.
+- **Watch Later External Playlist Policy**: Added `WatchLaterPlaybackPolicy` to build external queue and start index from clicked item.
+- **Top Tab Label Mode Setting**: Added configurable top-tab label mode (`图标+文字 / 仅图标 / 仅文字`) in settings and wired to home header.
+- **Playlist Persistence**: Added `PlaylistManager` state persistence/restore (playlist, index, play mode, external-queue flag) and app-start initialization.
+
+### 🛠 Improvements & Fixes (优化与修复)
+
+- **Top Tab Refraction Behavior**: Top indicator now disables refraction when fully stationary; refraction only applies during drag/settle motion.
+- **Top Tab Text Clarity**: Removed double-text crossfade rendering that caused ghosting/blur on selected tabs; switched to single-layer color interpolation.
+- **Top Tab Icon+Text Layout Polish**: Improved visual placement by changing icon+text style to a cleaner horizontal arrangement.
+- **Watch Later Playback Order**:
+  - card click now also sets external playlist (not only top-right "play all")
+  - queue starts from the clicked item index
+  - playback flow no longer falls back to recommended queue unexpectedly in this scenario
+- **Search Repository Reliability**: Improved video search fallback path (`all/v2`) and page-info handling/logging.
+- **Danmaku Repository Robustness**:
+  - refined segment-count fallback policy
+  - strengthened thumb-up state resolution and error message mapping
+  - improved segment cache safety behavior
+- **Eye Protection Logic Cleanup**: Consolidated eye-care decision/tuning/reminder logic into policy helpers for predictable behavior.
+- **Bangumi Experience Refinement**:
+  - clearer follow-state preload flow
+  - safer season-id resolution for action routes
+  - cleaner playback-url collection and UI sizing rules
+  - improved MyFollow type/stat/watch-insight derivation
+
+### ✅ Tests (测试)
+
+- Added and/or updated unit tests:
+  - `BangumiFilterAndSearchTypePolicyTest`
+  - `BangumiFollowStatusPolicyTest`
+  - `BangumiModePolicyTest`
+  - `BangumiPlaybackUrlPolicyTest`
+  - `BangumiSeasonActionPolicyTest`
+  - `BangumiUiPolicyTest`
+  - `MyFollowPolicyTest`
+  - `MyFollowStatsPolicyTest`
+  - `MyFollowStatsDetailPolicyTest`
+  - `MyFollowWatchInsightPolicyTest`
+  - `HomeTopCategoryPolicyTest`
+  - `MineSideDrawerVisualPolicyTest`
+  - `TopTabLayoutPolicyTest`
+  - `TopTabLabelModePolicyTest`
+  - `TopTabRefractionPolicyTest`
+  - `DanmakuRepositoryPolicyTest`
+  - `DanmakuSettingsPolicyTest`
+  - `EyeProtectionPolicyTest`
+  - `LiquidLensProfileTest`
+  - `VideoPlaybackUseCaseQualitySwitchTest`
+  - `WatchLaterPlaybackPolicyTest`
+
+### 📦 Release
+
+- **Version Bump**: Updated app version to `5.3.1` (`versionCode` `67`).
+
 ## [5.3.0] - 2026-02-12
 
 ### ✨ New Features (新增功能)

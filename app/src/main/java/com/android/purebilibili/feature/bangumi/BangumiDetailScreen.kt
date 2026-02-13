@@ -55,7 +55,7 @@ fun BangumiDetailScreen(
     seasonId: Long,
     epId: Long = 0,
     onBack: () -> Unit,
-    onEpisodeClick: (BangumiEpisode) -> Unit,  // 点击剧集播放
+    onEpisodeClick: (Long, BangumiEpisode) -> Unit,  // 点击剧集播放
     onSeasonClick: (Long) -> Unit = {},        //  点击切换季度
     viewModel: BangumiViewModel = viewModel()
 ) {
@@ -120,15 +120,19 @@ fun BangumiDetailScreen(
                 }
             }
             is BangumiDetailState.Success -> {
+                val actionSeasonId = resolveBangumiActionSeasonId(
+                    routeSeasonId = seasonId,
+                    detailSeasonId = state.detail.seasonId
+                )
                 if (LocalWindowSizeClass.current.shouldUseSplitLayout) {
                     TabletBangumiDetailContent(
                         detail = state.detail,
                         paddingValues = paddingValues,
                         hazeState = hazeState,
-                        onEpisodeClick = onEpisodeClick,
+                        onEpisodeClick = { episode -> onEpisodeClick(actionSeasonId, episode) },
                         onSeasonClick = onSeasonClick,
                         onToggleFollow = { isFollowing ->
-                            viewModel.toggleFollow(seasonId, isFollowing)
+                            viewModel.toggleFollow(actionSeasonId, isFollowing)
                         }
                     )
                 } else {
@@ -136,10 +140,10 @@ fun BangumiDetailScreen(
                         detail = state.detail,
                         paddingValues = paddingValues,
                         hazeState = hazeState,
-                        onEpisodeClick = onEpisodeClick,
+                        onEpisodeClick = { episode -> onEpisodeClick(actionSeasonId, episode) },
                         onSeasonClick = onSeasonClick,
                         onToggleFollow = { isFollowing ->
-                            viewModel.toggleFollow(seasonId, isFollowing)
+                            viewModel.toggleFollow(actionSeasonId, isFollowing)
                         }
                     )
                 }
@@ -158,7 +162,7 @@ private fun TabletBangumiDetailContent(
     onToggleFollow: (Boolean) -> Unit
 ) {
     // 状态管理
-    val followFromApi = detail.userStatus?.follow == 1
+    val followFromApi = isBangumiFollowed(detail.userStatus)
     var isFollowing by remember(detail.seasonId, followFromApi) { 
         mutableStateOf(followFromApi) 
     }
@@ -445,7 +449,7 @@ private fun MobileBangumiDetailContent(
     onToggleFollow: (Boolean) -> Unit
 ) {
     //  [修复] 使用 detail 本身作为 key，这样当 ViewModel 更新 detail 时，状态会正确同步
-    val followFromApi = detail.userStatus?.follow == 1
+    val followFromApi = isBangumiFollowed(detail.userStatus)
     var isFollowing by remember(detail.seasonId, followFromApi) { 
         mutableStateOf(followFromApi) 
     }

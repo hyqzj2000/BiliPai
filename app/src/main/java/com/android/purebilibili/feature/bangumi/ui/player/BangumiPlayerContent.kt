@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.android.purebilibili.core.util.FormatUtils
 import com.android.purebilibili.data.model.response.BangumiDetail
 import com.android.purebilibili.data.model.response.BangumiEpisode
+import com.android.purebilibili.feature.bangumi.isBangumiFollowed
 
 /**
  * 番剧播放内容区域
@@ -33,7 +34,7 @@ fun BangumiPlayerContent(
     onEpisodeClick: (BangumiEpisode) -> Unit,
     onFollowClick: () -> Unit
 ) {
-    val isFollowing = detail.userStatus?.follow == 1
+    val isFollowing = isBangumiFollowed(detail.userStatus)
     
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

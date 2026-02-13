@@ -10,6 +10,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.android.purebilibili.core.ui.blur.BlurIntensity
 import com.android.purebilibili.feature.settings.AppThemeMode
+import com.android.purebilibili.feature.video.danmaku.DANMAKU_DEFAULT_OPACITY
+import com.android.purebilibili.feature.video.danmaku.normalizeDanmakuOpacity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -35,6 +37,7 @@ data class HomeSettings(
     val displayMode: Int = 0,              // 展示模式 (0=网格, 1=故事卡片)
     val isBottomBarFloating: Boolean = true,
     val bottomBarLabelMode: Int = 0,       // (0=图标+文字, 1=仅图标, 2=仅文字)
+    val topTabLabelMode: Int = 2,          // (0=图标+文字, 1=仅图标, 2=仅文字)
     val isHeaderBlurEnabled: Boolean = true,
     val isBottomBarBlurEnabled: Boolean = true,
     val isLiquidGlassEnabled: Boolean = true, // [New]
@@ -72,6 +75,8 @@ object SettingsManager {
     private val KEY_BOTTOM_BAR_FLOATING = booleanPreferencesKey("bottom_bar_floating")
     //  [新增] 底栏显示模式 (0=图标+文字, 1=仅图标, 2=仅文字)
     private val KEY_BOTTOM_BAR_LABEL_MODE = intPreferencesKey("bottom_bar_label_mode")
+    //  [新增] 顶部标签显示模式 (0=图标+文字, 1=仅图标, 2=仅文字)
+    private val KEY_TOP_TAB_LABEL_MODE = intPreferencesKey("top_tab_label_mode")
     
     //  [新增] 开屏壁纸
     private val KEY_SPLASH_WALLPAPER_URI = stringPreferencesKey("splash_wallpaper_uri")
@@ -82,6 +87,12 @@ object SettingsManager {
     
     object BottomBarLabelMode {
         const val SELECTED = 0 // 兼容 AppNavigation 的调用
+        const val ICON_AND_TEXT = 0
+        const val ICON_ONLY = 1
+        const val TEXT_ONLY = 2
+    }
+
+    object TopTabLabelMode {
         const val ICON_AND_TEXT = 0
         const val ICON_ONLY = 1
         const val TEXT_ONLY = 2
@@ -127,6 +138,7 @@ object SettingsManager {
         val displayModeFlow = context.settingsDataStore.data.map { it[KEY_DISPLAY_MODE] ?: 0 }
         val bottomBarFloatingFlow = context.settingsDataStore.data.map { it[KEY_BOTTOM_BAR_FLOATING] ?: true }
         val bottomBarLabelModeFlow = context.settingsDataStore.data.map { it[KEY_BOTTOM_BAR_LABEL_MODE] ?: 0 }  // 默认图标+文字
+        val topTabLabelModeFlow = context.settingsDataStore.data.map { it[KEY_TOP_TAB_LABEL_MODE] ?: TopTabLabelMode.TEXT_ONLY }
         val headerBlurFlow = context.settingsDataStore.data.map { it[KEY_HEADER_BLUR_ENABLED] ?: true }
         val headerCollapseFlow = context.settingsDataStore.data.map { it[KEY_HEADER_COLLAPSE_ENABLED] ?: true } // [New]
         val bottomBarBlurFlow = context.settingsDataStore.data.map { it[KEY_BOTTOM_BAR_BLUR_ENABLED] ?: true }
@@ -146,9 +158,15 @@ object SettingsManager {
         
         val gridColumnCountFlow = context.settingsDataStore.data.map { it[KEY_GRID_COLUMN_COUNT] ?: 0 }
 
-        val layoutSettingsFlow = combine(displayModeFlow, bottomBarFloatingFlow, bottomBarLabelModeFlow, gridColumnCountFlow) { d, f, l, g -> 
-            data class Layout(val d: Int, val f: Boolean, val l: Int, val g: Int)
-            Layout(d, f, l, g)
+        val layoutSettingsFlow = combine(
+            displayModeFlow,
+            bottomBarFloatingFlow,
+            bottomBarLabelModeFlow,
+            topTabLabelModeFlow,
+            gridColumnCountFlow
+        ) { d, f, bottomMode, topMode, g ->
+            data class Layout(val d: Int, val f: Boolean, val bottomMode: Int, val topMode: Int, val g: Int)
+            Layout(d, f, bottomMode, topMode, g)
         }
         val visualSettingsFlow = combine(headerBlurFlow, headerCollapseFlow, bottomBarBlurFlow, liquidGlassFlow, liquidGlassStyleFlow) { h, c, b, l, s -> 
             data class Visual(val h: Boolean, val c: Boolean, val b: Boolean, val l: Boolean, val s: LiquidGlassStyle)
@@ -159,7 +177,8 @@ object SettingsManager {
              HomeSettings(
                 displayMode = layout.d,
                 isBottomBarFloating = layout.f,
-                bottomBarLabelMode = layout.l,
+                bottomBarLabelMode = layout.bottomMode,
+                topTabLabelMode = layout.topMode,
                 gridColumnCount = layout.g, // [New]
                 isHeaderBlurEnabled = visual.h,
                 isHeaderCollapseEnabled = visual.c, // [New]
@@ -466,6 +485,14 @@ object SettingsManager {
     suspend fun setBottomBarLabelMode(context: Context, value: Int) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_BOTTOM_BAR_LABEL_MODE] = value }
     }
+
+    //  [新增] --- 顶部标签显示模式 (0=图标+文字, 1=仅图标, 2=仅文字) ---
+    fun getTopTabLabelMode(context: Context): Flow<Int> = context.settingsDataStore.data
+        .map { preferences -> preferences[KEY_TOP_TAB_LABEL_MODE] ?: TopTabLabelMode.TEXT_ONLY }
+
+    suspend fun setTopTabLabelMode(context: Context, value: Int) {
+        context.settingsDataStore.edit { preferences -> preferences[KEY_TOP_TAB_LABEL_MODE] = value }
+    }
     
     //  [新增] --- 搜索框模糊效果 ---
     fun getHeaderBlurEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data
@@ -556,7 +583,7 @@ object SettingsManager {
     
     private const val DANMAKU_DEFAULTS_VERSION = 2
     private const val HOME_VISUAL_DEFAULTS_VERSION = 1
-    private const val DEFAULT_DANMAKU_OPACITY = 0.85f
+    private const val DEFAULT_DANMAKU_OPACITY = DANMAKU_DEFAULT_OPACITY
     private const val DEFAULT_DANMAKU_FONT_SCALE = 1.0f
     private const val DEFAULT_DANMAKU_SPEED = 1.0f
     private const val DEFAULT_DANMAKU_AREA = 0.5f
@@ -579,11 +606,13 @@ object SettingsManager {
     
     // --- 弹幕透明度 (0.0 ~ 1.0, 默认 0.85) ---
     fun getDanmakuOpacity(context: Context): Flow<Float> = context.settingsDataStore.data
-        .map { preferences -> preferences[KEY_DANMAKU_OPACITY] ?: DEFAULT_DANMAKU_OPACITY }
+        .map { preferences ->
+            normalizeDanmakuOpacity(preferences[KEY_DANMAKU_OPACITY] ?: DEFAULT_DANMAKU_OPACITY)
+        }
 
     suspend fun setDanmakuOpacity(context: Context, value: Float) {
         context.settingsDataStore.edit { preferences -> 
-            preferences[KEY_DANMAKU_OPACITY] = value.coerceIn(0.0f, 1.0f)
+            preferences[KEY_DANMAKU_OPACITY] = normalizeDanmakuOpacity(value)
         }
     }
     

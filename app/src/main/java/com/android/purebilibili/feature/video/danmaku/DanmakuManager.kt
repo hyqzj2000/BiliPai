@@ -949,13 +949,14 @@ class DanmakuManager private constructor(
                     var xmlData: ByteArray? = null
                     
                     //  [新增] 优先使用 Protobuf API (seg.so)
-                    // 如果元数据中有分段信息，可以使用它，否则使用 durationMs 估算
-                    val totalSegments = viewReply?.dmSge?.total ?: ((durationMs + 360000L - 1) / 360000L)
-                    
                     if (durationMs > 0 || viewReply != null) {
                         Log.w(TAG, " Trying Protobuf API (seg.so)...")
                         try {
-                            val fetched = com.android.purebilibili.data.repository.DanmakuRepository.getDanmakuSegments(cid, durationMs)
+                            val fetched = com.android.purebilibili.data.repository.DanmakuRepository.getDanmakuSegments(
+                                cid = cid,
+                                durationMs = durationMs,
+                                metadataSegmentCount = viewReply?.dmSge?.total?.toInt()
+                            )
                             if (fetched.isNotEmpty()) {
                                 segmentList = fetched
                             }

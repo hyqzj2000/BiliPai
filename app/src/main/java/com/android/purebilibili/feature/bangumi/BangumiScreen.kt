@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -71,6 +72,8 @@ fun BangumiScreen(
     val timelineState by viewModel.timelineState.collectAsState()
     val searchState by viewModel.searchState.collectAsState()
     val myFollowState by viewModel.myFollowState.collectAsState()
+    val myFollowType by viewModel.myFollowType.collectAsState()
+    val myFollowStats by viewModel.myFollowStats.collectAsState()
     val filter by viewModel.filter.collectAsState()
     val searchKeyword by viewModel.searchKeyword.collectAsState()
     
@@ -117,6 +120,7 @@ fun BangumiScreen(
     }
     
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
         topBar = {
             if (showSearchBar) {
                 // 搜索模式顶栏
@@ -136,31 +140,20 @@ fun BangumiScreen(
                     }
                 )
             } else {
-                // 默认顶栏
-                TopAppBar(
-                    title = { Text("番剧影视") },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(CupertinoIcons.Default.ChevronBackward, contentDescription = "返回")
+                BangumiNavigationBar(
+                    title = if (displayMode == BangumiDisplayMode.MY_FOLLOW) "我的追番/追剧" else "番剧影视",
+                    filterActive = filter != BangumiFilter(),
+                    isMyFollowMode = displayMode == BangumiDisplayMode.MY_FOLLOW,
+                    onBack = {
+                        if (displayMode == BangumiDisplayMode.MY_FOLLOW) {
+                            viewModel.setDisplayMode(BangumiDisplayMode.LIST)
+                        } else {
+                            onBack()
                         }
                     },
-                    actions = {
-                        // 搜索按钮
-                        IconButton(onClick = { showSearchBar = true }) {
-                            Icon(CupertinoIcons.Default.MagnifyingGlass, contentDescription = "搜索")
-                        }
-                        // 筛选按钮
-                        IconButton(onClick = { showFilter = !showFilter }) {
-                            Icon(
-                                CupertinoIcons.Default.ListBullet,
-                                contentDescription = "筛选",
-                                tint = if (filter != BangumiFilter()) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
+                    onSearch = { showSearchBar = true },
+                    onOpenMyFollow = { viewModel.openMyFollowEntry() },
+                    onToggleFilter = { showFilter = !showFilter }
                 )
             }
         },
@@ -172,35 +165,31 @@ fun BangumiScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .responsiveContentWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                        )
+                    )
+                )
                 //  [修复] 移除这里的底部内边距，让内容区域自己处理（如 LazyVerticalGrid 的 contentPadding）
         ) {
-            // 模式切换 Tabs (时间表/索引/追番)
-            BangumiModeTabs(
-                currentMode = displayMode,
-                onModeChange = { viewModel.setDisplayMode(it) }
-            )
+            // 模式切换 Tabs (时间表/索引)
+            if (displayMode == BangumiDisplayMode.LIST || displayMode == BangumiDisplayMode.TIMELINE) {
+                BangumiModeTabs(
+                    currentMode = displayMode,
+                    onModeChange = { viewModel.setDisplayMode(it) }
+                )
+            }
             
             // 类型选择 Tabs (仅列表模式显示)
             if (displayMode == BangumiDisplayMode.LIST) {
-                ScrollableTabRow(
-                    selectedTabIndex = types.indexOfFirst { it.value == selectedType }.coerceAtLeast(0),
-                    edgePadding = 16.dp,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    divider = {}
-                ) {
-                    types.forEach { type ->
-                        Tab(
-                            selected = type.value == selectedType,
-                            onClick = { viewModel.selectType(type.value) },
-                            text = {
-                                Text(
-                                    text = type.label,
-                                    fontWeight = if (type.value == selectedType) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                        )
-                    }
-                }
+                BangumiTypeTabs(
+                    types = types,
+                    selectedType = selectedType,
+                    onTypeSelected = { viewModel.selectType(it) }
+                )
                 
                 // 筛选器
                 if (showFilter) {
@@ -232,7 +221,10 @@ fun BangumiScreen(
                 BangumiDisplayMode.MY_FOLLOW -> {
                     MyBangumiContent(
                         myFollowState = myFollowState,
-                        onRetry = { viewModel.loadMyFollowBangumi() },
+                        followStats = myFollowStats,
+                        followType = myFollowType,
+                        onFollowTypeChange = { viewModel.selectMyFollowType(it) },
+                        onRetry = { viewModel.loadMyFollowBangumi(myFollowType) },
                         onLoadMore = { viewModel.loadMoreMyFollow() },
                         onBangumiClick = onBangumiClick
                     )
@@ -353,6 +345,113 @@ private fun BangumiSearchBar(
                     Text(
                         "搜索",
                         color = if (query.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(0.5f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BangumiNavigationBar(
+    title: String,
+    filterActive: Boolean,
+    isMyFollowMode: Boolean,
+    onBack: () -> Unit,
+    onSearch: () -> Unit,
+    onOpenMyFollow: () -> Unit,
+    onToggleFilter: () -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    val titleFontSize = resolveBangumiNavigationTitleFontSizeSp(configuration.screenWidthDp).sp
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+        shadowElevation = 2.dp
+    ) {
+        Column {
+            Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(CupertinoIcons.Default.ChevronBackward, contentDescription = "返回")
+                }
+                Text(
+                    text = title,
+                    fontSize = titleFontSize,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = onSearch) {
+                    Icon(CupertinoIcons.Default.MagnifyingGlass, contentDescription = "搜索")
+                }
+                IconButton(onClick = onOpenMyFollow) {
+                    Icon(
+                        CupertinoIcons.Default.Bookmark,
+                        contentDescription = "我的追番",
+                        tint = if (isMyFollowMode) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                    )
+                }
+                if (!isMyFollowMode) {
+                    IconButton(onClick = onToggleFilter) {
+                        Icon(
+                            CupertinoIcons.Default.ListBullet,
+                            contentDescription = "筛选",
+                            tint = if (filterActive) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(48.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BangumiTypeTabs(
+    types: List<BangumiType>,
+    selectedType: Int,
+    onTypeSelected: (Int) -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    val tabFontSize = resolveBangumiTypeTabFontSizeSp(configuration.screenWidthDp).sp
+
+    Surface(color = MaterialTheme.colorScheme.surface) {
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            items(types, key = { it.value }) { type ->
+                val selected = type.value == selectedType
+                Column(
+                    modifier = Modifier
+                        .clickable { onTypeSelected(type.value) }
+                        .padding(top = 10.dp, bottom = 2.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = type.label,
+                        fontSize = tabFontSize,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .height(3.dp)
+                            .width(28.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
+                            )
                     )
                 }
             }

@@ -245,6 +245,8 @@ object BangumiRepository {
         filter: BangumiFilter = BangumiFilter()
     ): Result<BangumiIndexData> = withContext(Dispatchers.IO) {
         try {
+            val year = filter.toApiYear(seasonType)
+            val releaseDate = filter.toApiReleaseDate(seasonType)
             val response = api.getBangumiIndex(
                 seasonType = seasonType,
                 st = seasonType,
@@ -253,7 +255,8 @@ object BangumiRepository {
                 order = filter.order,
                 area = filter.area,
                 isFinish = filter.isFinish,
-                year = filter.year,
+                year = year,
+                releaseDate = releaseDate,
                 styleId = filter.styleId,
                 seasonStatus = filter.seasonStatus
             )

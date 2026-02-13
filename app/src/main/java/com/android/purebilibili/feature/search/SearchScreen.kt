@@ -84,6 +84,7 @@ fun SearchScreen(
     onBack: () -> Unit,
     onVideoClick: (String, Long) -> Unit,
     onUpClick: (Long) -> Unit,  //  点击UP主跳转到空间
+    onBangumiClick: (Long) -> Unit, //  点击番剧/影视跳转详情
     onLiveClick: (Long, String, String) -> Unit, // [新增] 直播点击
     onAvatarClick: () -> Unit
 ) {
@@ -358,8 +359,9 @@ fun SearchScreen(
                                     }
                                 }
                             }
-                            com.android.purebilibili.data.model.response.SearchType.BANGUMI -> {
-                                //  番剧搜索结果
+                            com.android.purebilibili.data.model.response.SearchType.BANGUMI,
+                            com.android.purebilibili.data.model.response.SearchType.MEDIA_FT -> {
+                                //  番剧/影视搜索结果
                                 LazyColumn(
                                     contentPadding = PaddingValues(top = contentTopPadding + 8.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
                                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -389,7 +391,11 @@ fun SearchScreen(
                                     itemsIndexed(state.bangumiResults) { index, bangumiItem ->
                                         BangumiSearchResultCard(
                                             item = bangumiItem,
-                                            onClick = { /* TODO: Navigate to bangumi detail */ }
+                                            onClick = {
+                                                if (bangumiItem.seasonId > 0) {
+                                                    onBangumiClick(bangumiItem.seasonId)
+                                                }
+                                            }
                                         )
                                         if (index == state.bangumiResults.size - 3 && state.hasMoreResults && !state.isLoadingMore) {
                                             LaunchedEffect(state.currentPage, state.searchType) {
@@ -1155,6 +1161,7 @@ fun SearchFilterBar(
                 com.android.purebilibili.data.model.response.SearchType.VIDEO to "视频",
                 com.android.purebilibili.data.model.response.SearchType.UP to "UP主",
                 com.android.purebilibili.data.model.response.SearchType.BANGUMI to "番剧",
+                com.android.purebilibili.data.model.response.SearchType.MEDIA_FT to "影视",
                 com.android.purebilibili.data.model.response.SearchType.LIVE to "直播"
             ).forEach { (type, label) ->
                 val isSelected = currentType == type

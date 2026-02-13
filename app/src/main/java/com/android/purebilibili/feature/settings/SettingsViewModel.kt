@@ -377,7 +377,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 "icon_blue" to "${packageName}.MainActivityAliasBlue",
                 "icon_neon" to "${packageName}.MainActivityAliasNeon",
                 "icon_retro" to "${packageName}.MainActivityAliasRetro",
-                "icon_3d" to "${packageName}.MainActivityAlias3D",
+                "icon_3d" to "${packageName}.MainActivityAlias3DLauncher",
                 // 特色系列
                 "icon_anime" to "${packageName}.MainActivityAliasAnime",
                 "icon_flat" to "${packageName}.MainActivityAliasFlat",
@@ -391,7 +391,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 "Anime" to "${packageName}.MainActivityAliasAnime",
                 "Tv" to "${packageName}.MainActivityAliasTv",
                 "Headphone" to "${packageName}.MainActivityAliasHeadphone",
-                "3D" to "${packageName}.MainActivityAlias3D",
+                "3D" to "${packageName}.MainActivityAlias3DLauncher",
                 "Blue" to "${packageName}.MainActivityAliasBlue",
                 "Retro" to "${packageName}.MainActivityAliasRetro",
                 "Flat" to "${packageName}.MainActivityAliasFlat",
@@ -401,10 +401,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             
             // 找到需要启用的 alias
             val targetAlias = allAliases.find { it.first == iconKey }?.second
-                ?: "${packageName}.MainActivityAlias3D" // 默认 3D 图标
+                ?: "${packageName}.MainActivityAlias3DLauncher" // 默认 3D 图标
             
             // [修复] 获取所有唯一的 alias 名称（去重，因为向后兼容映射可能有重复）
             val allUniqueAliases = allAliases.map { it.second }.distinct()
+            val compatAlias = "${packageName}.MainActivityAlias3D"
             
             android.util.Log.d("SettingsViewModel", "Switching icon to: $iconKey -> $targetAlias")
             
@@ -418,13 +419,21 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                     android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                     android.content.pm.PackageManager.DONT_KILL_APP
                 )
+                // 保留兼容入口（无 Launcher 图标），避免历史 IDE 运行配置启动失败
+                pm.setComponentEnabledSetting(
+                    android.content.ComponentName(packageName, compatAlias),
+                    android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                    android.content.pm.PackageManager.DONT_KILL_APP
+                )
                 android.util.Log.d("SettingsViewModel", "Enabled alias: $targetAlias")
                 
                 // 第二步：短暂延迟，让启动器处理启用操作
                 kotlinx.coroutines.delay(300)
                 
                 // 第三步：禁用所有其他 alias
-                allUniqueAliases.filter { it != targetAlias }.forEach { aliasFullName ->
+                allUniqueAliases
+                    .filter { it != targetAlias }
+                    .forEach { aliasFullName ->
                     try {
                         pm.setComponentEnabledSetting(
                             android.content.ComponentName(packageName, aliasFullName),

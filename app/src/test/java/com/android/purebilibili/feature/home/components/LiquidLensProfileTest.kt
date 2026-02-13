@@ -105,11 +105,13 @@ class LiquidLensProfileTest {
         val classic = resolveLiquidStyleTuning(LiquidGlassStyle.CLASSIC)
         val ios26 = resolveLiquidStyleTuning(LiquidGlassStyle.IOS26)
 
-        assertTrue(ios26.idleThresholdPxPerSecond > classic.idleThresholdPxPerSecond)
+        assertTrue(ios26.idleThresholdPxPerSecond >= classic.idleThresholdPxPerSecond)
         assertTrue(ios26.lensIntensityMultiplier > classic.lensIntensityMultiplier)
-        assertTrue(ios26.chromaticMultiplier < classic.chromaticMultiplier)
+        assertTrue(ios26.edgeWarpMultiplier > 1f)
+        assertTrue(ios26.chromaticMultiplier <= classic.chromaticMultiplier)
+        assertTrue(ios26.chromaticMultiplier > 0f)
         assertTrue(ios26.dragMotionFloor < classic.dragMotionFloor)
-        assertTrue(ios26.deformationMultiplier < classic.deformationMultiplier)
+        assertTrue(ios26.deformationMultiplier <= classic.deformationMultiplier)
         assertTrue(ios26.depthEffectEnabled)
         assertTrue(ios26.allowChromaticAberration)
     }

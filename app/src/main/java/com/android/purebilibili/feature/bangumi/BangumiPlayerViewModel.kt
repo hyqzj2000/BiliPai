@@ -53,6 +53,11 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
     
     private var currentSeasonId: Long = 0
     private var currentEpId: Long = 0
+
+    //  [修复] 与详情页保持一致的追番状态缓存
+    private val followStatusCache = mutableMapOf<Long, Boolean>()
+    private val followedSeasonIds = mutableSetOf<Long>()
+    private val loadedFollowTypes = mutableSetOf<Int>()
     
     //  [重构] 覆盖基类的空降跳过回调，显示 toast
     override fun onSponsorSkipped(segment: SponsorSegment) {
@@ -68,6 +73,13 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
                 // 播放完成，自动播放下一集
                 playNextEpisode()
             }
+        }
+    }
+
+    init {
+        viewModelScope.launch {
+            ensureFollowedSeasonsLoaded(MY_FOLLOW_TYPE_BANGUMI)
+            ensureFollowedSeasonsLoaded(MY_FOLLOW_TYPE_CINEMA)
         }
     }
     
@@ -168,6 +180,7 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
             // 解析播放地址
             var videoUrl: String? = null
             var audioUrl: String? = null
+            var durlSegmentUrls: List<String> = emptyList()
             
             if (playData.dash != null) {
                 // DASH 格式
@@ -192,21 +205,24 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
                 
                 com.android.purebilibili.core.util.Logger.d("BangumiPlayerVM", " DASH: video=${videoUrl?.take(60)}..., audio=${audioUrl?.take(40)}...")
                 
-            } else if (!playData.durl.isNullOrEmpty()) {
-                // FLV/MP4 格式
-                val durl = playData.durl.first()
-                videoUrl = durl.url
-                //  [优化] durl 也有备用 URL
-                val backupUrls = durl.backup_url
-                if (videoUrl.isNullOrEmpty() && !backupUrls.isNullOrEmpty()) {
-                    videoUrl = backupUrls.firstOrNull()
-                }
-                audioUrl = null
-                com.android.purebilibili.core.util.Logger.d("BangumiPlayerVM", "📹 DURL: url=${videoUrl?.take(60)}...")
             } else {
-                com.android.purebilibili.core.util.Logger.e("BangumiPlayerVM", "❌ No dash or durl in response!")
-                _uiState.value = BangumiPlayerState.Error("无法获取播放地址：服务器未返回视频流")
-                return
+                // FLV/MP4 格式
+                durlSegmentUrls = collectPlayableDurlUrls(
+                    when {
+                        !playData.durl.isNullOrEmpty() -> playData.durl
+                        !playData.durls.isNullOrEmpty() -> playData.durls
+                        else -> null
+                    }
+                )
+                if (durlSegmentUrls.isNotEmpty()) {
+                    videoUrl = durlSegmentUrls.first()
+                    audioUrl = null
+                    com.android.purebilibili.core.util.Logger.d("BangumiPlayerVM", "📹 DURL: segments=${durlSegmentUrls.size}, first=${videoUrl?.take(60)}...")
+                } else {
+                    com.android.purebilibili.core.util.Logger.e("BangumiPlayerVM", "❌ No dash or durl in response!")
+                    _uiState.value = BangumiPlayerState.Error("无法获取播放地址：服务器未返回视频流")
+                    return
+                }
             }
             
             if (videoUrl.isNullOrEmpty()) {
@@ -214,8 +230,36 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
                 return
             }
             
+            val realSeasonId = detail.seasonId
+            val followType = defaultMyFollowTypeForSeasonType(detail.seasonType)
+            if (!loadedFollowTypes.contains(followType)) {
+                ensureFollowedSeasonsLoaded(followType)
+            }
+            val isFollowed = when {
+                followStatusCache.containsKey(realSeasonId) -> followStatusCache[realSeasonId] == true
+                followedSeasonIds.contains(realSeasonId) -> true
+                else -> isBangumiFollowed(detail.userStatus)
+            }
+            followStatusCache[realSeasonId] = isFollowed
+            if (isFollowed) {
+                followedSeasonIds.add(realSeasonId)
+            }
+            val correctedDetail = detail.copy(
+                userStatus = detail.userStatus?.copy(
+                    follow = if (isFollowed) 1 else 0,
+                    followStatus = if (isFollowed) {
+                        maxOf(detail.userStatus?.followStatus ?: 0, 1)
+                    } else {
+                        0
+                    }
+                ) ?: UserStatus(
+                    follow = if (isFollowed) 1 else 0,
+                    followStatus = if (isFollowed) 1 else 0
+                )
+            )
+
             _uiState.value = BangumiPlayerState.Success(
-                seasonDetail = detail,
+                seasonDetail = correctedDetail,
                 currentEpisode = episode,
                 currentEpisodeIndex = episodeIndex,
                 playUrl = videoUrl,
@@ -235,8 +279,12 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
             val referer = "https://www.bilibili.com/bangumi/play/ep${episode.id}"
             com.android.purebilibili.core.util.Logger.d("BangumiPlayerVM", "🔗 Using Referer: $referer")
             
-            //  [重构] 使用基类方法播放视频
-            playDashVideo(videoUrl, audioUrl, referer = referer)
+            //  [修复] 多段 durl 使用拼接播放，避免只播第一段
+            if (audioUrl.isNullOrEmpty() && durlSegmentUrls.size > 1) {
+                playSegmentedVideo(durlSegmentUrls, referer = referer)
+            } else {
+                playDashVideo(videoUrl, audioUrl, referer = referer)
+            }
             
             //  [重构] 使用基类方法加载弹幕
             //  UI 层 (BangumiPlayerScreen) 已经通过 DanmakuManager 加载了弹幕，此处无需重复加载
@@ -299,6 +347,7 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
             playUrlResult.onSuccess { playData ->
                 val videoUrl: String?
                 val audioUrl: String?
+                val durlSegmentUrls: List<String>
                 
                 if (playData.dash != null) {
                     //  [修复] 优先使用 AVC 编码，确保所有设备都能解码
@@ -306,11 +355,17 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
                     val audio = playData.dash.getBestAudio()
                     videoUrl = video?.getValidUrl()
                     audioUrl = audio?.getValidUrl()
-                } else if (!playData.durl.isNullOrEmpty()) {
-                    videoUrl = playData.durl.firstOrNull()?.url
-                    audioUrl = null
+                    durlSegmentUrls = emptyList()
                 } else {
-                    return@onSuccess
+                    durlSegmentUrls = collectPlayableDurlUrls(
+                        when {
+                            !playData.durl.isNullOrEmpty() -> playData.durl
+                            !playData.durls.isNullOrEmpty() -> playData.durls
+                            else -> null
+                        }
+                    )
+                    videoUrl = durlSegmentUrls.firstOrNull()
+                    audioUrl = null
                 }
                 
                 if (videoUrl.isNullOrEmpty()) return@onSuccess
@@ -323,7 +378,16 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
                 
                 //  [修复] 切换清晰度时使用 resetPlayer=false 减少闪烁，并传入 Referer
                 val referer = "https://www.bilibili.com/bangumi/play/ep${currentState.currentEpisode.id}"
-                playDashVideo(videoUrl, audioUrl, currentPos, resetPlayer = false, referer = referer)
+                if (audioUrl.isNullOrEmpty() && durlSegmentUrls.size > 1) {
+                    playSegmentedVideo(
+                        segmentUrls = durlSegmentUrls,
+                        seekToMs = currentPos,
+                        resetPlayer = false,
+                        referer = referer
+                    )
+                } else {
+                    playDashVideo(videoUrl, audioUrl, currentPos, resetPlayer = false, referer = referer)
+                }
             }
         }
     }
@@ -333,20 +397,36 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
      */
     fun toggleFollow() {
         val currentState = _uiState.value as? BangumiPlayerState.Success ?: return
-        val isFollowing = currentState.seasonDetail.userStatus?.follow == 1
+        val seasonId = currentState.seasonDetail.seasonId
+        val isFollowing = isBangumiFollowed(currentState.seasonDetail.userStatus)
         
         viewModelScope.launch {
             val result = if (isFollowing) {
-                BangumiRepository.unfollowBangumi(currentState.seasonDetail.seasonId)
+                BangumiRepository.unfollowBangumi(seasonId)
             } else {
-                BangumiRepository.followBangumi(currentState.seasonDetail.seasonId)
+                BangumiRepository.followBangumi(seasonId)
             }
             
             if (result.isSuccess) {
                 //  [修复] 立即更新本地状态，不等待重新获取
-                val newFollowStatus = if (isFollowing) 0 else 1
-                val updatedUserStatus = currentState.seasonDetail.userStatus?.copy(follow = newFollowStatus)
-                    ?: com.android.purebilibili.data.model.response.UserStatus(follow = newFollowStatus)
+                val newIsFollowing = !isFollowing
+                followStatusCache[seasonId] = newIsFollowing
+                if (newIsFollowing) {
+                    followedSeasonIds.add(seasonId)
+                } else {
+                    followedSeasonIds.remove(seasonId)
+                }
+                val updatedUserStatus = currentState.seasonDetail.userStatus?.copy(
+                    follow = if (newIsFollowing) 1 else 0,
+                    followStatus = if (newIsFollowing) {
+                        maxOf(currentState.seasonDetail.userStatus?.followStatus ?: 0, 1)
+                    } else {
+                        0
+                    }
+                ) ?: UserStatus(
+                    follow = if (newIsFollowing) 1 else 0,
+                    followStatus = if (newIsFollowing) 1 else 0
+                )
                 val updatedDetail = currentState.seasonDetail.copy(userStatus = updatedUserStatus)
                 _uiState.value = currentState.copy(seasonDetail = updatedDetail)
                 
@@ -363,5 +443,17 @@ class BangumiPlayerViewModel : BasePlayerViewModel() {
      */
     fun retry() {
         loadBangumiPlay(currentSeasonId, currentEpId)
+    }
+
+    private suspend fun ensureFollowedSeasonsLoaded(type: Int): Int {
+        if (loadedFollowTypes.contains(type)) return 0
+        val preloadResult = preloadFollowedSeasonsForType(
+            type = type,
+            followedSeasonIds = followedSeasonIds
+        )
+        if (preloadResult.requestSucceeded) {
+            loadedFollowTypes.add(type)
+        }
+        return preloadResult.total
     }
 }

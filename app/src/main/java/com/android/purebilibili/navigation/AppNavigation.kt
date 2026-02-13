@@ -799,6 +799,11 @@ fun AppNavigation(
                     onBack = { navController.popBackStack() },
                     onVideoClick = { bvid, cid -> navigateToVideo(bvid, cid, "") },
                     onUpClick = { mid -> navController.navigate(ScreenRoutes.Space.createRoute(mid)) },  //  点击UP主跳转到空间
+                    onBangumiClick = { seasonId ->
+                        if (canNavigate() && seasonId > 0) {
+                            navController.navigate(ScreenRoutes.BangumiDetail.createRoute(seasonId))
+                        }
+                    },
                     onLiveClick = { roomId, title, uname ->
                         if (canNavigate()) navController.navigate(ScreenRoutes.Live.createRoute(roomId, title, uname))
                     },
@@ -1127,9 +1132,9 @@ fun AppNavigation(
                 seasonId = seasonId,
                 epId = epId,
                 onBack = { navController.popBackStack() },
-                onEpisodeClick = { episode ->
+                onEpisodeClick = { actionSeasonId, episode ->
                     //  [修改] 跳转到番剧播放页
-                    navController.navigate(ScreenRoutes.BangumiPlayer.createRoute(seasonId, episode.id))
+                    navController.navigate(ScreenRoutes.BangumiPlayer.createRoute(actionSeasonId, episode.id))
                 },
                 onSeasonClick = { newSeasonId ->
                     //  切换到其他季度（替换当前页面）
@@ -1156,7 +1161,8 @@ fun AppNavigation(
             com.android.purebilibili.feature.bangumi.BangumiPlayerScreen(
                 seasonId = seasonId,
                 epId = epId,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigateToLogin = { navController.navigate(ScreenRoutes.Login.route) }
             )
         }
         

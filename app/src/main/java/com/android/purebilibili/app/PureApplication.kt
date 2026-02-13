@@ -102,6 +102,7 @@ class PureApplication : Application(), ImageLoaderFactory, ComponentCallbacks2 {
         com.android.purebilibili.data.repository.VideoRepository.init(this) //  [新增] 初始化 VideoRepo
         BackgroundManager.init(this)  // 📱 后台状态管理
         com.android.purebilibili.core.store.PlayerSettingsCache.init(this) // 🎬 [新增] 播放器设置缓存
+        com.android.purebilibili.feature.video.player.PlaylistManager.init(this) // 🎵 [新增] 恢复播放队列状态
         
         createNotificationChannel()
         
@@ -309,6 +310,7 @@ class PureApplication : Application(), ImageLoaderFactory, ComponentCallbacks2 {
             try {
                 val pm = packageManager
                 val packageName = this@PureApplication.packageName
+                val compatAlias = android.content.ComponentName(packageName, "${packageName}.MainActivityAlias3D")
                 
                 // 读取用户保存的图标偏好
                 val currentIcon = SettingsManager.getAppIcon(this@PureApplication).first()
@@ -317,7 +319,7 @@ class PureApplication : Application(), ImageLoaderFactory, ComponentCallbacks2 {
                 val allAliases = listOf(
                     // 默认系列
                     "default" to "${packageName}.MainActivityAliasYuki", // 默认使用 Yuki (兼容旧逻辑 if "default" passed)
-                    "icon_3d" to "${packageName}.MainActivityAlias3D",
+                    "icon_3d" to "${packageName}.MainActivityAlias3DLauncher",
                     "icon_blue" to "${packageName}.MainActivityAliasBlue",
                     "icon_neon" to "${packageName}.MainActivityAliasNeon",
                     "icon_retro" to "${packageName}.MainActivityAliasRetro",
@@ -335,7 +337,7 @@ class PureApplication : Application(), ImageLoaderFactory, ComponentCallbacks2 {
                     "Anime" to "${packageName}.MainActivityAliasAnime",
                     "Tv" to "${packageName}.MainActivityAliasTv",
                     "Headphone" to "${packageName}.MainActivityAliasHeadphone",
-                    "3D" to "${packageName}.MainActivityAlias3D",
+                    "3D" to "${packageName}.MainActivityAlias3DLauncher",
                     "Blue" to "${packageName}.MainActivityAliasBlue",
                     "Retro" to "${packageName}.MainActivityAliasRetro",
                     "Flat" to "${packageName}.MainActivityAliasFlat",
@@ -345,10 +347,17 @@ class PureApplication : Application(), ImageLoaderFactory, ComponentCallbacks2 {
                 //  [重装检测] 检查目标alias是否可用
                 // 找到需要启用的 alias
                 val targetAlias = allAliases.find { it.first == currentIcon }?.second
-                    ?: "${packageName}.MainActivityAlias3D" // 默认改用 3D 图标
+                    ?: "${packageName}.MainActivityAlias3DLauncher" // 默认改用 3D 图标
                 
                 val targetAliasComponent = android.content.ComponentName(packageName, targetAlias)
                 val targetState = pm.getComponentEnabledSetting(targetAliasComponent)
+
+                // 保留兼容入口（无 Launcher 图标），确保旧 IDE 运行配置可用
+                pm.setComponentEnabledSetting(
+                    compatAlias,
+                    android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                    android.content.pm.PackageManager.DONT_KILL_APP
+                )
                 
                 // 如果目标alias是disabled（说明之前被禁用了，可能是重装），强制重置为默认(icon_3d)
                 if (currentIcon != "icon_3d" && targetState == android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
@@ -357,14 +366,14 @@ class PureApplication : Application(), ImageLoaderFactory, ComponentCallbacks2 {
                     SettingsManager.setAppIcon(this@PureApplication, "icon_3d")
                     
                     // 确保 3D 图标被启用
-                    val aliasDefault = android.content.ComponentName(packageName, "${packageName}.MainActivityAlias3D")
+                    val aliasDefault = android.content.ComponentName(packageName, "${packageName}.MainActivityAlias3DLauncher")
                     pm.setComponentEnabledSetting(
                         aliasDefault,
                         android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                         android.content.pm.PackageManager.DONT_KILL_APP
                     )
                     // 禁用其他所有alias
-                    allAliases.filter { it.second != "${packageName}.MainActivityAlias3D" }.forEach { (_, aliasFullName) ->
+                    allAliases.filter { it.second != "${packageName}.MainActivityAlias3DLauncher" }.forEach { (_, aliasFullName) ->
                         pm.setComponentEnabledSetting(
                             android.content.ComponentName(packageName, aliasFullName),
                             android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED,

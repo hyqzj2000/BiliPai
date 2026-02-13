@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.ConcatenatingMediaSource
 import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.android.purebilibili.core.network.NetworkModule
@@ -197,19 +198,7 @@ abstract class BasePlayerViewModel : ViewModel() {
         
         player.volume = 1.0f
         
-        val headers = mapOf(
-            "Referer" to referer,
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        )
-        val dataSourceFactory = OkHttpDataSource.Factory(NetworkModule.okHttpClient)
-            .setDefaultRequestProperties(headers)
-        
-        //  [修复] 使用 DefaultExtractorsFactory 支持 B站的 fMP4/m4s 格式
-        //  B站的 DASH 视频是 fragmented MP4 (.m4s)，需要正确的 extractor
-        val extractorsFactory = androidx.media3.extractor.DefaultExtractorsFactory()
-            .setConstantBitrateSeekingEnabled(true)  // 启用恒定比特率 seeking
-        
-        val mediaSourceFactory = ProgressiveMediaSource.Factory(dataSourceFactory, extractorsFactory)
+        val mediaSourceFactory = buildProgressiveMediaSourceFactory(referer)
         
         val videoSource = mediaSourceFactory.createMediaSource(MediaItem.fromUri(videoUrl))
         
@@ -228,6 +217,63 @@ abstract class BasePlayerViewModel : ViewModel() {
         }
         player.playWhenReady = true
         com.android.purebilibili.core.util.Logger.d(TAG, "✅ playDashVideo: Player prepared and started, playWhenReady=true")
+    }
+
+    /**
+     * 播放分段 durl 视频（多段 MP4）
+     */
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    protected fun playSegmentedVideo(
+        segmentUrls: List<String>,
+        seekToMs: Long = 0L,
+        resetPlayer: Boolean = true,
+        referer: String = "https://www.bilibili.com"
+    ) {
+        val player = exoPlayer ?: return
+        val cleanUrls = segmentUrls.filter { it.isNotBlank() }
+        if (cleanUrls.isEmpty()) return
+
+        if (cleanUrls.size == 1) {
+            playDashVideo(
+                videoUrl = cleanUrls.first(),
+                audioUrl = null,
+                seekToMs = seekToMs,
+                resetPlayer = resetPlayer,
+                referer = referer
+            )
+            return
+        }
+
+        player.volume = 1.0f
+        val mediaSourceFactory = buildProgressiveMediaSourceFactory(referer)
+        val concatenated = ConcatenatingMediaSource().apply {
+            cleanUrls.forEach { url ->
+                addMediaSource(mediaSourceFactory.createMediaSource(MediaItem.fromUri(url)))
+            }
+        }
+
+        player.setMediaSource(concatenated, resetPlayer)
+        player.prepare()
+        if (seekToMs > 0) {
+            player.seekTo(seekToMs)
+        }
+        player.playWhenReady = true
+        com.android.purebilibili.core.util.Logger.d(TAG, "✅ playSegmentedVideo: segmentCount=${cleanUrls.size}, seekTo=${seekToMs}ms")
+    }
+
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    private fun buildProgressiveMediaSourceFactory(referer: String): ProgressiveMediaSource.Factory {
+        val headers = mapOf(
+            "Referer" to referer,
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        )
+        val dataSourceFactory = OkHttpDataSource.Factory(NetworkModule.okHttpClient)
+            .setDefaultRequestProperties(headers)
+
+        // B站分段与 DASH 常用 fMP4/m4s，需要显式 extractor 配置保证可播
+        val extractorsFactory = androidx.media3.extractor.DefaultExtractorsFactory()
+            .setConstantBitrateSeekingEnabled(true)
+        return ProgressiveMediaSource.Factory(dataSourceFactory, extractorsFactory)
     }
     
     /**

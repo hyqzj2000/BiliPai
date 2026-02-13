@@ -81,7 +81,14 @@ class VideoPlaybackUseCase(
 
     companion object {
         private val STANDARD_LOW_QUALITIES = listOf(32, 16)
+        private const val API_ONLY_HIGH_QUALITY_FLOOR = 112
     }
+
+    internal data class QualityMergeResult(
+        val switchableQualities: List<Int>,
+        val apiOnlyHighQualities: List<Int>,
+        val mergedQualityIds: List<Int>
+    )
     
     private var exoPlayer: ExoPlayer? = null
     
@@ -275,14 +282,8 @@ class VideoPlaybackUseCase(
                     val apiQualities = playData.accept_quality ?: emptyList()
                     val dashVideoIds = playData.dash?.video?.map { it.id }?.distinct() ?: emptyList()
 
-                    val switchableQualities = if (dashVideoIds.isNotEmpty()) {
-                        dashVideoIds
-                    } else {
-                        apiQualities
-                    }
-                    val mergedQualityIds = (switchableQualities + STANDARD_LOW_QUALITIES)
-                        .distinct()
-                        .sortedDescending()
+                    val qualityMergeResult = mergeQualityOptions(apiQualities, dashVideoIds)
+                    val mergedQualityIds = qualityMergeResult.mergedQualityIds
                     
                     //  [修复] 生成对应的画质标签 - 使用更短的名称确保竖屏显示完整
                     val qualityLabelMap = mapOf(
@@ -304,7 +305,7 @@ class VideoPlaybackUseCase(
                     
                     Logger.d(
                         "VideoPlaybackUseCase",
-                        " Quality merge: api=$apiQualities, dash=$dashVideoIds, switchable=$switchableQualities, merged=$mergedQualityIds"
+                        " Quality merge: api=$apiQualities, dash=$dashVideoIds, switchable=${qualityMergeResult.switchableQualities}, apiOnlyHigh=${qualityMergeResult.apiOnlyHighQualities}, merged=$mergedQualityIds"
                     )
                     
                     // Check user interaction status
@@ -569,5 +570,29 @@ class VideoPlaybackUseCase(
             ?: playData.durl?.firstOrNull()?.url?.takeIf { it.isNotEmpty() }
             ?: playData.durl?.firstOrNull()?.backupUrl?.firstOrNull()
             ?: ""
+    }
+
+    internal fun mergeQualityOptions(
+        apiQualities: List<Int>,
+        dashVideoIds: List<Int>
+    ): QualityMergeResult {
+        val normalizedApi = apiQualities.distinct().sortedDescending()
+        val normalizedDash = dashVideoIds.distinct().sortedDescending()
+        val switchableQualities = if (normalizedDash.isNotEmpty()) normalizedDash else normalizedApi
+
+        // Keep API-only high tiers visible (4K/1080P60/1080P+) so users can trigger re-fetch switching.
+        val apiOnlyHighQualities = normalizedApi.filter { qualityId ->
+            qualityId >= API_ONLY_HIGH_QUALITY_FLOOR && qualityId !in normalizedDash
+        }
+
+        val mergedQualityIds = (switchableQualities + apiOnlyHighQualities + STANDARD_LOW_QUALITIES)
+            .distinct()
+            .sortedDescending()
+
+        return QualityMergeResult(
+            switchableQualities = switchableQualities,
+            apiOnlyHighQualities = apiOnlyHighQualities,
+            mergedQualityIds = mergedQualityIds
+        )
     }
 }

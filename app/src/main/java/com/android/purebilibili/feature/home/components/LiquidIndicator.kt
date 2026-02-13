@@ -18,6 +18,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -534,28 +535,31 @@ private fun DrawScope.drawLiquidSphereSurface(
     val isMoving = lensProfile.shouldRefract
 
     if (style == LiquidGlassStyle.IOS26) {
-        // iOS26 目标：让真实内容折射主导，表面覆盖尽量轻，避免“脏色”。
-        drawRect(baseColor.copy(alpha = if (isMoving) 0.06f else 0.075f))
+        // iOS26: neutral gray capsule with slightly stronger visibility.
+        drawRect(baseColor.copy(alpha = if (isMoving) 0.09f else 0.11f))
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    Color.White.copy(alpha = if (isMoving) 0.10f else 0.08f),
+                    Color.White.copy(alpha = if (isMoving) 0.13f else 0.10f),
                     Color.Transparent,
-                    Color.Black.copy(alpha = if (isMoving) 0.05f else 0.03f)
+                    Color.Black.copy(alpha = if (isMoving) 0.04f else 0.03f)
                 )
             )
         )
 
-        val ringAlpha = if (isMoving) 0.14f else 0.09f
+        val ringAlpha = if (isMoving) 0.22f else 0.16f
         val ringStroke = (size.minDimension * 0.05f).coerceAtLeast(1f)
+        val ringHighlight = lerp(baseColor, Color.White, 0.48f).copy(alpha = ringAlpha)
+        val ringMid = lerp(baseColor, Color.White, 0.22f).copy(alpha = ringAlpha * 0.86f)
+        val ringShadow = lerp(baseColor, Color.Black, 0.24f).copy(alpha = ringAlpha * 0.70f)
         drawRoundRect(
             brush = Brush.sweepGradient(
                 colors = listOf(
-                    Color(0xFF87BFFF).copy(alpha = ringAlpha),
-                    Color(0xFF94E6E0).copy(alpha = ringAlpha * 0.8f),
-                    Color(0xFFFFB889).copy(alpha = ringAlpha * 0.72f),
-                    Color(0xFFA7A8FF).copy(alpha = ringAlpha * 0.76f),
-                    Color(0xFF87BFFF).copy(alpha = ringAlpha)
+                    ringHighlight,
+                    ringMid,
+                    ringShadow,
+                    ringMid,
+                    ringHighlight
                 ),
                 center = Offset(size.width / 2f, size.height / 2f)
             ),

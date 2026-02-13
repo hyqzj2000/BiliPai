@@ -6,6 +6,12 @@ internal data class EyeCareTuning(
     val reminderIntervalMinutes: Int
 )
 
+internal data class EyeVisualState(
+    val isActive: Boolean,
+    val brightnessLevel: Float,
+    val warmFilterStrength: Float
+)
+
 internal fun isWithinProtectionWindow(
     currentHour: Int,
     startHour: Int,
@@ -48,6 +54,49 @@ internal fun isVisualEffectActive(
         startHour = startHour,
         endHour = endHour
     )
+}
+
+internal fun resolveEyeVisualState(
+    settingsPreviewEnabled: Boolean,
+    forceEnabled: Boolean,
+    nightModeEnabled: Boolean,
+    currentHour: Int,
+    startHour: Int,
+    endHour: Int,
+    brightnessLevel: Float,
+    warmFilterStrength: Float
+): EyeVisualState {
+    val clampedBrightness = brightnessLevel.coerceIn(0.3f, 1.0f)
+    val clampedWarmFilter = warmFilterStrength.coerceIn(0f, 0.5f)
+
+    if (settingsPreviewEnabled) {
+        return EyeVisualState(
+            isActive = true,
+            brightnessLevel = clampedBrightness,
+            warmFilterStrength = clampedWarmFilter
+        )
+    }
+
+    val active = isVisualEffectActive(
+        forceEnabled = forceEnabled,
+        nightModeEnabled = nightModeEnabled,
+        currentHour = currentHour,
+        startHour = startHour,
+        endHour = endHour
+    )
+    return if (active) {
+        EyeVisualState(
+            isActive = true,
+            brightnessLevel = clampedBrightness,
+            warmFilterStrength = clampedWarmFilter
+        )
+    } else {
+        EyeVisualState(
+            isActive = false,
+            brightnessLevel = 1.0f,
+            warmFilterStrength = 0f
+        )
+    }
 }
 
 internal fun tuningForPreset(preset: EyeCarePreset): EyeCareTuning {

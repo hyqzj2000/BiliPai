@@ -202,9 +202,9 @@
             </intent-filter>
         </activity-alias>
 
-        <!-- 3D (默认) -->
+        <!-- 3D Launcher (默认图标入口) -->
         <activity-alias
-            android:name=".MainActivityAlias3D"
+            android:name=".MainActivityAlias3DLauncher"
             android:enabled="true"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_3d"
@@ -220,6 +220,13 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity-alias>
+
+        <!-- 兼容入口：保留旧类名供 IDE/历史运行配置启动，不在 Launcher 显示 -->
+        <activity-alias
+            android:name=".MainActivityAlias3D"
+            android:enabled="true"
+            android:exported="true"
+            android:targetActivity=".MainActivity" />
 
         <activity-alias
             android:name=".MainActivityAliasBlue"

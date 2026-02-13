@@ -1,12 +1,14 @@
 package com.android.purebilibili.feature.home.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -14,6 +16,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -25,29 +28,24 @@ import com.android.purebilibili.core.theme.iOSGreen
 import com.android.purebilibili.core.theme.iOSPink
 import com.android.purebilibili.core.theme.iOSYellow
 import com.android.purebilibili.core.ui.components.IOSClickableItem
+import com.android.purebilibili.core.ui.blur.unifiedBlur
 import com.android.purebilibili.feature.home.UserState
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import dev.chrisbanes.haze.materials.HazeMaterials
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
+import io.github.alexzhirkevich.cupertino.icons.filled.Tv
 import io.github.alexzhirkevich.cupertino.icons.outlined.ArrowDownCircle
 import io.github.alexzhirkevich.cupertino.icons.outlined.Bookmark
 import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronForward
 import io.github.alexzhirkevich.cupertino.icons.outlined.Clock
 import io.github.alexzhirkevich.cupertino.icons.outlined.Envelope
 import io.github.alexzhirkevich.cupertino.icons.outlined.RectanglePortraitAndArrowForward
-import io.github.alexzhirkevich.cupertino.icons.outlined.Drop
-import com.android.purebilibili.core.ui.components.IOSSwitchItem
 import kotlinx.coroutines.launch
 
 /**
  * 首页侧边栏 - 优化版 (带毛玻璃效果)
  * 采用更紧凑的布局和更现代的视觉风格
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MineSideDrawer(
     drawerState: DrawerState,
@@ -55,6 +53,7 @@ fun MineSideDrawer(
     onLogout: () -> Unit,
     onHistoryClick: () -> Unit,
     onFavoriteClick: () -> Unit,
+    onBangumiClick: () -> Unit,
     onDownloadClick: () -> Unit,
     onWatchLaterClick: () -> Unit,
     onInboxClick: () -> Unit,
@@ -81,62 +80,71 @@ fun MineSideDrawer(
     // 检测深色模式
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
-    // 动态调整毛玻璃样式以适配深浅色模式
-    val hazeStyle = if (isDark) {
-        // 深色模式：使用深色背景和模糊
-        HazeStyle(
-            backgroundColor = Color.Black.copy(alpha = 0.6f),
-            tint = HazeTint(Color.Black.copy(alpha = 0.4f)),
-            blurRadius = 30.dp,
-            noiseFactor = 0f
-        )
-    } else {
-        // 浅色模式：使用白色背景和模糊 (iOS 风格)
-        HazeStyle(
-            backgroundColor = Color.White.copy(alpha = 0.65f),
-            tint = HazeTint(Color.Unspecified),
-            blurRadius = 30.dp,
-            noiseFactor = 0f
-        )
-    }
-    
+    val blurActive = hazeState != null && isBlurEnabled
+    val palette = resolveDrawerGlassPalette(isDark = isDark, blurEnabled = blurActive)
+
     // 动态文字颜色
-    val activeContentColor = if (isDark) Color(0xFFE5E5EA) else Color(0xFF1C1C1E)
+    val activeContentColor = if (isDark) Color(0xFFF8FAFF) else Color(0xFF101114)
     // 动态次级文字/图标颜色
-    val secondaryContentColor = if (isDark) Color(0xFF8E8E93) else Color(0xFF3C3C43).copy(alpha = 0.6f)
+    val secondaryContentColor = if (isDark) Color(0xFFC4C8D1) else Color(0xFF2E2F33).copy(alpha = 0.86f)
     // 动态分割线颜色
-    val dividerColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.1f)
+    val dividerColor = if (isDark) Color.White.copy(alpha = palette.dividerAlpha) else Color.Black.copy(alpha = palette.dividerAlpha)
+    val drawerBaseColor = if (isDark) Color(0xFF0B0D12).copy(alpha = palette.drawerBaseAlpha) else Color.White.copy(alpha = palette.drawerBaseAlpha)
+    val itemSurfaceColor = if (isDark) {
+        Color.White.copy(alpha = palette.itemSurfaceAlpha)
+    } else {
+        Color(0xFFFDFEFF).copy(alpha = palette.itemSurfaceAlpha)
+    }
+    val itemBorderColor = if (isDark) Color.White.copy(alpha = palette.itemBorderAlpha) else Color.Black.copy(alpha = palette.itemBorderAlpha)
+    val chevronColor = secondaryContentColor.copy(alpha = if (isDark) 0.92f else 0.84f)
 
     // 使用 Surface 替代 ModalDrawerSheet 以绕过最小宽度限制 (240dp)
     Surface(
-        color = if (hazeState != null && isBlurEnabled) 
-            Color.Transparent  // 透明背景以显示毛玻璃
-        else 
-            MaterialTheme.colorScheme.surface,
+        color = drawerBaseColor,
         contentColor = activeContentColor,
         shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp), // 保持抽屉的右侧圆角
         modifier = Modifier
             .fillMaxHeight()
             .width(drawerWidth)
             .then(
-                if (hazeState != null && isBlurEnabled) {
-                    Modifier.hazeEffect(
-                        state = hazeState,
-                        style = hazeStyle
-                    ) {
-                        blurEnabled = true
-                    }
+                if (blurActive) {
+                    Modifier.unifiedBlur(
+                        hazeState = requireNotNull(hazeState),
+                        enabled = true,
+                        shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
+                    )
                 } else Modifier
             )
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(vertical = 12.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = if (isDark) {
+                            listOf(
+                                Color.White.copy(alpha = 0.05f),
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.08f)
+                            )
+                        } else {
+                            listOf(
+                                Color.White.copy(alpha = 0.18f),
+                                Color.White.copy(alpha = 0.06f),
+                                Color.Transparent
+                            )
+                        }
+                    )
+                )
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(vertical = 12.dp)
+            ) {
             // 1. 用户信息区域 - 可点击进入个人主页
             // 移除 Surface 背景，只保留点击区域和内容
             Box(
@@ -144,6 +152,8 @@ fun MineSideDrawer(
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp)
                     .clip(RoundedCornerShape(12.dp))
+                    .background(itemSurfaceColor)
+                    .border(BorderStroke(0.8.dp, itemBorderColor), RoundedCornerShape(12.dp))
                     .clickable { closeAndRun(onProfileClick) }
                     // 背景完全透明，依靠下方毛玻璃效果
             ) {
@@ -239,61 +249,77 @@ fun MineSideDrawer(
             )
 
             // 2. 常用服务 - iOS 风格列表
-            Column(
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
+                    .padding(horizontal = 12.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = itemSurfaceColor,
+                border = BorderStroke(0.8.dp, itemBorderColor)
             ) {
-                IOSClickableItem(
-                    icon = CupertinoIcons.Outlined.ArrowDownCircle,
-                    title = "离线缓存",
-                    onClick = { closeAndRun(onDownloadClick) },
-                    iconTint = MaterialTheme.colorScheme.primary,
-                    textColor = activeContentColor
-                )
-                
-                // 列表内分割线 (左侧留出图标空隙)
-                HorizontalDivider(modifier = Modifier.padding(start = 48.dp), thickness = dividerThickness, color = dividerColor)
-                
-                IOSClickableItem(
-                    icon = CupertinoIcons.Outlined.Clock,
-                    title = "历史记录",
-                    onClick = { closeAndRun(onHistoryClick) },
-                    iconTint = iOSBlue,
-                    textColor = activeContentColor
-                )
-                
-                HorizontalDivider(modifier = Modifier.padding(start = 48.dp), thickness = dividerThickness, color = dividerColor)
-                
-                IOSClickableItem(
-                    icon = CupertinoIcons.Outlined.Bookmark,
-                    title = "我的收藏",
-                    onClick = { closeAndRun(onFavoriteClick) },
-                    iconTint = iOSYellow,
-                    textColor = activeContentColor
-                )
-                
-                HorizontalDivider(modifier = Modifier.padding(start = 48.dp), thickness = dividerThickness, color = dividerColor)
-                
-                IOSClickableItem(
-                    icon = CupertinoIcons.Outlined.Bookmark,
-                    title = "稀后再看",
-                    onClick = { closeAndRun(onWatchLaterClick) },
-                    iconTint = iOSGreen,
-                    textColor = activeContentColor
-                )
-                
-                HorizontalDivider(modifier = Modifier.padding(start = 48.dp), thickness = dividerThickness, color = dividerColor)
-                
-                IOSClickableItem(
-                    icon = CupertinoIcons.Outlined.Envelope,
-                    title = "我的私信",
-                    onClick = { closeAndRun(onInboxClick) },
-                    iconTint = iOSPink,
-                    textColor = activeContentColor
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(start = 48.dp), thickness = dividerThickness, color = dividerColor)
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    IOSClickableItem(
+                        icon = CupertinoIcons.Outlined.ArrowDownCircle,
+                        title = "离线缓存",
+                        onClick = { closeAndRun(onDownloadClick) },
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        textColor = activeContentColor,
+                        valueColor = secondaryContentColor,
+                        chevronTint = chevronColor
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(start = 48.dp), thickness = dividerThickness, color = dividerColor)
+                    IOSClickableItem(
+                        icon = CupertinoIcons.Outlined.Clock,
+                        title = "历史记录",
+                        onClick = { closeAndRun(onHistoryClick) },
+                        iconTint = iOSBlue,
+                        textColor = activeContentColor,
+                        valueColor = secondaryContentColor,
+                        chevronTint = chevronColor
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(start = 48.dp), thickness = dividerThickness, color = dividerColor)
+                    IOSClickableItem(
+                        icon = CupertinoIcons.Filled.Tv,
+                        title = "番剧影视",
+                        onClick = { closeAndRun(onBangumiClick) },
+                        iconTint = iOSPink,
+                        textColor = activeContentColor,
+                        valueColor = secondaryContentColor,
+                        chevronTint = chevronColor
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(start = 48.dp), thickness = dividerThickness, color = dividerColor)
+                    IOSClickableItem(
+                        icon = CupertinoIcons.Outlined.Bookmark,
+                        title = "我的收藏",
+                        onClick = { closeAndRun(onFavoriteClick) },
+                        iconTint = iOSYellow,
+                        textColor = activeContentColor,
+                        valueColor = secondaryContentColor,
+                        chevronTint = chevronColor
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(start = 48.dp), thickness = dividerThickness, color = dividerColor)
+                    IOSClickableItem(
+                        icon = CupertinoIcons.Outlined.Bookmark,
+                        title = "稀后再看",
+                        onClick = { closeAndRun(onWatchLaterClick) },
+                        iconTint = iOSGreen,
+                        textColor = activeContentColor,
+                        valueColor = secondaryContentColor,
+                        chevronTint = chevronColor
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(start = 48.dp), thickness = dividerThickness, color = dividerColor)
+                    IOSClickableItem(
+                        icon = CupertinoIcons.Outlined.Envelope,
+                        title = "我的私信",
+                        onClick = { closeAndRun(onInboxClick) },
+                        iconTint = iOSPink,
+                        textColor = activeContentColor,
+                        valueColor = secondaryContentColor,
+                        chevronTint = chevronColor
+                    )
+                }
             }
             
             // 组间分割线
@@ -305,22 +331,28 @@ fun MineSideDrawer(
             
             // 3. 退出登录按钮
             if (user.isLogin) {
-                Column(
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp)
+                        .padding(horizontal = 12.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    color = itemSurfaceColor,
+                    border = BorderStroke(0.8.dp, itemBorderColor)
                 ) {
                     IOSClickableItem(
                         icon = CupertinoIcons.Outlined.RectanglePortraitAndArrowForward,
                         title = "退出登录",
                         onClick = { closeAndRun(onLogout) },
                         iconTint = Color(0xFFFF453A), // iOS 红色
-                        textColor = Color(0xFFFF453A)
+                        textColor = Color(0xFFFF453A),
+                        valueColor = secondaryContentColor,
+                        chevronTint = chevronColor
                     )
                 }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
+        }
         }
     }
 }

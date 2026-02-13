@@ -145,14 +145,18 @@ fun BangumiPlayerScreen(
     val danmakuDisplayArea by com.android.purebilibili.core.store.SettingsManager
         .getDanmakuArea(context)
         .collectAsState(initial = 0.5f)
+    val danmakuMergeDuplicates by com.android.purebilibili.core.store.SettingsManager
+        .getDanmakuMergeDuplicates(context)
+        .collectAsState(initial = true)
     
     //  弹幕设置变化时实时应用到 DanmakuManager
-    LaunchedEffect(danmakuOpacity, danmakuFontScale, danmakuSpeed, danmakuDisplayArea) {
+    LaunchedEffect(danmakuOpacity, danmakuFontScale, danmakuSpeed, danmakuDisplayArea, danmakuMergeDuplicates) {
         danmakuManager.updateSettings(
             opacity = danmakuOpacity,
             fontScale = danmakuFontScale,
             speed = danmakuSpeed,
-            displayArea = danmakuDisplayArea
+            displayArea = danmakuDisplayArea,
+            mergeDuplicates = danmakuMergeDuplicates
         )
     }
     
@@ -162,7 +166,7 @@ fun BangumiPlayerScreen(
     
     // 加载弹幕 - 在父级组件管理
     //  [修复] 等待播放器 duration 可用后再加载弹幕，启用 Protobuf API
-    LaunchedEffect(currentCid, danmakuEnabled) {
+    LaunchedEffect(currentCid, currentAid, danmakuEnabled, exoPlayer) {
         android.util.Log.d("BangumiPlayer", "🎯 Parent Danmaku LaunchedEffect: cid=$currentCid, aid=$currentAid, enabled=$danmakuEnabled")
         if (currentCid > 0 && danmakuEnabled) {
             danmakuManager.isEnabled = true
@@ -342,10 +346,12 @@ fun BangumiPlayerScreen(
                     danmakuFontScale = danmakuFontScale,
                     danmakuSpeed = danmakuSpeed,
                     danmakuDisplayArea = danmakuDisplayArea,
+                    danmakuMergeDuplicates = danmakuMergeDuplicates,
                     onDanmakuOpacityChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuOpacity(context, it) } },
                     onDanmakuFontScaleChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuFontScale(context, it) } },
                     onDanmakuSpeedChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuSpeed(context, it) } },
-                    onDanmakuDisplayAreaChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuArea(context, it) } }
+                    onDanmakuDisplayAreaChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuArea(context, it) } },
+                    onDanmakuMergeDuplicatesChange = { scope.launch { com.android.purebilibili.core.store.SettingsManager.setDanmakuMergeDuplicates(context, it) } }
                 )
             }
         }

@@ -657,6 +657,10 @@ interface SearchApi {
     //  [新增] 番剧搜索 - search_type=media_bangumi
     @GET("x/web-interface/wbi/search/type")
     suspend fun searchBangumi(@QueryMap params: Map<String, String>): com.android.purebilibili.data.model.response.BangumiSearchResponse
+
+    //  [新增] 影视搜索 - search_type=media_ft
+    @GET("x/web-interface/wbi/search/type")
+    suspend fun searchMediaFt(@QueryMap params: Map<String, String>): com.android.purebilibili.data.model.response.BangumiSearchResponse
     
     //  [新增] 直播搜索 - search_type=live_room
     @GET("x/web-interface/wbi/search/type")
@@ -862,6 +866,7 @@ interface BangumiApi {
         @Query("season_status") seasonStatus: Int = -1,  // -1=全部
         @Query("season_month") seasonMonth: Int = -1,    // -1=全部
         @Query("year") year: String = "-1",      // -1=全部
+        @Query("release_date") releaseDate: String = "-1", // -1=全部
         @Query("style_id") styleId: Int = -1,    // -1=全部
         @Query("sort") sort: Int = 0,
         @Query("type") type: Int = 1
@@ -906,8 +911,7 @@ interface BangumiApi {
         @Query("vmid") vmid: Long,          // 用户 mid (登录用户的 mid)
         @Query("type") type: Int = 1,        // 1=追番 2=追剧
         @Query("pn") pn: Int = 1,
-        @Query("ps") ps: Int = 30,
-        @Query("follow_status") followStatus: Int = 0  // 0=全部
+        @Query("ps") ps: Int = 30
     ): com.android.purebilibili.data.model.response.MyFollowBangumiResponse
 }
 
