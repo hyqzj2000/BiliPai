@@ -16,26 +16,3 @@ internal fun shouldUseSidebarNavigationForLayout(
 internal fun shouldEnableHomeDrawer(useSideNavigation: Boolean): Boolean {
     return !useSideNavigation
 }
-
-/**
- * 视频详情页仅在“普通竖屏主态”启用预测返回拦截。
- * 其它状态（全屏/竖屏全屏/手机横屏分栏/阻塞层）交给各自 BackHandler 处理。
- */
-internal fun shouldEnableVideoDetailPredictiveBack(
-    isFullscreenMode: Boolean,
-    isPortraitFullscreen: Boolean,
-    isPhoneInLandscapeSplitView: Boolean,
-    hasBlockingOverlay: Boolean
-): Boolean {
-    return !isFullscreenMode &&
-        !isPortraitFullscreen &&
-        !isPhoneInLandscapeSplitView &&
-        !hasBlockingOverlay
-}
-
-/**
- * 预测返回手势仅在未被取消时提交返回动作。
- */
-internal fun shouldCommitPredictiveBackGesture(cancelled: Boolean): Boolean {
-    return !cancelled
-}

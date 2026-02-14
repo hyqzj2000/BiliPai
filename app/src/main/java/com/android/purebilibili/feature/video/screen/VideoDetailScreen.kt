@@ -26,7 +26,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -117,14 +116,10 @@ import com.android.purebilibili.feature.video.ui.overlay.PlayerProgress
 import com.android.purebilibili.feature.video.ui.components.VideoAspectRatio
 import com.android.purebilibili.feature.video.danmaku.rememberDanmakuManager
 import com.android.purebilibili.feature.video.ui.components.BottomInputBar // [New] Bottom Input Bar
-import com.android.purebilibili.core.util.shouldCommitPredictiveBackGesture
-import com.android.purebilibili.core.util.shouldEnableVideoDetailPredictiveBack
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import com.android.purebilibili.feature.video.ui.components.DanmakuContextMenu
 import kotlin.math.abs
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.collect
 
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
@@ -749,35 +744,6 @@ fun VideoDetailScreen(
         )
         val activity = context.findActivity()
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    }
-
-    val predictiveBackEnabled = shouldEnableVideoDetailPredictiveBack(
-        isFullscreenMode = isFullscreenMode,
-        isPortraitFullscreen = isPortraitFullscreen,
-        isPhoneInLandscapeSplitView = isPhoneInLandscapeSplitView,
-        hasBlockingOverlay = subReplyState.visible || showFavoriteFolderDialog
-    )
-
-    PredictiveBackHandler(enabled = predictiveBackEnabled) { backEventFlow ->
-        var cancelled = false
-        try {
-            backEventFlow.collect { }
-        } catch (_: CancellationException) {
-            cancelled = true
-        }
-
-        if (shouldCommitPredictiveBackGesture(cancelled)) {
-            com.android.purebilibili.core.util.Logger.d(
-                "VideoDetailScreen",
-                "Predictive back committed, navigating back now"
-            )
-            handleBack()
-        } else {
-            com.android.purebilibili.core.util.Logger.d(
-                "VideoDetailScreen",
-                "Predictive back cancelled, stay on current screen"
-            )
-        }
     }
 
     // 🎯 [移除] 以下 BackHandler 会阻止 Compose Navigation 的预测性返回手势动画

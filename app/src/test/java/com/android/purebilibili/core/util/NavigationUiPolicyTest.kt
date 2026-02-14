@@ -52,46 +52,4 @@ class NavigationUiPolicyTest {
     fun homeDrawerEnabledWhenUsingBottomNavigation() {
         assertTrue(shouldEnableHomeDrawer(useSideNavigation = false))
     }
-
-    @Test
-    fun videoDetailPredictiveBackEnabledInNormalPortraitState() {
-        assertTrue(
-            shouldEnableVideoDetailPredictiveBack(
-                isFullscreenMode = false,
-                isPortraitFullscreen = false,
-                isPhoneInLandscapeSplitView = false,
-                hasBlockingOverlay = false
-            )
-        )
-    }
-
-    @Test
-    fun videoDetailPredictiveBackDisabledWhenFullscreen() {
-        assertFalse(
-            shouldEnableVideoDetailPredictiveBack(
-                isFullscreenMode = true,
-                isPortraitFullscreen = false,
-                isPhoneInLandscapeSplitView = false,
-                hasBlockingOverlay = false
-            )
-        )
-    }
-
-    @Test
-    fun videoDetailPredictiveBackDisabledWhenBlockingOverlayVisible() {
-        assertFalse(
-            shouldEnableVideoDetailPredictiveBack(
-                isFullscreenMode = false,
-                isPortraitFullscreen = false,
-                isPhoneInLandscapeSplitView = false,
-                hasBlockingOverlay = true
-            )
-        )
-    }
-
-    @Test
-    fun predictiveBackCommitsOnlyWhenGestureNotCancelled() {
-        assertTrue(shouldCommitPredictiveBackGesture(cancelled = false))
-        assertFalse(shouldCommitPredictiveBackGesture(cancelled = true))
-    }
 }
