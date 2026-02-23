@@ -449,35 +449,45 @@ JSON 规则插件是一种**无需编程**的轻量级插件格式，只需编�
 
 ## 📂 项目结构
 
+### 仓库目录（Root）
+
 ```
-├── app/                      # Application 入口与启动初始化
-├── core/                     # 跨功能公共能力
-│   ├── cache/                # 缓存与预热策略
-│   ├── cooldown/             # 频控与节流策略
-│   ├── database/             # Room 数据库/DAO/实体
-│   ├── lifecycle/            # 生命周期封装
-│   ├── network/              # 网络请求与长连接
-│   ├── plugin/               # 插件引擎与 JSON 规则
-│   ├── store/                # DataStore 本地配置
-│   ├── theme/                # 全局主题
-│   ├── ui/                   # 通用 UI 组件
-│   └── util/                 # 工具函数
-├── data/                     # 数据层
-│   ├── model/                # 数据模型（entity/response）
-│   └── repository/           # 数据仓库实现
-├── domain/                   # 领域层
-│   └── usecase/              # 业务用例
-├── feature/                  # 业务功能模块（按场景拆分）
-│   ├── home/ video/ player/ cast/ audio/ watchlater/
-│   ├── bangumi/ live/ dynamic/ search/ web/
-│   ├── profile/ space/ following/ message/
-│   ├── category/ partition/ list/ story/
-│   └── settings/ plugin/ download/ login/ onboarding/
-└── navigation/               # 全局导航
+├── app/                      # Android 应用主模块（Compose UI、业务实现）
+├── baselineprofile/          # Macrobenchmark / Baseline Profile 生成模块
+├── docs/                     # 文档与截图资源
+├── scripts/                  # 构建与性能辅助脚本
+├── plugins/                  # 外置插件与规则样例
+├── androidMain/              # 多平台预留目录
+├── commonMain/               # 多平台预留目录
+├── build.gradle.kts          # 根构建脚本
+└── settings.gradle.kts       # Gradle 模块声明
+```
+
+### Android 主源码结构
+
+> 主路径：`app/src/main/java/com/android/purebilibili`
+
+```
+app/src/main/java/com/android/purebilibili
+├── app/                      # Application / Activity 入口与启动流程
+├── core/                     # 跨业务公共层（cache/network/store/ui/player/...）
+├── data/                     # 数据层（model/repository）
+├── domain/                   # 领域层（usecase）
+├── feature/                  # 功能层（按场景拆分）
+│   ├── audio/ bangumi/ cast/ category/ download/
+│   ├── dynamic/ following/ home/ list/ live/
+│   ├── login/ message/ onboarding/ partition/
+│   ├── plugin/ profile/ search/ settings/
+│   ├── space/ story/ video/ watchlater/ web/
+│   ├── settings/             # 子分层：policy / screen / ui / update / webdav
+│   └── video/                # 子分层：controller / danmaku / interaction / policy /
+│                             #         player / screen / state / ui / usecase / util / viewmodel
+└── navigation/               # 路由与导航编排
 ```
 
 > [!TIP]
-> 结构按 `v6.1.1` 主分支整理。新增目录会在 Release 周期内同步到文档。
+> 结构按当前 `main` 主分支整理。新增目录会在 Release 周期内同步到文档。
+> 结构维护约束见：`STRUCTURE_GUIDELINES.adoc`
 
 ---
 
