@@ -2,59 +2,59 @@
 
 ## v6.2.0 (2026-02-24)
 
-### Tonight Release Summary
-- Version bump: `6.1.5` -> `6.2.0` (`versionCode 86`).
-- This release includes a full night batch of fixes and behavior polishing across Dynamic, Video, Home, Following, List, Live, Settings, and shared infrastructure.
-- Unit test coverage was expanded for newly extracted policies and key regression points.
+### 版本信息
+- 版本号从 `6.1.5` 升级到 `6.2.0`，`versionCode` 升级到 `86`。
+- 本次为当晚集中修复与体验优化版本，覆盖动态、历史、播放、首页、设置、直播与仓库层逻辑。
 
-### Dynamic (重点修复)
-- Fixed subscribed collection/season cards in Dynamic feed that could not be opened.
-- Fixed Dynamic video link opening failures for aid-only targets by supporting `BV`/`av`/`aid` compatible lookup flow.
-- Added robust click target resolution for `archive`, `ugc_season`, `jump_url`, and fallback IDs.
-- Fixed comment parameter resolution to use API-returned targets first (`basic.comment_id_str`, `basic.comment_type`) with stronger fallback inference.
-- Fixed posting comments using resolved `(oid, type)` instead of hardcoded dynamic comment type.
-- Fixed Dynamic "视频" tab filtering to include `DYNAMIC_TYPE_PGC` and `DYNAMIC_TYPE_UGC_SEASON`.
-- Added `DynamicInteractionPolicy` and tests to lock behavior for comment targets and video-tab inclusion.
+### 动态模块修复（重点）
+- 修复动态流中“订阅合集/剧集”卡片无法点击进入的问题。
+- 修复动态视频链接在仅有 aid 场景下无法打开的问题，统一支持 `BV`、`av`、`aid` 三种目标解析。
+- 补齐动态卡片与转发卡片的跳转兜底链路（`archive`、`ugc_season`、`jump_url`、`aid`）。
+- 修复动态评论参数解析，优先使用 `basic.comment_id_str` 与 `basic.comment_type`，并增强多类型回退推断。
+- 修复动态发评硬编码参数问题，改为按当前动态解析出的 `(oid, type)` 发起请求。
+- 修复动态“视频”分栏筛选遗漏，纳入 `DYNAMIC_TYPE_PGC` 与 `DYNAMIC_TYPE_UGC_SEASON`。
 
-### Video / Playback
-- Improved video detail loading policy and repository lookup path for mixed ID formats.
-- Added/updated navigation target CID resolution and related screen policies.
-- Refined player overlays and controls (bottom bar, fullscreen overlays, portrait fullscreen, live danmaku overlay).
-- Improved playback progress management and related player state/usecase handling.
-- Continued cleanup of player-side interaction policies and UI action routing.
+### 历史记录能力增强
+- 新增历史记录卡片长按删除能力。
+- 新增历史页顶部“批量删除”按钮与批量选择流程（全选、删除、完成）。
+- 删除链路接入官方历史删除接口：`x/v2/history/delete`。
+- 历史删除复用“稍后再看”同款消散动画效果，提升反馈一致性。
+- 新增历史删除策略与映射逻辑（渲染 key、`kid` 组装规则），覆盖 archive、pgc、live、article 等类型。
 
-### Home / Following / List / Watch Later
-- Refined home pull-to-refresh UI policy and refresh behavior handling.
-- Improved card history progress policy behavior.
-- Added history-screen long-press delete and direct batch delete actions.
-- Reused the Watch Later "Thanos snap" dissolve animation for history deletions.
-- Updated following list selection/batch handling policy tests.
-- Refined list/history playback policy with additional tests.
-- Added watch-later delete behavior policy test coverage.
+### 播放与视频链路优化
+- 优化视频详情加载策略，补强混合 ID 输入下的视频信息查询流程。
+- 新增/完善导航目标 CID 解析策略，减少跨页面跳转丢失分 P 的情况。
+- 持续优化播放器覆盖层与控制栏交互（底部控制、全屏覆盖层、竖屏覆盖层、直播弹幕层）。
+- 优化播放进度管理、播放器状态同步与相关用例处理逻辑。
 
-### Live / Danmaku / Network & Repositories
-- Improved live danmaku protocol/client and repository handling.
-- Updated danmaku filters and merged advanced filter policy tests.
-- Refined action repository behavior (including follow-group related policy tests).
+### 首页、关注、列表与稍后再看
+- 优化首页下拉刷新交互策略与提示状态逻辑。
+- 优化视频卡片历史进度条显示策略。
+- 更新关注列表批量选择等策略细节与对应测试。
+- 增补历史播放策略与稍后再看删除策略相关测试。
 
-### Settings / App Shell
-- Added app update auto-check process gate to avoid duplicate in-process auto checks.
-- Refined settings screens/tablet layout/settings sections behavior and UI consistency.
-- Updated `MainActivity` and navigation integration touchpoints for recent behavior changes.
+### 直播、弹幕与仓库层
+- 优化直播弹幕协议与客户端处理流程。
+- 优化弹幕过滤与合并策略，补齐高级过滤场景测试。
+- 调整部分仓库层行为与容错处理（含关注分组等场景策略测试）。
 
-### Engineering Quality
-- Continued policy extraction for deterministic logic and testability (Dynamic, Home, Video, Settings, UI component policies).
-- Added/updated broad unit tests for newly extracted policies and previously fragile branches.
+### 设置与应用框架
+- 新增应用更新自动检查进程门禁，避免同进程重复触发自动检查。
+- 优化设置页与平板设置布局的一致性与交互细节。
+- 同步调整 `MainActivity` 与导航接入点，匹配本次行为改动。
 
-### Verification
-- Ran:
-  - `./gradlew :app:testDebugUnitTest`
-- Result: `BUILD SUCCESSFUL`.
+### 工程化与测试
+- 持续抽离可测试策略模块，覆盖动态、首页、历史、播放、设置等高频逻辑。
+- 新增并更新多组单元测试，重点覆盖跳转、删除、过滤、选择与参数解析回归点。
 
-### Tonight Version Track
-- `v6.1.3`: release bump and dynamic/detail integration fixes.
-- `v6.1.4`: release publish.
-- `v6.2.0`: this full-night stabilization and behavior fix batch.
+### 验证结果
+- 已执行：`./gradlew :app:testDebugUnitTest`
+- 结果：`BUILD SUCCESSFUL`
+
+### 当晚版本轨迹
+- `v6.1.3`：版本升级并合入动态/详情链路修复。
+- `v6.1.4`：发布版本。
+- `v6.2.0`：当晚集中稳定性修复与交互增强版本。
 
 ## [6.1.4] - 2026-02-24
 
