@@ -371,12 +371,13 @@ A lightweight plugin format requiring **no coding**, just a simple JSON file to 
 - [x] Landscape player controls upgrade (subtitle panel + more panel + play-order quick switch)
 - [x] Shared Element Transitions + return-to-home animation optimization
 - [x] Tablet/Foldable Support (sidebar + bottom bar layout)
+- [x] In-app update checks (manual check + auto-check toggle + startup prompt)
 - [x] Plugin System Core
 - [x] Built-in Plugins
 
 ### 🚧 WIP
 
-- [ ] In-app Update
+- [ ] In-app update UX polish (copywriting, check cadence, download-jump feedback)
 - [ ] Wiki and module-level documentation expansion
 
 ### 📋 Planned
