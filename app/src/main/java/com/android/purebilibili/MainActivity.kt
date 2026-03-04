@@ -57,11 +57,13 @@ import com.android.purebilibili.feature.settings.AppUpdateChecker
 import com.android.purebilibili.feature.settings.AppThemeMode
 import com.android.purebilibili.feature.settings.RELEASE_DISCLAIMER_ACK_KEY
 import com.android.purebilibili.feature.settings.resolveUpdateReleaseNotesText
+import com.android.purebilibili.feature.settings.shouldRunAppEntryAutoCheck
 import com.android.purebilibili.feature.video.player.MiniPlayerManager
 import com.android.purebilibili.feature.video.ui.overlay.FullscreenPlayerOverlay
 import com.android.purebilibili.feature.video.ui.overlay.MiniPlayerOverlay
 import com.android.purebilibili.navigation.AppNavigation
 import dev.chrisbanes.haze.haze
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.net.URI
 import java.net.URLDecoder
@@ -139,6 +141,19 @@ internal fun shouldNavigateToVideoFromNotification(
 ): Boolean {
     val isInVideoRoute = currentRoute?.substringBefore("/") == com.android.purebilibili.navigation.VideoRoute.base
     return !(isInVideoRoute && currentBvid == targetBvid)
+}
+
+internal fun resolveMainActivityVideoRoute(
+    bvid: String,
+    cid: Long
+): String {
+    return com.android.purebilibili.navigation.VideoRoute.resolveVideoRoutePath(
+        bvid = bvid,
+        cid = cid,
+        encodedCover = "",
+        startAudio = false,
+        autoPortrait = true
+    )
 }
 
 internal fun shouldForceStopPlaybackOnUserLeaveHint(
@@ -586,11 +601,12 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             val uriHandler = LocalUriHandler.current
             val navController = androidx.navigation.compose.rememberNavController()
-            val autoCheckUpdateEnabled by SettingsManager.getAutoCheckAppUpdate(context).collectAsState(initial = true)
             var startupUpdateCheckResult by remember { mutableStateOf<AppUpdateCheckResult?>(null) }
 
-            LaunchedEffect(autoCheckUpdateEnabled) {
-                if (autoCheckUpdateEnabled && AppUpdateAutoCheckGate.tryMarkChecked()) {
+            LaunchedEffect(Unit) {
+                val autoCheckUpdateEnabled = SettingsManager.getAutoCheckAppUpdate(context).first()
+                val gateAllowsCheck = AppUpdateAutoCheckGate.tryMarkChecked()
+                if (shouldRunAppEntryAutoCheck(autoCheckUpdateEnabled, gateAllowsCheck)) {
                     AppUpdateChecker.check(BuildConfig.VERSION_NAME).onSuccess { info ->
                         if (info.isUpdateAvailable) {
                             startupUpdateCheckResult = info
@@ -614,7 +630,7 @@ class MainActivity : ComponentActivity() {
                     if (shouldNavigate) {
                         Logger.d(TAG, "🚀 导航到视频: $videoId")
                         miniPlayerManager.isNavigatingToVideo = true
-                        navController.navigate("video/$videoId?cid=0&cover=") {
+                        navController.navigate(resolveMainActivityVideoRoute(bvid = videoId, cid = 0L)) {
                             launchSingleTop = true
                         }
                     } else {
@@ -766,7 +782,7 @@ class MainActivity : ComponentActivity() {
                                         miniPlayerManager.isNavigatingToVideo = true
                                         miniPlayerManager.exitMiniMode(animate = false)
                                         val cid = miniPlayerManager.currentCid
-                                        navController.navigate("video/$bvid?cid=$cid&cover=") {
+                                        navController.navigate(resolveMainActivityVideoRoute(bvid = bvid, cid = cid)) {
                                             launchSingleTop = true
                                         }
                                     }
@@ -791,7 +807,7 @@ class MainActivity : ComponentActivity() {
                                     miniPlayerManager.exitMiniMode(animate = false)
                                     //  [修复] 使用正确的 cid，而不是 0
                                     val cid = miniPlayerManager.currentCid
-                                    navController.navigate("video/$bvid?cid=$cid&cover=") {
+                                    navController.navigate(resolveMainActivityVideoRoute(bvid = bvid, cid = cid)) {
                                         launchSingleTop = true
                                     }
                                 }

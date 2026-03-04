@@ -137,6 +137,7 @@ import com.android.purebilibili.feature.video.ui.components.BottomInputBar // [N
 import com.android.purebilibili.core.ui.blur.unifiedBlur
 import com.android.purebilibili.core.ui.IOSModalBottomSheet
 import com.android.purebilibili.core.util.CardPositionManager
+import com.android.purebilibili.core.util.FormatUtils
 import coil.compose.AsyncImage
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
@@ -290,6 +291,22 @@ internal fun shouldAutoEnterAudioModeFromRoute(
     return startAudioFromRoute && !hasAutoEnteredAudioMode && isVideoLoadSuccess
 }
 
+internal fun shouldAutoEnterPortraitFullscreenFromRoute(
+    autoEnterPortraitFromRoute: Boolean,
+    startAudioFromRoute: Boolean,
+    portraitExperienceEnabled: Boolean,
+    isVerticalVideo: Boolean,
+    isPortraitFullscreen: Boolean,
+    hasAutoEnteredPortraitFromRoute: Boolean
+): Boolean {
+    return autoEnterPortraitFromRoute &&
+        !startAudioFromRoute &&
+        portraitExperienceEnabled &&
+        isVerticalVideo &&
+        !isPortraitFullscreen &&
+        !hasAutoEnteredPortraitFromRoute
+}
+
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -300,6 +317,7 @@ fun VideoDetailScreen(
     coverUrl: String = "",
     startInFullscreen: Boolean = false,
     startAudioFromRoute: Boolean = false,
+    autoEnterPortraitFromRoute: Boolean = false,
     transitionEnabled: Boolean = false,
     transitionEnterDurationMillis: Int = 320,
     transitionMaxBlurRadiusPx: Float = 20f,
@@ -319,11 +337,13 @@ fun VideoDetailScreen(
     val view = LocalView.current
     val configuration = LocalConfiguration.current
     val uiState by viewModel.uiState.collectAsState()
+    val resumePlaybackSuggestion by viewModel.resumePlaybackSuggestion.collectAsState()
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     var isNavigatingToVideo by remember { mutableStateOf(false) }
     var isNavigatingToAudioMode by remember { mutableStateOf(false) }
     var isNavigatingToMiniMode by remember { mutableStateOf(false) }
     var hasAutoEnteredAudioMode by rememberSaveable { mutableStateOf(false) }
+    var hasAutoEnteredPortraitFromRoute by rememberSaveable(bvid) { mutableStateOf(false) }
 
     val navigateToRelatedVideo = remember(onVideoClick, miniPlayerManager, uiState) {
         { targetBvid: String, options: android.os.Bundle? ->
@@ -956,6 +976,28 @@ fun VideoDetailScreen(
             isPortraitFullscreen = true
         }
     }
+    LaunchedEffect(
+        autoEnterPortraitFromRoute,
+        startAudioFromRoute,
+        portraitExperienceEnabled,
+        isVerticalVideo,
+        isPortraitFullscreen,
+        hasAutoEnteredPortraitFromRoute
+    ) {
+        if (
+            shouldAutoEnterPortraitFullscreenFromRoute(
+                autoEnterPortraitFromRoute = autoEnterPortraitFromRoute,
+                startAudioFromRoute = startAudioFromRoute,
+                portraitExperienceEnabled = portraitExperienceEnabled,
+                isVerticalVideo = isVerticalVideo,
+                isPortraitFullscreen = isPortraitFullscreen,
+                hasAutoEnteredPortraitFromRoute = hasAutoEnteredPortraitFromRoute
+            )
+        ) {
+            enterPortraitFullscreen()
+            hasAutoEnteredPortraitFromRoute = true
+        }
+    }
     val shouldMirrorPortraitProgressToMainPlayer = com.android.purebilibili.feature.video.ui.pager
         .shouldMirrorPortraitProgressToMainPlayer(useSharedPlayer = useSharedPortraitPlayer)
 
@@ -1118,7 +1160,7 @@ fun VideoDetailScreen(
             
             // 📱 [双重验证] 从 API dimension 字段设置预判断值
             info.dimension?.let { dim ->
-                playerState.setApiDimension(dim.width, dim.height)
+                playerState.setApiDimension(dim.width, dim.height, dim.rotate)
             }
             
             //  同步视频信息到小窗管理器（为小窗模式做准备）
@@ -2693,6 +2735,28 @@ fun VideoDetailScreen(
                     modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp)
                 )
             }
+        }
+
+        resumePlaybackSuggestion?.let { suggestion ->
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissResumePlaybackSuggestion() },
+                title = { Text("继续播放") },
+                text = {
+                    Text(
+                        text = "检测到上次播放到 ${suggestion.targetLabel}（${FormatUtils.formatDuration(suggestion.positionMs)}），是否跳转继续播放？"
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.continueResumePlaybackSuggestion() }) {
+                        Text("跳转")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissResumePlaybackSuggestion() }) {
+                        Text("稍后")
+                    }
+                }
+            )
         }
 
         // 💬 弹幕上下文菜单
