@@ -1,6 +1,8 @@
 package com.android.purebilibili.feature.video.viewmodel
 
 import com.android.purebilibili.core.store.PlaybackCompletionBehavior
+import com.android.purebilibili.feature.video.player.ExternalPlaylistSource
+import com.android.purebilibili.feature.video.player.PlayMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -82,6 +84,48 @@ class PlaybackCompletionPolicyTest {
                 behavior = PlaybackCompletionBehavior.CONTINUE_CURRENT_LOGIC,
                 autoPlayEnabled = false,
                 isExternalPlaylist = true
+            )
+        )
+    }
+
+    @Test
+    fun `favorite external playlist should loop list in sequential play mode`() {
+        assertEquals(
+            PlaybackEndAction.PLAY_NEXT_IN_PLAYLIST_LOOP,
+            resolvePlaybackEndActionForSession(
+                behavior = PlaybackCompletionBehavior.STOP_AFTER_CURRENT,
+                autoPlayEnabled = false,
+                isExternalPlaylist = true,
+                externalPlaylistSource = ExternalPlaylistSource.FAVORITE,
+                playMode = PlayMode.SEQUENTIAL
+            )
+        )
+    }
+
+    @Test
+    fun `favorite external playlist should use shuffle flow in random mode`() {
+        assertEquals(
+            PlaybackEndAction.AUTO_CONTINUE,
+            resolvePlaybackEndActionForSession(
+                behavior = PlaybackCompletionBehavior.STOP_AFTER_CURRENT,
+                autoPlayEnabled = false,
+                isExternalPlaylist = true,
+                externalPlaylistSource = ExternalPlaylistSource.FAVORITE,
+                playMode = PlayMode.SHUFFLE
+            )
+        )
+    }
+
+    @Test
+    fun `non-favorite external playlist should still respect selected completion behavior`() {
+        assertEquals(
+            PlaybackEndAction.STOP,
+            resolvePlaybackEndActionForSession(
+                behavior = PlaybackCompletionBehavior.STOP_AFTER_CURRENT,
+                autoPlayEnabled = true,
+                isExternalPlaylist = true,
+                externalPlaylistSource = ExternalPlaylistSource.WATCH_LATER,
+                playMode = PlayMode.SEQUENTIAL
             )
         )
     }

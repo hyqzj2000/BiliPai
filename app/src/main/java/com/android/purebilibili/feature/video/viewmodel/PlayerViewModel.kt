@@ -1179,10 +1179,12 @@ class PlayerViewModel : ViewModel() {
                 val behavior = com.android.purebilibili.core.store.SettingsManager
                     .getPlaybackCompletionBehaviorSync(context)
                 when (
-                    resolvePlaybackEndAction(
+                    resolvePlaybackEndActionForSession(
                         behavior = behavior,
                         autoPlayEnabled = autoPlayEnabled,
-                        isExternalPlaylist = PlaylistManager.isExternalPlaylist.value
+                        isExternalPlaylist = PlaylistManager.isExternalPlaylist.value,
+                        externalPlaylistSource = PlaylistManager.externalPlaylistSource.value,
+                        playMode = PlaylistManager.playMode.value
                     )
                 ) {
                     PlaybackEndAction.STOP -> {

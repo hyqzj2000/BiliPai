@@ -1,6 +1,8 @@
 package com.android.purebilibili.feature.video.viewmodel
 
 import com.android.purebilibili.core.store.PlaybackCompletionBehavior
+import com.android.purebilibili.feature.video.player.ExternalPlaylistSource
+import com.android.purebilibili.feature.video.player.PlayMode
 
 internal enum class PlaybackEndAction {
     STOP,
@@ -28,4 +30,26 @@ internal fun resolvePlaybackEndAction(
             }
         }
     }
+}
+
+internal fun resolvePlaybackEndActionForSession(
+    behavior: PlaybackCompletionBehavior,
+    autoPlayEnabled: Boolean,
+    isExternalPlaylist: Boolean,
+    externalPlaylistSource: ExternalPlaylistSource,
+    playMode: PlayMode
+): PlaybackEndAction {
+    if (isExternalPlaylist && externalPlaylistSource == ExternalPlaylistSource.FAVORITE) {
+        return when (playMode) {
+            PlayMode.SEQUENTIAL -> PlaybackEndAction.PLAY_NEXT_IN_PLAYLIST_LOOP
+            PlayMode.SHUFFLE -> PlaybackEndAction.AUTO_CONTINUE
+            PlayMode.REPEAT_ONE -> PlaybackEndAction.REPEAT_CURRENT
+        }
+    }
+
+    return resolvePlaybackEndAction(
+        behavior = behavior,
+        autoPlayEnabled = autoPlayEnabled,
+        isExternalPlaylist = isExternalPlaylist
+    )
 }
