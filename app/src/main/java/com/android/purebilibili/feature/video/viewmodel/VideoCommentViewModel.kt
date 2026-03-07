@@ -54,6 +54,7 @@ data class CommentUiState(
     val childInputHint: String = "回复一下吧~",
     val canUploadImage: Boolean = true,
     val canInputComment: Boolean = true,
+    val showUpFlag: Boolean = false,
     // [新增] 评论反诈检测状态
     val isDetectingFraud: Boolean = false,
     val fraudDetectResult: CommentFraudStatus? = null,
@@ -251,7 +252,8 @@ class VideoCommentViewModel : ViewModel() {
                     rootInputHint = data.control?.rootInputText?.takeIf { it.isNotBlank() } ?: current.rootInputHint,
                     childInputHint = data.control?.childInputText?.takeIf { it.isNotBlank() } ?: current.childInputHint,
                     canUploadImage = data.control?.canUploadPicture ?: current.canUploadImage,
-                    canInputComment = data.control?.inputDisable?.not() ?: current.canInputComment
+                    canInputComment = data.control?.inputDisable?.not() ?: current.canInputComment,
+                    showUpFlag = data.config?.showUpFlag ?: current.showUpFlag
                 )
             }.onFailure { e ->
                 android.util.Log.e("CommentVM", " loadComments error: ${e.message}")

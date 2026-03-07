@@ -2090,6 +2090,7 @@ fun VideoDetailScreen(
                                                         // [新增] 传递删除相关参数
                                                         currentMid = commentState.currentMid,
                                                         dissolvingIds = commentState.dissolvingIds,
+                                                        showUpFlag = commentState.showUpFlag,
                                                         // [新增] 删除评论
                                                         onDeleteComment = { rpid ->
                                                             commentViewModel.deleteComment(rpid)
@@ -2921,6 +2922,7 @@ fun VideoDetailScreen(
                 state = subReplyState,
                 emoteMap = successState?.emoteMap ?: emptyMap(),
                 onDismiss = { commentViewModel.closeSubReply() },
+                showUpFlag = commentState.showUpFlag,
                 onLoadMore = { commentViewModel.loadMoreSubReplies() },
                 //  [新增] 时间戳点击跳转
                 onTimestampClick = { positionMs ->

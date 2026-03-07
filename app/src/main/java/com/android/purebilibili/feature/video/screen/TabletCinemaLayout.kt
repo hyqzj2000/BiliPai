@@ -82,6 +82,7 @@ import com.android.purebilibili.feature.video.ui.components.CollectionSheet
 import com.android.purebilibili.feature.video.ui.components.PagesSelector
 import com.android.purebilibili.feature.video.ui.components.RelatedVideoItem
 import com.android.purebilibili.feature.video.ui.components.ReplyItemView
+import com.android.purebilibili.feature.video.ui.components.resolveReplyItemContentType
 import com.android.purebilibili.feature.video.ui.section.ActionButtonsRow
 import com.android.purebilibili.feature.video.ui.section.UpInfoSection
 import com.android.purebilibili.feature.video.ui.section.VideoTitleWithDesc
@@ -838,7 +839,8 @@ private fun CinemaCommentsPane(
             }
             items(
                 items = commentState.replies,
-                key = { "curtain_reply_${it.rpid}" }
+                key = { "curtain_reply_${it.rpid}" },
+                contentType = { resolveReplyItemContentType(it) }
             ) { reply ->
                 ReplyItemView(
                     item = reply,
@@ -850,6 +852,7 @@ private fun CinemaCommentsPane(
                         playerState.player.seekTo(positionMs)
                         playerState.player.play()
                     },
+                    showUpFlag = commentState.showUpFlag,
                     onImagePreview = { images, index, rect, textContent ->
                         previewImages = images
                         previewInitialIndex = index

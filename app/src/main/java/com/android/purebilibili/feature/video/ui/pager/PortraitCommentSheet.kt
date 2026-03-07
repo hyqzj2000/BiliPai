@@ -52,6 +52,7 @@ import com.android.purebilibili.feature.video.ui.components.CommentFraudDetectin
 import com.android.purebilibili.feature.video.ui.components.CommentFraudResultDialog
 import com.android.purebilibili.feature.video.ui.components.CommentSortFilterBar
 import com.android.purebilibili.feature.video.ui.components.ReplyItemView
+import com.android.purebilibili.feature.video.ui.components.resolveReplyItemContentType
 import com.android.purebilibili.feature.video.viewmodel.CommentSortMode
 import com.android.purebilibili.feature.video.viewmodel.VideoCommentViewModel
 import kotlinx.coroutines.launch
@@ -233,10 +234,15 @@ private fun MainCommentList(
                 // 这样列表内容最后会被抬高，避免被小白条遮挡，但背景是通透到底的。
                 contentPadding = WindowInsets.navigationBars.asPaddingValues() 
             ) {
-                items(state.replies, key = { it.rpid }) { reply ->
+                items(
+                    items = state.replies,
+                    key = { it.rpid },
+                    contentType = { resolveReplyItemContentType(it) }
+                ) { reply ->
                     ReplyItemView(
                         item = reply,
                         upMid = state.upMid,
+                        showUpFlag = state.showUpFlag,
                         isPinned = false,
                         onClick = { 
                             // TODO: 回复点击
@@ -272,6 +278,7 @@ private fun SubReplyContent(
     onUserClick: (Long) -> Unit
 ) {
     val state by viewModel.subReplyState.collectAsState()
+    val commentState by viewModel.commentState.collectAsState()
     val rootReply = state.rootReply ?: return
     
     Column(modifier = Modifier.fillMaxSize()) {
@@ -309,6 +316,7 @@ private fun SubReplyContent(
                 ReplyItemView(
                     item = rootReply,
                     upMid = state.upMid,
+                    showUpFlag = commentState.showUpFlag,
                     isPinned = false,
                     onClick = { /* TODO */ },
                     onSubClick = { /* 已经是详情页，忽略 */ },
@@ -332,10 +340,15 @@ private fun SubReplyContent(
             }
             
             // 相关子评论
-            items(state.items, key = { it.rpid }) { reply ->
+            items(
+                items = state.items,
+                key = { it.rpid },
+                contentType = { resolveReplyItemContentType(it) }
+            ) { reply ->
                ReplyItemView(
                     item = reply,
                     upMid = state.upMid,
+                    showUpFlag = commentState.showUpFlag,
                     isPinned = false,
                     onClick = { /* TODO: 回复子评论 */ },
                     onSubClick = { /* 子评论没有子子评论预览 */ },

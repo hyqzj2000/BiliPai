@@ -61,6 +61,7 @@ import com.android.purebilibili.feature.video.ui.components.CollectionSheet
 import com.android.purebilibili.feature.video.ui.components.PagesSelector
 import com.android.purebilibili.feature.video.ui.components.CommentSortFilterBar
 import com.android.purebilibili.feature.video.ui.components.ReplyItemView
+import com.android.purebilibili.feature.video.ui.components.resolveReplyItemContentType
 import com.android.purebilibili.feature.video.viewmodel.CommentSortMode
 import com.android.purebilibili.feature.dynamic.components.ImagePreviewDialog
 import com.android.purebilibili.feature.dynamic.components.ImagePreviewTextContent
@@ -120,6 +121,7 @@ fun VideoContentSection(
     onDanmakuToggle: () -> Unit = {},
     // [新增] 删除与动画参数
     currentMid: Long = 0,
+    showUpFlag: Boolean = false,
     dissolvingIds: Set<Long> = emptySet(),
     onDeleteComment: (Long) -> Unit = {},
     onDissolveStart: (Long) -> Unit = {},
@@ -307,6 +309,7 @@ fun VideoContentSection(
                     onSubReplyClick = onSubReplyClick,
                     onRootCommentClick = onRootCommentClick,
                     onLoadMoreReplies = onLoadMoreReplies,
+                    showUpFlag = showUpFlag,
                     
                     // [新增] 传递删除相关参数
                     currentMid = currentMid,
@@ -476,6 +479,7 @@ private fun VideoCommentTab(
     onLoadMoreReplies: () -> Unit,
     onImagePreview: (List<String>, Int, Rect?, ImagePreviewTextContent?) -> Unit,
     onTimestampClick: ((Long) -> Unit)?,
+    showUpFlag: Boolean,
     contentPadding: PaddingValues,
     // [新增] 参数
     currentMid: Long,
@@ -538,7 +542,11 @@ private fun VideoCommentTab(
                     }
                 }
             } else {
-                items(items = replies, key = { it.rpid }) { reply ->
+                items(
+                    items = replies,
+                    key = { it.rpid },
+                    contentType = { resolveReplyItemContentType(it) }
+                ) { reply ->
                     // [新增] 使用 DissolvableVideoCard 包裹
                     com.android.purebilibili.core.ui.animation.MaybeDissolvableVideoCard(
                         isDissolving = reply.rpid in dissolvingIds,
@@ -547,6 +555,7 @@ private fun VideoCommentTab(
                         modifier = Modifier.padding(bottom = 1.dp) // 小间距防止裁剪
                     ) {
                         ReplyItemView(
+                            showUpFlag = showUpFlag,
                             item = reply,
                             upMid = info.owner.mid,
                             emoteMap = emoteMap,

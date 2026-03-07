@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-  <sub>Last updated: 2026-03-04 · Synced to v6.6.0 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
+  <sub>Last updated: 2026-03-07 · Synced to v6.9.1 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-6.6.0-fb7299?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/Version-6.9.1-fb7299?style=flat-square" alt="Version">
   <img src="https://img.shields.io/github/stars/jay3-yy/BiliPai?style=flat-square&color=yellow" alt="Stars">
   <img src="https://img.shields.io/github/forks/jay3-yy/BiliPai?style=flat-square&color=green" alt="Forks">
   <img src="https://img.shields.io/github/last-commit/jay3-yy/BiliPai?style=flat-square&color=purple" alt="Last Commit">
@@ -393,11 +393,11 @@ A lightweight plugin format requiring **no coding**, just a simple JSON file to 
 
 See full changelog: [CHANGELOG.md](CHANGELOG.md)
 
-### Latest (v6.6.0 · 2026-03-04)
+### Latest (v6.9.1 · 2026-03-07)
 
-- 🎬 **Subtitle Pipeline Upgrade**: Subtitles enabled by default, player info switched to WBI-signed endpoint, and subtitle panel/readability improved.
-- 🎵 **Favorites Audio Queue Fix**: Fixed stop-after-one issue in sequential/shuffle modes; favorites queue now follows its own continuous playback strategy.
-- 💬 **UX Improvements**: Inbox pin-first sorting and optimistic updates, horizontal scrolling filter bar in search, and cleaner info layout on home video cards.
+- 💬 **Smoother Comment Scrolling**: Reduced comment-row hot-path work and added better lazy-list reuse hints for main comments and reply threads.
+- 👍 **Desktop-Style Comment Labels**: Special comments can now show the plain-text `UP主觉得很赞` label, with server-provided desktop labels taking priority.
+- 🧪 **Regression Coverage**: Added parsing and policy tests around comment labels, fallback rules, and derived comment-row display behavior.
 
 ---
 
