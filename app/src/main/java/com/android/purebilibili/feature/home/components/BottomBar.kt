@@ -323,9 +323,9 @@ fun FrostedBottomBar(
     val isActivelyScrolling = kotlin.math.abs(scrollOffset) >= 6f
     
     // [Fix] Background Color for Legibility
-    // 使用半透明背景以保证文字在视频上的可读性，同时保留毛玻璃效果
+    // 液态玻璃保持轻底色，常规路径交给颜色策略统一处理。
     val barColor = if (homeSettings.isLiquidGlassEnabled) {
-        // [Fix] 40% opacity to allow video cover colors to show through blur
+        // Low alpha keeps the refraction layer visible.
         MaterialTheme.colorScheme.surface.copy(alpha = 0.1f) 
     } else {
         resolveBottomBarSurfaceColor(
@@ -759,7 +759,7 @@ internal fun resolveBottomBarSurfaceColor(
     val alpha = if (blurEnabled) {
         BlurStyles.getBackgroundAlpha(blurIntensity)
     } else {
-        1f
+        return Color.White
     }
     return surfaceColor.copy(alpha = alpha)
 }

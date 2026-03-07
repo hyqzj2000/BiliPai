@@ -45,6 +45,9 @@ internal fun shouldShowDislikeInTopControlBar(widthDp: Int): Boolean = widthDp >
 internal fun shouldShowInteractiveActionsInTopControlBar(
     showFullscreenActionItems: Boolean
 ): Boolean = showFullscreenActionItems
+internal fun shouldApplyStatusBarPaddingToTopControlBar(
+    isFullscreen: Boolean
+): Boolean = false
 
 /**
  * Top Control Bar Component
@@ -118,7 +121,13 @@ fun TopControlBar(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (isFullscreen) Modifier.statusBarsPadding() else Modifier)
+            .then(
+                if (shouldApplyStatusBarPaddingToTopControlBar(isFullscreen = isFullscreen)) {
+                    Modifier.statusBarsPadding()
+                } else {
+                    Modifier
+                }
+            )
             .padding(
                 horizontal = layoutPolicy.horizontalPaddingDp.dp,
                 vertical = layoutPolicy.verticalPaddingDp.dp

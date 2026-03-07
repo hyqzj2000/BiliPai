@@ -87,6 +87,8 @@ import com.android.purebilibili.feature.video.ui.section.UpInfoSection
 import com.android.purebilibili.feature.video.ui.section.VideoTitleWithDesc
 import com.android.purebilibili.feature.video.ui.section.VideoPlayerSection
 import com.android.purebilibili.feature.video.ui.section.AiSummaryCard
+import com.android.purebilibili.feature.video.ui.section.AiSummaryPromptCard
+import com.android.purebilibili.feature.video.ui.section.shouldShowAiSummaryEntry
 import com.android.purebilibili.feature.video.viewmodel.CommentUiState
 import com.android.purebilibili.feature.video.viewmodel.PlayerUiState
 import com.android.purebilibili.feature.video.viewmodel.PlayerViewModel
@@ -554,7 +556,11 @@ private fun CinemaMetaPanel(
 private fun CinemaVideoIntroSection(
     success: PlayerUiState.Success
 ) {
+    val context = LocalContext.current
     val isDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val videoAiSummaryEntryEnabled by com.android.purebilibili.core.store.SettingsManager
+        .getVideoAiSummaryEntryEnabled(context)
+        .collectAsState(initial = true)
 
     Surface(
         modifier = Modifier
@@ -575,9 +581,18 @@ private fun CinemaVideoIntroSection(
                 videoTags = success.videoTags,
                 bgmInfo = success.bgmInfo
             )
-            if (success.aiSummary?.modelResult != null) {
+            if (shouldShowAiSummaryEntry(
+                    aiSummary = success.aiSummary,
+                    isAiSummaryEntryEnabled = videoAiSummaryEntryEnabled
+                )
+            ) {
                 AiSummaryCard(
                     aiSummary = success.aiSummary,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                )
+            } else if (videoAiSummaryEntryEnabled && success.aiSummaryPrompt != null) {
+                AiSummaryPromptCard(
+                    promptState = success.aiSummaryPrompt,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                 )
             }

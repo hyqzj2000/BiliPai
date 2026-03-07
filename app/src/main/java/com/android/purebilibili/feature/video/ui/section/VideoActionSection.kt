@@ -53,6 +53,17 @@ import androidx.compose.ui.input.pointer.pointerInput
 import com.android.purebilibili.feature.video.ui.feedback.resolveVideoActionCountTint
 import com.android.purebilibili.feature.video.ui.feedback.resolveVideoActionTint
 
+internal fun shouldStartTriplePress(longPressConfirmed: Boolean): Boolean {
+    return longPressConfirmed
+}
+
+internal fun shouldCancelTriplePressOnRelease(
+    isTriplePressing: Boolean,
+    tripleCompleted: Boolean
+): Boolean {
+    return isTriplePressing && !tripleCompleted
+}
+
 /**
  * Video Action Section Components
  * 
@@ -147,16 +158,24 @@ fun ActionButtonsRow(
                     tripleProgress
                 ) {
                     detectTapGestures(
-                        onPress = {
+                        onTap = {
+                            onLikeClick()
+                        },
+                        onLongPress = {
                             tripleCompleted = false
-                            isTriplePressing = true
-                            val released = tryAwaitRelease()
-                            val progressAtRelease = tripleProgress
-                            if (!tripleCompleted) {
+                            isTriplePressing = shouldStartTriplePress(
+                                longPressConfirmed = true
+                            )
+                        },
+                        onPress = {
+                            tryAwaitRelease()
+                            if (
+                                shouldCancelTriplePressOnRelease(
+                                    isTriplePressing = isTriplePressing,
+                                    tripleCompleted = tripleCompleted
+                                )
+                            ) {
                                 isTriplePressing = false
-                                if (released && progressAtRelease < 0.08f) {
-                                    onLikeClick()
-                                }
                             }
                         }
                     )

@@ -301,29 +301,17 @@ fun PlaybackSettingsContent(
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = "默认播放速度",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            val speedOptions = listOf(
-                                PlaybackSegmentOption(0.5f, "0.5x"),
-                                PlaybackSegmentOption(0.75f, "0.75x"),
-                                PlaybackSegmentOption(1.0f, "1x"),
-                                PlaybackSegmentOption(1.25f, "1.25x"),
-                                PlaybackSegmentOption(1.3f, "1.3x"),
-                                PlaybackSegmentOption(1.5f, "1.5x"),
-                                PlaybackSegmentOption(2.0f, "2x")
-                            )
-                            IOSSlidingSegmentedControl(
-                                options = speedOptions,
-                                selectedValue = defaultPlaybackSpeed,
-                                onSelectionChange = { speed ->
+                            DefaultPlaybackSpeedPreferenceControl(
+                                currentSpeed = defaultPlaybackSpeed,
+                                onSpeedChange = { speed ->
                                     scope.launch {
                                         com.android.purebilibili.core.store.SettingsManager
                                             .setDefaultPlaybackSpeed(context, speed)
                                     }
-                                }
+                                },
+                                title = "默认播放速度",
+                                subtitle = "拖动滑杆自定义，常用档位可一键选择",
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                     }
@@ -577,6 +565,9 @@ fun PlaybackSettingsContent(
                     val subtitleAutoPreference by com.android.purebilibili.core.store.SettingsManager
                         .getSubtitleAutoPreference(context)
                         .collectAsState(initial = SubtitleAutoPreference.OFF)
+                    val videoAiSummaryEntryEnabled by com.android.purebilibili.core.store.SettingsManager
+                        .getVideoAiSummaryEntryEnabled(context)
+                        .collectAsState(initial = true)
                     val subtitlePreferenceDescription = when (subtitleAutoPreference) {
                         SubtitleAutoPreference.OFF -> "默认关闭字幕"
                         SubtitleAutoPreference.ON -> "默认开启（优先当前可用轨道）"
@@ -695,6 +686,24 @@ fun PlaybackSettingsContent(
                             )
                             Divider()
                         }
+                        IOSSwitchItem(
+                            icon = CupertinoIcons.Default.Sparkles,
+                            title = "显示 AI 总结入口",
+                            subtitle = if (videoAiSummaryEntryEnabled) {
+                                "视频简介区展示 AI 总结按钮，点按后展开内容"
+                            } else {
+                                "关闭后隐藏视频简介区的 AI 总结入口"
+                            },
+                            checked = videoAiSummaryEntryEnabled,
+                            onCheckedChange = {
+                                scope.launch {
+                                    com.android.purebilibili.core.store.SettingsManager
+                                        .setVideoAiSummaryEntryEnabled(context, it)
+                                }
+                            },
+                            iconTint = com.android.purebilibili.core.theme.iOSPurple
+                        )
+                        Divider()
                         IOSSwitchItem(
                             icon = CupertinoIcons.Default.HandThumbsup,
                             title = "双击点赞",

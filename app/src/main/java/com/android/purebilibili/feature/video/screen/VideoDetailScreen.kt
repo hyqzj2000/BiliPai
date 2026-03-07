@@ -672,6 +672,11 @@ fun VideoDetailScreen(
     //  [关键] 保存进入前的状态栏配置（在 DisposableEffect 外部定义以便复用）
     val activity = remember { context.findActivity() }
     val window = remember { activity?.window }
+    var entryRequestedOrientation by rememberSaveable {
+        mutableIntStateOf(
+            activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        )
+    }
     val insetsController = remember {
         if (window != null && activity != null) {
             WindowCompat.getInsetsController(window, window.decorView)
@@ -895,8 +900,10 @@ fun VideoDetailScreen(
                     } catch (_: Exception) {}
                 }
 
-                // 恢复屏幕方向
-                deferredActivity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                // 恢复进入详情页前的方向请求，避免平板误横屏后退不回去。
+                deferredActivity?.requestedOrientation = resolveVideoDetailExitRequestedOrientation(
+                    originalRequestedOrientation = entryRequestedOrientation
+                )
             }
         }
     }
@@ -2169,6 +2176,7 @@ fun VideoDetailScreen(
                                                         onRestorePlayer = { playerHeightOffsetPx = 0f },
                                                         // [新增] AI Summary & BGM
                                                         aiSummary = success.aiSummary,
+                                                        aiSummaryPrompt = success.aiSummaryPrompt,
                                                         bgmInfo = success.bgmInfo,
                                                         onBgmClick = onBgmClick,
                                                         ownerFollowerCount = success.ownerFollowerCount,
@@ -3491,6 +3499,12 @@ internal fun resolvePortraitRotateTargetOrientation(
     } else {
         null
     }
+}
+
+internal fun resolveVideoDetailExitRequestedOrientation(
+    originalRequestedOrientation: Int?
+): Int {
+    return originalRequestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 }
 
 internal fun shouldEnableVideoCoverSharedTransition(

@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,6 +52,7 @@ import com.android.purebilibili.data.model.response.BgmInfo
 import com.android.purebilibili.feature.video.ui.section.VideoTitleWithDesc
 import com.android.purebilibili.feature.video.ui.section.UpInfoSection
 import com.android.purebilibili.feature.video.ui.section.ActionButtonsRow
+import com.android.purebilibili.feature.video.ui.section.shouldShowAiSummaryEntry
 import com.android.purebilibili.feature.video.ui.section.resolveVideoDetailMotionBudget
 import com.android.purebilibili.feature.video.ui.section.shouldAnimateVideoDetailLayout
 import com.android.purebilibili.feature.video.ui.components.RelatedVideoItem
@@ -68,6 +70,7 @@ import io.github.alexzhirkevich.cupertino.icons.filled.*
 import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import com.android.purebilibili.data.model.response.AiSummaryData
 import com.android.purebilibili.feature.video.ui.section.AiSummaryCard
+import com.android.purebilibili.feature.video.ui.section.AiSummaryPromptCard
 import kotlin.math.abs
 
 internal fun shouldShowDanmakuSendInput(isPlayerCollapsed: Boolean): Boolean = !isPlayerCollapsed
@@ -144,6 +147,7 @@ fun VideoContentSection(
     onRestorePlayer: () -> Unit = {},
     // [新增] AI Summary & BGM
     aiSummary: AiSummaryData? = null,
+    aiSummaryPrompt: com.android.purebilibili.feature.video.viewmodel.AiSummaryPromptState? = null,
     bgmInfo: BgmInfo? = null,
     onBgmClick: (BgmInfo) -> Unit = {},
     ownerFollowerCount: Int? = null,
@@ -278,6 +282,7 @@ fun VideoContentSection(
                     ownerVideoCount = ownerVideoCount,
                     onFavoriteLongClick = onFavoriteLongClick,
                     aiSummary = aiSummary,
+                    aiSummaryPrompt = aiSummaryPrompt,
                     bgmInfo = bgmInfo,
                     onTimestampClick = onTimestampClick,
                     onBgmClick = onBgmClick,
@@ -361,6 +366,7 @@ private fun VideoIntroTab(
     ownerVideoCount: Int? = null,
     onFavoriteLongClick: () -> Unit = {},
     aiSummary: AiSummaryData? = null,
+    aiSummaryPrompt: com.android.purebilibili.feature.video.viewmodel.AiSummaryPromptState? = null,
     bgmInfo: BgmInfo? = null,
     onTimestampClick: ((Long) -> Unit)? = null,
     onBgmClick: (BgmInfo) -> Unit = {},
@@ -400,6 +406,7 @@ private fun VideoIntroTab(
                 ownerVideoCount = ownerVideoCount,
                 onFavoriteLongClick = onFavoriteLongClick,
                 aiSummary = aiSummary,
+                aiSummaryPrompt = aiSummaryPrompt,
                 bgmInfo = bgmInfo,
                 onTimestampClick = onTimestampClick,
                 onBgmClick = onBgmClick,
@@ -626,12 +633,17 @@ private fun VideoHeaderContent(
     ownerVideoCount: Int? = null,
     onFavoriteLongClick: () -> Unit = {},
     aiSummary: AiSummaryData? = null,
+    aiSummaryPrompt: com.android.purebilibili.feature.video.viewmodel.AiSummaryPromptState? = null,
     bgmInfo: BgmInfo? = null,
     onTimestampClick: ((Long) -> Unit)? = null,
     onBgmClick: (BgmInfo) -> Unit = {},
     showInteractionActions: Boolean = true,
     animateVideoDetailLayout: Boolean = true
 ) {
+    val context = LocalContext.current
+    val videoAiSummaryEntryEnabled by com.android.purebilibili.core.store.SettingsManager
+        .getVideoAiSummaryEntryEnabled(context)
+        .collectAsState(initial = true)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -645,7 +657,7 @@ private fun VideoHeaderContent(
             isFollowing = isFollowing,
             onFollowClick = onFollowClick,
             onUpClick = onUpClick,
-            showOwnerAvatar = false,
+            showOwnerAvatar = true,
             followerCount = ownerFollowerCount,
             videoCount = ownerVideoCount,
             transitionEnabled = transitionEnabled  // 🔗 传递共享元素开关
@@ -661,10 +673,19 @@ private fun VideoHeaderContent(
         )
 
         // [新增] AI Summary
-        if (aiSummary != null && aiSummary.modelResult != null) {
+        if (shouldShowAiSummaryEntry(
+                aiSummary = aiSummary,
+                isAiSummaryEntryEnabled = videoAiSummaryEntryEnabled
+            )
+        ) {
             AiSummaryCard(
                 aiSummary = aiSummary,
                 onTimestampClick = onTimestampClick,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        } else if (videoAiSummaryEntryEnabled && aiSummaryPrompt != null) {
+            AiSummaryPromptCard(
+                promptState = aiSummaryPrompt,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }

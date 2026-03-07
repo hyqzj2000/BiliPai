@@ -41,4 +41,22 @@ class TopControlBarPolicyTest {
             )
         )
     }
+
+    @Test
+    fun fullscreenTopBar_doesNotConsumeStatusBarPadding() {
+        assertFalse(
+            shouldApplyStatusBarPaddingToTopControlBar(
+                isFullscreen = true
+            )
+        )
+    }
+
+    @Test
+    fun inlineTopBar_doesNotConsumeStatusBarPaddingEither() {
+        assertFalse(
+            shouldApplyStatusBarPaddingToTopControlBar(
+                isFullscreen = false
+            )
+        )
+    }
 }
