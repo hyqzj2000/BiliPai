@@ -4,13 +4,20 @@ import androidx.compose.ui.graphics.Color
 
 enum class VideoFeedbackAnchor {
     BottomCenter,
-    BottomTrailing
+    BottomTrailing,
+    CenterOverlay
+}
+
+enum class VideoFeedbackEmphasis {
+    Standard,
+    Emphasized
 }
 
 data class VideoFeedbackPlacement(
     val anchor: VideoFeedbackAnchor,
     val bottomInsetDp: Int,
-    val sideInsetDp: Int
+    val sideInsetDp: Int,
+    val emphasis: VideoFeedbackEmphasis = VideoFeedbackEmphasis.Standard
 )
 
 fun resolveVideoActionTint(
@@ -43,4 +50,13 @@ fun resolveVideoFeedbackPlacement(
             sideInsetDp = 0
         )
     }
+}
+
+fun resolveQualityReminderPlacement(): VideoFeedbackPlacement {
+    return VideoFeedbackPlacement(
+        anchor = VideoFeedbackAnchor.CenterOverlay,
+        bottomInsetDp = 0,
+        sideInsetDp = 0,
+        emphasis = VideoFeedbackEmphasis.Emphasized
+    )
 }

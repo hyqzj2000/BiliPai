@@ -17,11 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.android.purebilibili.core.ui.blur.unifiedBlur
 import com.android.purebilibili.feature.video.ui.feedback.VideoFeedbackAnchor
+import com.android.purebilibili.feature.video.ui.feedback.VideoFeedbackEmphasis
 import com.android.purebilibili.feature.video.ui.feedback.VideoFeedbackPlacement
 import dev.chrisbanes.haze.HazeState
 
@@ -36,7 +38,16 @@ fun BoxScope.VideoActionFeedbackHost(
     val alignment = when (placement.anchor) {
         VideoFeedbackAnchor.BottomCenter -> Alignment.BottomCenter
         VideoFeedbackAnchor.BottomTrailing -> Alignment.BottomEnd
+        VideoFeedbackAnchor.CenterOverlay -> Alignment.Center
     }
+    val emphasized = placement.emphasis == VideoFeedbackEmphasis.Emphasized
+    val horizontalPadding = if (emphasized) 24.dp else 20.dp
+    val verticalPadding = if (emphasized) 14.dp else 12.dp
+    val minWidth = if (emphasized) 160.dp else 120.dp
+    val maxWidth = if (emphasized) 320.dp else 280.dp
+    val backgroundAlpha = if (emphasized) 0.62f else 0.46f
+    val fontSize = if (emphasized) 17.sp else 15.sp
+    val fontWeight = if (emphasized) FontWeight.SemiBold else FontWeight.Medium
 
     AnimatedVisibility(
         visible = visible && !message.isNullOrBlank(),
@@ -50,9 +61,9 @@ fun BoxScope.VideoActionFeedbackHost(
                 top = 16.dp,
                 bottom = placement.bottomInsetDp.dp
             )
-    ) {
+        ) {
         Surface(
-            color = Color.Black.copy(alpha = 0.46f),
+            color = Color.Black.copy(alpha = backgroundAlpha),
             contentColor = Color.White,
             shape = RoundedCornerShape(22.dp),
             tonalElevation = 0.dp,
@@ -60,14 +71,15 @@ fun BoxScope.VideoActionFeedbackHost(
             modifier = Modifier
                 .clip(RoundedCornerShape(22.dp))
                 .unifiedBlur(hazeState = hazeState)
-                .widthIn(min = 120.dp, max = 280.dp)
+                .widthIn(min = minWidth, max = maxWidth)
         ) {
             Text(
                 text = message.orEmpty(),
                 color = Color.White.copy(alpha = 0.98f),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                fontSize = fontSize,
+                fontWeight = fontWeight,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = horizontalPadding, vertical = verticalPadding)
             )
         }
     }

@@ -94,12 +94,16 @@ class VideoCommentViewModel : ViewModel() {
     fun init(
         aid: Long,
         upMid: Long = 0,
-        preferredSortMode: CommentSortMode = CommentSortMode.HOT
+        preferredSortMode: CommentSortMode = CommentSortMode.HOT,
+        expectedReplyCount: Int = 0
     ) {
         android.util.Log.d("CommentVM", " init called with aid=$aid, upMid=$upMid, currentAid=$currentAid")
         if (currentAid == aid && _commentState.value.upMid == upMid) {
             // [修复] 即使视频相同，也刷新 currentMid（防止登录状态变化后不更新）
             refreshCurrentMid()
+            if (expectedReplyCount > _commentState.value.replyCount) {
+                _commentState.value = _commentState.value.copy(replyCount = expectedReplyCount)
+            }
             return
         }
         currentAid = aid
@@ -110,7 +114,8 @@ class VideoCommentViewModel : ViewModel() {
         _commentState.value = CommentUiState(
             sortMode = preferredSortMode,
             upMid = upMid,
-            currentMid = myMid
+            currentMid = myMid,
+            replyCount = expectedReplyCount.coerceAtLeast(0)
         )
         loadComments()
     }
@@ -145,7 +150,8 @@ class VideoCommentViewModel : ViewModel() {
             sortMode = mode,
             upOnlyFilter = false,  //  互斥：清除 UP 筛选
             upMid = currentState.upMid,
-            currentMid = currentState.currentMid
+            currentMid = currentState.currentMid,
+            replyCount = currentState.replyCount
         )
         loadComments()
     }
@@ -197,6 +203,7 @@ class VideoCommentViewModel : ViewModel() {
             result.onSuccess { data ->
                 val current = _commentState.value
                 val newReplies = data.replies ?: emptyList()
+                val previousRepliesSize = allReplies.size
                 
                 // 第一页时先合并置顶和热评
                 val topReplies = if (pageToLoad == 1) data.collectTopReplies() else emptyList()
@@ -214,8 +221,10 @@ class VideoCommentViewModel : ViewModel() {
                 val pageResolution = resolveCommentPageResolution(
                     data = data,
                     pageToLoad = pageToLoad,
+                    previousRepliesSize = previousRepliesSize,
                     combinedRepliesSize = combinedReplies.size,
-                    newRepliesSize = newReplies.size
+                    newRepliesSize = newReplies.size,
+                    fallbackCount = current.replyCount
                 )
                 val totalCount = pageResolution.totalCount
                 val isEnd = pageResolution.isEnd

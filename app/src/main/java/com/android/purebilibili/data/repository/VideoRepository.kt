@@ -554,7 +554,20 @@ object VideoRepository {
                 isVip = isVip,
                 auto1080pEnabled = auto1080pEnabled
             )
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", " Selected startQuality=$startQuality (userSetting=$targetQuality, isAutoHighest=$isAutoHighestQuality, isLogin=$isLogin, isVip=$isVip)")
+            com.android.purebilibili.core.util.Logger.d(
+                "VideoRepo",
+                buildStartQualityDecisionSummary(
+                    bvid = cacheBvid.ifBlank { bvid },
+                    cid = cid,
+                    userSettingQuality = targetQuality,
+                    startQuality = startQuality,
+                    isAutoHighestQuality = isAutoHighestQuality,
+                    isLoggedIn = isLogin,
+                    isVip = isVip,
+                    auto1080pEnabled = auto1080pEnabled,
+                    audioLang = audioLang
+                )
+            )
 
             // [优化] 默认语言优先走缓存；自动最高画质仅对大会员跳过缓存以追求极限流。
             if (!shouldSkipPlayUrlCache(isAutoHighestQuality, isVip, audioLang)) {
@@ -585,6 +598,23 @@ object VideoRepository {
             //  支持 DASH 和 durl 两种格式
             val hasDash = !playData.dash?.video.isNullOrEmpty()
             val hasDurl = !playData.durl.isNullOrEmpty()
+            val dashVideoIds = playData.dash?.video?.map { it.id }?.distinct()?.sortedDescending() ?: emptyList()
+            com.android.purebilibili.core.util.Logger.d(
+                "VideoRepo",
+                buildPlayUrlFetchSummary(
+                    bvid = playUrlBvid,
+                    cid = cid,
+                    source = fetchResult.source,
+                    requestedQuality = startQuality,
+                    returnedQuality = playData.quality,
+                    acceptQualities = playData.accept_quality,
+                    dashVideoIds = dashVideoIds,
+                    hasDurl = hasDurl,
+                    isLoggedIn = isLogin,
+                    isVip = isVip,
+                    audioLang = audioLang
+                )
+            )
             if (!hasDash && !hasDurl) throw Exception("播放地址解析失败 (无 dash/durl)")
 
             //  [优化] 缓存结果 (仅默认语言缓存)
@@ -871,11 +901,26 @@ object VideoRepository {
                 try {
                     val data = fetchPlayUrlWithWbiInternal(bvid, cid, dashQn, audioLang)
                     if (hasPlayableStreams(data)) {
+                        val payload = data ?: continue
+                        val dashVideoIds = payload.dash?.video?.map { it.id }?.distinct() ?: emptyList()
+                        val shouldRetryTrackRecovery = shouldRetryDashTrackRecovery(
+                            targetQn = dashQn,
+                            returnedQuality = payload.quality,
+                            acceptQualities = payload.accept_quality,
+                            dashVideoIds = dashVideoIds
+                        )
+                        if (shouldRetryTrackRecovery && attempt < retryDelays.lastIndex) {
+                            com.android.purebilibili.core.util.Logger.d(
+                                "VideoRepo",
+                                " [LoggedIn] DASH track recovery retry: requestedQn=$dashQn, returnedQuality=${payload.quality}, accept=${payload.accept_quality}, dashIds=$dashVideoIds"
+                            )
+                            continue
+                        }
                         com.android.purebilibili.core.util.Logger.d(
                             "VideoRepo",
-                            " [LoggedIn] DASH success: quality=${data?.quality}, requestedQn=$dashQn"
+                            " [LoggedIn] DASH success: quality=${payload.quality}, requestedQn=$dashQn"
                         )
-                        return data?.let { PlayUrlFetchResult(it, PlayUrlSource.DASH) }
+                        return PlayUrlFetchResult(payload, PlayUrlSource.DASH)
                     }
                     android.util.Log.w("VideoRepo", " DASH qn=$dashQn attempt=${attempt + 1}: data is null or empty")
                     if (attempt < retryDelays.lastIndex) {

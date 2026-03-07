@@ -47,7 +47,11 @@ data class ReplyData(
     val control: ReplyPageControl? = null
 ) {
     //  统一获取总评论数
-    fun getAllCount(): Int = if (cursor.allCount > 0) cursor.allCount else page.count
+    fun getAllCount(): Int = when {
+        cursor.allCount > 0 -> cursor.allCount
+        page.acount > 0 -> page.acount
+        else -> page.count
+    }
     //  统一获取是否结束
     fun getIsEnd(currentPage: Int, currentSize: Int): Boolean {
         return if (cursor.allCount > 0) {

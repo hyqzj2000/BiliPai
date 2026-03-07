@@ -151,8 +151,11 @@ import com.android.purebilibili.feature.video.ui.components.DanmakuContextMenu
 import com.android.purebilibili.feature.video.ui.components.InteractiveChoiceOverlay
 import com.android.purebilibili.feature.video.ui.feedback.VideoFeedbackAnchor
 import com.android.purebilibili.feature.video.ui.feedback.TripleCelebrationPlacement
+import com.android.purebilibili.feature.video.ui.feedback.resolveQualityReminderPlacement
 import com.android.purebilibili.feature.video.ui.feedback.resolveTripleCelebrationPlacement
 import com.android.purebilibili.feature.video.ui.feedback.resolveVideoFeedbackPlacement
+import com.android.purebilibili.feature.video.viewmodel.PlayerToastMessage
+import com.android.purebilibili.feature.video.viewmodel.PlayerToastPresentation
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -899,7 +902,7 @@ fun VideoDetailScreen(
     }
     
     //  新增：监听消息事件（关注/收藏反馈）- 使用居中弹窗
-    var popupMessage by remember { mutableStateOf<String?>(null) }
+    var popupMessage by remember { mutableStateOf<PlayerToastMessage?>(null) }
     LaunchedEffect(Unit) {
         viewModel.toastEvent.collect { message ->
             popupMessage = message
@@ -949,6 +952,7 @@ fun VideoDetailScreen(
     val feedbackAnchorAlignment = when (feedbackPlacement.anchor) {
         VideoFeedbackAnchor.BottomCenter -> Alignment.BottomCenter
         VideoFeedbackAnchor.BottomTrailing -> Alignment.BottomEnd
+        VideoFeedbackAnchor.CenterOverlay -> Alignment.Center
     }
     val isReducedActionMotion = !cardAnimationEnabled
     
@@ -1320,7 +1324,12 @@ fun VideoDetailScreen(
             val success = uiState as PlayerUiState.Success
             
             // 初始化评论（传入 UP 主 mid 用于筛选）- 保持在主线程
-            commentViewModel.init(info.aid, info.owner.mid, preferredCommentSortMode)
+            commentViewModel.init(
+                aid = info.aid,
+                upMid = info.owner.mid,
+                preferredSortMode = preferredCommentSortMode,
+                expectedReplyCount = info.stat.reply
+            )
             
             playerState.updateMediaMetadata(
                 title = info.title,
@@ -2998,10 +3007,16 @@ fun VideoDetailScreen(
             }
         }
         
+        val activeFeedbackPlacement = if (popupMessage?.presentation == PlayerToastPresentation.CenteredHighlight) {
+            resolveQualityReminderPlacement()
+        } else {
+            feedbackPlacement
+        }
+
         VideoActionFeedbackHost(
-            message = popupMessage,
+            message = popupMessage?.message,
             visible = popupMessage != null,
-            placement = feedbackPlacement,
+            placement = activeFeedbackPlacement,
             hazeState = hazeState
         )
 

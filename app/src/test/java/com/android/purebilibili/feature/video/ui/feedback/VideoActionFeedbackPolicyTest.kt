@@ -91,4 +91,12 @@ class VideoActionFeedbackPolicyTest {
         assertEquals(24, placement.bottomInsetDp)
         assertEquals(24, placement.sideInsetDp)
     }
+
+    @Test
+    fun `quality reminder placement uses centered emphasized overlay`() {
+        val placement = resolveQualityReminderPlacement()
+
+        assertEquals(VideoFeedbackAnchor.CenterOverlay, placement.anchor)
+        assertEquals(VideoFeedbackEmphasis.Emphasized, placement.emphasis)
+    }
 }

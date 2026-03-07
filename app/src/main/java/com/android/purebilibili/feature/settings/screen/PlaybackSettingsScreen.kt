@@ -39,6 +39,7 @@ import com.android.purebilibili.core.theme.iOSTeal
 import com.android.purebilibili.core.theme.iOSOrange
 import com.android.purebilibili.core.theme.iOSSystemGray
 import com.android.purebilibili.core.util.LocalWindowSizeClass
+import com.android.purebilibili.core.store.TokenManager
 import com.android.purebilibili.feature.video.subtitle.SubtitleAutoPreference
 import com.android.purebilibili.feature.video.subtitle.isSubtitleFeatureEnabledForUser
 import kotlinx.coroutines.launch
@@ -1107,6 +1108,9 @@ fun PlaybackSettingsContent(
                         .getMobileQuality(context).collectAsState(initial = 64)
                     val directedTrafficEnabled by com.android.purebilibili.core.store.SettingsManager
                         .getBiliDirectedTrafficEnabled(context).collectAsState(initial = false)
+                    val isLoggedIn = !TokenManager.sessDataCache.isNullOrEmpty() ||
+                        !TokenManager.accessTokenCache.isNullOrEmpty()
+                    val isVip = TokenManager.isVipCache
                     
                     val qualityOptions = resolveDefaultPlaybackQualityOptions()
                     
@@ -1139,7 +1143,12 @@ fun PlaybackSettingsContent(
 
                         IOSSlidingSegmentedSetting(
                             title = "WiFi 默认画质：${getQualityLabel(wifiQuality)}",
-                            subtitle = "仅 WiFi 环境生效",
+                            subtitle = resolveDefaultQualitySubtitle(
+                                rawQuality = wifiQuality,
+                                fallbackSubtitle = "仅 WiFi 环境生效",
+                                isLoggedIn = isLoggedIn,
+                                isVip = isVip
+                            ),
                             options = qualityOptions,
                             selectedValue = wifiQuality,
                             onSelectionChange = { qualityId ->
@@ -1169,7 +1178,12 @@ fun PlaybackSettingsContent(
                             subtitle = when {
                                 isDataSaverActive && mobileQuality > effectiveQuality ->
                                     "省流量模式当前实际最高为 $effectiveQualityLabel"
-                                else -> "仅移动网络环境生效"
+                                else -> resolveDefaultQualitySubtitle(
+                                    rawQuality = mobileQuality,
+                                    fallbackSubtitle = "仅移动网络环境生效",
+                                    isLoggedIn = isLoggedIn,
+                                    isVip = isVip
+                                )
                             },
                             options = qualityOptions,
                             selectedValue = mobileQuality,

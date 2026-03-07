@@ -68,6 +68,7 @@ fun PortraitCommentSheet(
     commentViewModel: VideoCommentViewModel,
     aid: Long,
     upMid: Long = 0,
+    expectedReplyCount: Int = 0,
     onUserClick: (Long) -> Unit
 ) {
     val context = LocalContext.current
@@ -90,9 +91,14 @@ fun PortraitCommentSheet(
         }
     }
 
-    LaunchedEffect(aid, visible, preferredSortMode, upMid) {
+    LaunchedEffect(aid, visible, preferredSortMode, upMid, expectedReplyCount) {
         if (visible) {
-             commentViewModel.init(aid, upMid = upMid, preferredSortMode = preferredSortMode)
+             commentViewModel.init(
+                 aid = aid,
+                 upMid = upMid,
+                 preferredSortMode = preferredSortMode,
+                 expectedReplyCount = expectedReplyCount
+             )
         }
     }
 

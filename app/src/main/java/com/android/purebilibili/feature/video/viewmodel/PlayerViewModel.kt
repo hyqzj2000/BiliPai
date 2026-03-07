@@ -621,7 +621,7 @@ class PlayerViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<PlayerUiState>(PlayerUiState.Loading.Initial)
     val uiState = _uiState.asStateFlow()
     
-    private val _toastEvent = Channel<String>()
+    private val _toastEvent = Channel<PlayerToastMessage>()
     val toastEvent = _toastEvent.receiveAsFlow()
 
     private val _resumePlaybackSuggestion = MutableStateFlow<ResumePlaybackSuggestion?>(null)
@@ -1610,7 +1610,14 @@ class PlayerViewModel : ViewModel() {
             }
             _uiState.value = PlayerUiState.Loading.Initial
             
-                val defaultQuality = appContext?.let { NetworkUtils.getDefaultQualityId(it) } ?: 64
+                val defaultQuality = appContext?.let {
+                    NetworkUtils.getPlayableDefaultQualityId(
+                        context = it,
+                        isLoggedIn = !com.android.purebilibili.core.store.TokenManager.sessDataCache.isNullOrEmpty() ||
+                            !com.android.purebilibili.core.store.TokenManager.accessTokenCache.isNullOrEmpty(),
+                        isVip = com.android.purebilibili.core.store.TokenManager.isVipCache
+                    )
+                } ?: 64
                 //  [新增] 获取音频/视频偏好
                 val audioQualityPreference = appContext?.let { 
                     com.android.purebilibili.core.store.SettingsManager.getAudioQualitySync(it) 
@@ -2043,7 +2050,14 @@ class PlayerViewModel : ViewModel() {
                     }
                     
                     // 获取默认画质
-                    val defaultQuality = appContext?.let { com.android.purebilibili.core.util.NetworkUtils.getDefaultQualityId(it) } ?: 64
+                    val defaultQuality = appContext?.let {
+                        com.android.purebilibili.core.util.NetworkUtils.getPlayableDefaultQualityId(
+                            context = it,
+                            isLoggedIn = !com.android.purebilibili.core.store.TokenManager.sessDataCache.isNullOrEmpty() ||
+                                !com.android.purebilibili.core.store.TokenManager.accessTokenCache.isNullOrEmpty(),
+                            isVip = com.android.purebilibili.core.store.TokenManager.isVipCache
+                        )
+                    } ?: 64
                     
                     // 预加载 PlayUrl（会自动缓存到 PlayUrlCache）
                     com.android.purebilibili.data.repository.VideoRepository.getPlayUrlData(
@@ -4050,8 +4064,14 @@ class PlayerViewModel : ViewModel() {
     
     fun changeQuality(qualityId: Int, currentPos: Long) {
         val current = _uiState.value as? PlayerUiState.Success ?: return
-        if (current.isQualitySwitching) { toast("正在切换中..."); return }
-        if (current.currentQuality == qualityId) { toast("已是当前清晰度"); return }
+        if (current.isQualitySwitching) {
+            toast("正在切换中...", PlayerToastPresentation.CenteredHighlight)
+            return
+        }
+        if (current.currentQuality == qualityId) {
+            toast("已是当前清晰度", PlayerToastPresentation.CenteredHighlight)
+            return
+        }
 
         val isHdrSupported = appContext?.let {
             com.android.purebilibili.core.util.MediaUtils.isHdrSupported(it)
@@ -4072,7 +4092,7 @@ class PlayerViewModel : ViewModel() {
         
         when (permissionResult) {
             is QualityPermissionResult.RequiresVip -> {
-                toast("${permissionResult.qualityLabel} 需要大会员")
+                toast("${permissionResult.qualityLabel} 需要大会员", PlayerToastPresentation.CenteredHighlight)
                 // 自动降级到最高可用画质
                 val fallbackQuality = qualityManager.getMaxAvailableQuality(
                     availableQualities = current.qualityIds,
@@ -4087,11 +4107,11 @@ class PlayerViewModel : ViewModel() {
                 return
             }
             is QualityPermissionResult.RequiresLogin -> {
-                toast("${permissionResult.qualityLabel} 需要登录")
+                toast("${permissionResult.qualityLabel} 需要登录", PlayerToastPresentation.CenteredHighlight)
                 return
             }
             is QualityPermissionResult.UnsupportedByDevice -> {
-                toast("${permissionResult.qualityLabel} 当前设备不支持")
+                toast("${permissionResult.qualityLabel} 当前设备不支持", PlayerToastPresentation.CenteredHighlight)
                 val fallbackQuality = qualityManager.getMaxAvailableQuality(
                     availableQualities = current.qualityIds,
                     isLoggedIn = current.isLoggedIn,
@@ -4136,13 +4156,14 @@ class PlayerViewModel : ViewModel() {
                         "目标清晰度不可用，已切换至 $label"
                     } else {
                         "✓ 已切换至 $label"
-                    }
+                    },
+                    PlayerToastPresentation.CenteredHighlight
                 )
                 //  记录画质切换事件
                 AnalyticsHelper.logQualityChange(currentBvid, current.currentQuality, result.actualQuality)
             } else {
                 _uiState.value = current.copy(isQualitySwitching = false, requestedQuality = null)
-                toast("清晰度切换失败")
+                toast("清晰度切换失败", PlayerToastPresentation.CenteredHighlight)
             }
         }
     }
@@ -4481,7 +4502,19 @@ class PlayerViewModel : ViewModel() {
         )
     }
     
-    fun toast(msg: String) { viewModelScope.launch { _toastEvent.send(msg) } }
+    fun toast(
+        msg: String,
+        presentation: PlayerToastPresentation = PlayerToastPresentation.Standard
+    ) {
+        viewModelScope.launch {
+            val payload = if (presentation == PlayerToastPresentation.CenteredHighlight) {
+                buildQualityToastMessage(msg)
+            } else {
+                buildPlayerToastMessage(msg)
+            }
+            _toastEvent.send(payload)
+        }
+    }
     
     override fun onCleared() {
         super.onCleared()
