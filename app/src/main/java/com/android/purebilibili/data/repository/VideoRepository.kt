@@ -645,28 +645,118 @@ object VideoRepository {
 
     // [新增] 获取 AI 视频总结
     suspend fun getAiSummary(bvid: String, cid: Long, upMid: Long): Result<AiSummaryResponse> = withContext(Dispatchers.IO) {
-        try {
-            val (imgKey, subKey) = getWbiKeys()
-            val params = mapOf(
-                "bvid" to bvid,
-                "cid" to cid.toString(),
-                "up_mid" to upMid.toString()
-            )
-            val signedParams = WbiUtils.sign(params, imgKey, subKey)
-            
-            com.android.purebilibili.core.util.Logger.d("VideoRepo", " Fetching AI Summary for bvid=$bvid")
-            val response = api.getAiConclusion(signedParams)
-            
-            if (response.code == 0) {
-                Result.success(response)
-            } else {
-                Result.failure(Exception("AI Summary API error: code=${response.code}, msg=${response.message}"))
+        ensureBuvid3FromSpi()
+        logAiSummaryPreflight(
+            bvid = bvid,
+            cid = cid,
+            upMid = upMid
+        )
+
+        var attempt = 1
+        var lastError: Throwable? = null
+
+        while (attempt <= 2) {
+            try {
+                if (attempt > 1) {
+                    wbiKeysCache = null
+                    wbiKeysTimestamp = 0
+                    kotlinx.coroutines.delay(350L)
+                }
+
+                val (imgKey, subKey) = getWbiKeys()
+                val params = buildAiSummaryParams(
+                    bvid = bvid,
+                    cid = cid,
+                    upMid = upMid
+                )
+                val signedParams = WbiUtils.sign(params, imgKey, subKey)
+
+                com.android.purebilibili.core.util.Logger.d(
+                    "VideoRepo",
+                    "🤖 AI Summary request: attempt=$attempt bvid=$bvid cid=$cid upMidPresent=${upMid > 0L}"
+                )
+                val response = api.getAiConclusion(signedParams)
+                val diagnosis = diagnoseAiSummaryResponse(response)
+                logAiSummaryResponse(
+                    bvid = bvid,
+                    cid = cid,
+                    attempt = attempt,
+                    diagnosis = diagnosis,
+                    hasModelResult = response.data?.modelResult != null,
+                    summaryLength = response.data?.modelResult?.summary?.length ?: 0,
+                    outlineCount = response.data?.modelResult?.outline?.size ?: 0
+                )
+
+                return@withContext if (response.code == 0) {
+                    Result.success(response)
+                } else {
+                    Result.failure(Exception("AI Summary API error: code=${response.code}, msg=${response.message}"))
+                }
+            } catch (e: Exception) {
+                lastError = e
+                val diagnosis = diagnoseAiSummaryFailure(e)
+                com.android.purebilibili.core.util.Logger.w(
+                    "VideoRepo",
+                    "🤖 AI Summary request failed: attempt=$attempt bvid=$bvid cid=$cid status=${diagnosis.status} reason=${diagnosis.reason} retryable=${diagnosis.shouldRetryRequest}"
+                )
+                if (attempt == 1 && diagnosis.shouldRetryRequest) {
+                    com.android.purebilibili.core.util.Logger.i(
+                        "VideoRepo",
+                        "🤖 AI Summary retry scheduled: bvid=$bvid cid=$cid reason=${diagnosis.reason}"
+                    )
+                    attempt++
+                    continue
+                }
+                return@withContext Result.failure(e)
             }
-        } catch (e: Exception) {
-             // 静默失败，不打印堆栈，仅记录
-             com.android.purebilibili.core.util.Logger.w("VideoRepo", " AI Summary failed: ${e.message}")
-             Result.failure(e)
         }
+
+        Result.failure(lastError ?: IllegalStateException("AI Summary unknown failure"))
+    }
+
+    private fun buildAiSummaryParams(
+        bvid: String,
+        cid: Long,
+        upMid: Long
+    ): Map<String, String> {
+        val params = linkedMapOf(
+            "bvid" to bvid,
+            "cid" to cid.toString()
+        )
+        if (upMid > 0L) {
+            params["up_mid"] = upMid.toString()
+        }
+        return params
+    }
+
+    private fun logAiSummaryPreflight(
+        bvid: String,
+        cid: Long,
+        upMid: Long
+    ) {
+        val hasSess = !TokenManager.sessDataCache.isNullOrEmpty()
+        val hasCsrf = !TokenManager.csrfCache.isNullOrEmpty()
+        val hasBuvid = !TokenManager.buvid3Cache.isNullOrEmpty()
+        val hasAccessToken = !TokenManager.accessTokenCache.isNullOrEmpty()
+        com.android.purebilibili.core.util.Logger.i(
+            "VideoRepo",
+            "🤖 AI Summary preflight: bvid=$bvid cid=$cid upMidPresent=${upMid > 0L} hasSess=$hasSess hasCsrf=$hasCsrf hasBuvid=$hasBuvid hasAccessToken=$hasAccessToken buvidInitialized=$buvidInitialized"
+        )
+    }
+
+    private fun logAiSummaryResponse(
+        bvid: String,
+        cid: Long,
+        attempt: Int,
+        diagnosis: AiSummaryFetchDiagnosis,
+        hasModelResult: Boolean,
+        summaryLength: Int,
+        outlineCount: Int
+    ) {
+        com.android.purebilibili.core.util.Logger.i(
+            "VideoRepo",
+            "🤖 AI Summary response: attempt=$attempt bvid=$bvid cid=$cid status=${diagnosis.status} reason=${diagnosis.reason} rootCode=${diagnosis.rootCode} dataCode=${diagnosis.dataCode} stid=${diagnosis.stid ?: ""} hasModelResult=$hasModelResult summaryLength=$summaryLength outlineCount=$outlineCount retryLater=${diagnosis.shouldRetryLater}"
+        )
     }
 
     //  [优化] WBI Key 缓存

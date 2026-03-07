@@ -68,6 +68,7 @@ import dev.chrisbanes.haze.haze
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.net.URI
+import java.net.URLEncoder
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import kotlin.math.max
@@ -156,6 +157,11 @@ internal fun resolveMainActivityVideoRoute(
         startAudio = false,
         autoPortrait = true
     )
+}
+
+internal fun resolveMainActivityDynamicRoute(dynamicId: String): String {
+    val encodedDynamicId = URLEncoder.encode(dynamicId, StandardCharsets.UTF_8.toString())
+    return "dynamic_detail/$encodedDynamicId"
 }
 
 internal fun shouldForceStopPlaybackOnUserLeaveHint(
@@ -1190,11 +1196,19 @@ class MainActivity : ComponentActivity() {
                         resolveShortLinkAndNavigate(uri.toString())
                     } else {
                         // bilibili.com 直接解析
-                        val result = com.android.purebilibili.core.util.BilibiliUrlParser.parseUri(uri)
+                        val result = when (scheme.lowercase()) {
+                            "http", "https" -> com.android.purebilibili.core.util.BilibiliUrlParser.parse(uri.toString())
+                            else -> com.android.purebilibili.core.util.BilibiliUrlParser.parseUri(uri)
+                        }
                         if (result.isValid) {
                             result.getVideoId()?.let { videoId ->
                                 Logger.d(TAG, "📺 从 Deep Link 提取到视频: $videoId")
                                 pendingVideoId = videoId
+                                return
+                            }
+                            result.getDynamicTargetId()?.let { dynamicId ->
+                                Logger.d(TAG, "📝 从 Deep Link 提取到动态: $dynamicId")
+                                pendingNavigationRoute = resolveMainActivityDynamicRoute(dynamicId)
                             }
                         }
                     }
@@ -1230,6 +1244,11 @@ class MainActivity : ComponentActivity() {
                             result.getVideoId()?.let { videoId ->
                                 Logger.d(TAG, "📺 从分享文本提取到视频: $videoId")
                                 pendingVideoId = videoId
+                                return
+                            }
+                            result.getDynamicTargetId()?.let { dynamicId ->
+                                Logger.d(TAG, "📝 从分享文本提取到动态: $dynamicId")
+                                pendingNavigationRoute = resolveMainActivityDynamicRoute(dynamicId)
                             }
                         }
                     }
@@ -1250,6 +1269,11 @@ class MainActivity : ComponentActivity() {
                     result.getVideoId()?.let { videoId ->
                         Logger.d(TAG, "📺 从短链接解析到视频: $videoId")
                         pendingVideoId = videoId
+                        return@launch
+                    }
+                    result.getDynamicTargetId()?.let { dynamicId ->
+                        Logger.d(TAG, "📝 从短链接解析到动态: $dynamicId")
+                        pendingNavigationRoute = resolveMainActivityDynamicRoute(dynamicId)
                     }
                 }
             } else {

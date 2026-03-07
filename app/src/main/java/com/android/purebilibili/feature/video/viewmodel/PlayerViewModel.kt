@@ -115,6 +115,7 @@ sealed class PlayerUiState {
         val onlineCount: String = "",
         // [新增] AI Summary & BGM
         val aiSummary: AiSummaryData? = null,
+        val aiSummaryPrompt: AiSummaryPromptState? = null,
         val bgmInfo: BgmInfo? = null,
         // [New] AI Audio Translation
         val aiAudio: AiAudioInfo? = null,
@@ -3875,25 +3876,110 @@ class PlayerViewModel : ViewModel() {
     }
 
     // [新增] 加载 AI 视频总结
-    private fun loadAiSummary(bvid: String, cid: Long, upMid: Long) {
+    private fun loadAiSummary(
+        bvid: String,
+        cid: Long,
+        upMid: Long,
+        queuedRetryCount: Int = 0
+    ) {
         viewModelScope.launch {
+            if (queuedRetryCount == 0) {
+                val loadingPrompt = initialAiSummaryPromptState()
+                _uiState.update { current ->
+                    if (
+                        current is PlayerUiState.Success &&
+                        current.info.bvid == bvid &&
+                        current.aiSummary?.modelResult == null
+                    ) {
+                        current.copy(aiSummaryPrompt = loadingPrompt)
+                    } else current
+                }
+            }
             try {
                 val result = VideoRepository.getAiSummary(bvid, cid, upMid)
                 result.onSuccess { response ->
-                    if (response.code == 0 && response.data != null) {
-                         // 过滤：如果有 model_result 才更新
-                         val hasResult = response.data.modelResult != null
-                         if (hasResult) {
-                             _uiState.update { current ->
-                                 if (current is PlayerUiState.Success && current.info.bvid == bvid) {
-                                     current.copy(aiSummary = response.data)
-                                 } else current
-                             }
-                             Logger.d("PlayerVM", "🤖 Loaded AI Summary")
-                         } else {
-                             Logger.d("PlayerVM", "🤖 AI Summary empty (code=0)")
-                         }
+                    val diagnosis =
+                        com.android.purebilibili.data.repository.diagnoseAiSummaryResponse(response)
+                    if (
+                        diagnosis.status ==
+                        com.android.purebilibili.data.repository.AiSummaryFetchStatus.AVAILABLE &&
+                        response.data != null
+                    ) {
+                        _uiState.update { current ->
+                            if (current is PlayerUiState.Success && current.info.bvid == bvid) {
+                                current.copy(
+                                    aiSummary = response.data,
+                                    aiSummaryPrompt = null
+                                )
+                            } else current
+                        }
+                        Logger.i(
+                            "PlayerVM",
+                            "🤖 Loaded AI Summary: bvid=$bvid cid=$cid status=${diagnosis.status}"
+                        )
+                    } else if (
+                        diagnosis.shouldRetryLater &&
+                        queuedRetryCount < 1
+                    ) {
+                        val prompt = resolveAiSummaryPromptState(diagnosis)
+                        _uiState.update { current ->
+                            if (current is PlayerUiState.Success && current.info.bvid == bvid) {
+                                current.copy(aiSummaryPrompt = prompt)
+                            } else current
+                        }
+                        Logger.i(
+                            "PlayerVM",
+                            "🤖 AI Summary queued, retry later: bvid=$bvid cid=$cid stid=${diagnosis.stid ?: ""}"
+                        )
+                        delay(2500L)
+                        val currentSuccess = _uiState.value as? PlayerUiState.Success
+                        if (currentSuccess?.info?.bvid == bvid && currentSuccess.aiSummary?.modelResult == null) {
+                            loadAiSummary(
+                                bvid = bvid,
+                                cid = cid,
+                                upMid = upMid,
+                                queuedRetryCount = queuedRetryCount + 1
+                            )
+                        }
+                    } else if (
+                        diagnosis.status ==
+                        com.android.purebilibili.data.repository.AiSummaryFetchStatus.QUEUED
+                    ) {
+                        val prompt = queuedAiSummaryPendingPromptState()
+                        _uiState.update { current ->
+                            if (current is PlayerUiState.Success && current.info.bvid == bvid) {
+                                current.copy(aiSummaryPrompt = prompt)
+                            } else current
+                        }
+                        Logger.i(
+                            "PlayerVM",
+                            "🤖 AI Summary still queued after retry: bvid=$bvid cid=$cid stid=${diagnosis.stid ?: ""}"
+                        )
+                    } else {
+                        val prompt = resolveAiSummaryPromptState(diagnosis)
+                        _uiState.update { current ->
+                            if (current is PlayerUiState.Success && current.info.bvid == bvid) {
+                                current.copy(aiSummaryPrompt = prompt)
+                            } else current
+                        }
+                        Logger.i(
+                            "PlayerVM",
+                            "🤖 AI Summary unavailable: bvid=$bvid cid=$cid status=${diagnosis.status} reason=${diagnosis.reason} rootCode=${diagnosis.rootCode} dataCode=${diagnosis.dataCode} stid=${diagnosis.stid ?: ""}"
+                        )
                     }
+                }.onFailure { throwable ->
+                    val diagnosis =
+                        com.android.purebilibili.data.repository.diagnoseAiSummaryFailure(throwable)
+                    val prompt = resolveAiSummaryPromptState(diagnosis)
+                    _uiState.update { current ->
+                        if (current is PlayerUiState.Success && current.info.bvid == bvid) {
+                            current.copy(aiSummaryPrompt = prompt)
+                        } else current
+                    }
+                    Logger.w(
+                        "PlayerVM",
+                        "🤖 Failed to load AI Summary: bvid=$bvid cid=$cid status=${diagnosis.status} reason=${diagnosis.reason}"
+                    )
                 }
             } catch (e: Exception) {
                 Logger.d("PlayerVM", "🤖 Failed to load AI Summary: ${e.message}")
@@ -3943,6 +4029,7 @@ class PlayerViewModel : ViewModel() {
                         currentFavorited = current.isFavorited,
                         likeSuccess = result.likeSuccess,
                         coinSuccess = result.coinSuccess,
+                        coinFailureMessage = result.coinMessage,
                         favoriteSuccess = result.favoriteSuccess
                     )
                     _uiState.value = current.copy(

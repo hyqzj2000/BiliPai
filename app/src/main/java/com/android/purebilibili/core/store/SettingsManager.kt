@@ -2,6 +2,7 @@
 package com.android.purebilibili.core.store
 
 import android.content.Context
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
@@ -10,15 +11,24 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.android.purebilibili.core.ui.blur.BlurIntensity
+import com.android.purebilibili.feature.settings.share.SettingsShareApplyResult
+import com.android.purebilibili.feature.settings.share.SettingsShareEntryDefinition
+import com.android.purebilibili.feature.settings.share.SettingsShareSection
 import com.android.purebilibili.feature.settings.AppThemeMode
 import com.android.purebilibili.feature.video.danmaku.DANMAKU_DEFAULT_OPACITY
 import com.android.purebilibili.feature.video.danmaku.normalizeDanmakuOpacity
 import com.android.purebilibili.feature.video.danmaku.parseDanmakuBlockRules
 import com.android.purebilibili.feature.video.subtitle.SubtitleAutoPreference
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.math.abs
 
 // 声明 DataStore 扩展属性
@@ -159,6 +169,93 @@ data class AppNavigationSettings(
     val tabletUseSidebar: Boolean = false
 )
 
+private sealed interface ShareablePreferenceDefinition {
+    val entryDefinition: SettingsShareEntryDefinition
+
+    fun read(preferences: Preferences): JsonElement?
+
+    fun write(preferences: MutablePreferences, value: JsonElement): Boolean
+}
+
+private class BooleanShareablePreferenceDefinition(
+    private val key: Preferences.Key<Boolean>,
+    section: SettingsShareSection
+) : ShareablePreferenceDefinition {
+    override val entryDefinition = SettingsShareEntryDefinition(
+        storageKey = key.name,
+        section = section
+    )
+
+    override fun read(preferences: Preferences): JsonElement? {
+        return preferences[key]?.let(::JsonPrimitive)
+    }
+
+    override fun write(preferences: MutablePreferences, value: JsonElement): Boolean {
+        val parsed = value.jsonPrimitive.booleanOrNull ?: return false
+        preferences[key] = parsed
+        return true
+    }
+}
+
+private class IntShareablePreferenceDefinition(
+    private val key: Preferences.Key<Int>,
+    section: SettingsShareSection
+) : ShareablePreferenceDefinition {
+    override val entryDefinition = SettingsShareEntryDefinition(
+        storageKey = key.name,
+        section = section
+    )
+
+    override fun read(preferences: Preferences): JsonElement? {
+        return preferences[key]?.let(::JsonPrimitive)
+    }
+
+    override fun write(preferences: MutablePreferences, value: JsonElement): Boolean {
+        val parsed = value.jsonPrimitive.intOrNull ?: return false
+        preferences[key] = parsed
+        return true
+    }
+}
+
+private class FloatShareablePreferenceDefinition(
+    private val key: Preferences.Key<Float>,
+    section: SettingsShareSection
+) : ShareablePreferenceDefinition {
+    override val entryDefinition = SettingsShareEntryDefinition(
+        storageKey = key.name,
+        section = section
+    )
+
+    override fun read(preferences: Preferences): JsonElement? {
+        return preferences[key]?.let(::JsonPrimitive)
+    }
+
+    override fun write(preferences: MutablePreferences, value: JsonElement): Boolean {
+        val parsed = value.jsonPrimitive.content.toFloatOrNull() ?: return false
+        preferences[key] = parsed
+        return true
+    }
+}
+
+private class StringShareablePreferenceDefinition(
+    private val key: Preferences.Key<String>,
+    section: SettingsShareSection
+) : ShareablePreferenceDefinition {
+    override val entryDefinition = SettingsShareEntryDefinition(
+        storageKey = key.name,
+        section = section
+    )
+
+    override fun read(preferences: Preferences): JsonElement? {
+        return preferences[key]?.let(::JsonPrimitive)
+    }
+
+    override fun write(preferences: MutablePreferences, value: JsonElement): Boolean {
+        preferences[key] = value.jsonPrimitive.content
+        return true
+    }
+}
+
 internal fun mapHomeSettingsFromPreferences(preferences: Preferences): HomeSettings {
     return SettingsManager.mapHomeSettingsFromPreferences(preferences)
 }
@@ -286,6 +383,7 @@ object SettingsManager {
     private val KEY_COMMENT_DEFAULT_SORT_MODE = intPreferencesKey("comment_default_sort_mode")
     //  [新增] 离开播放页后停止播放（优先于小窗/画中画模式）
     private val KEY_STOP_PLAYBACK_ON_EXIT = booleanPreferencesKey("stop_playback_on_exit")
+    private val KEY_VIDEO_AI_SUMMARY_ENTRY_ENABLED = booleanPreferencesKey("video_ai_summary_entry_enabled")
     private const val PLAYBACK_SPEED_CACHE_PREFS = "playback_speed_cache"
     private const val CACHE_KEY_DEFAULT_PLAYBACK_SPEED = "default_speed"
     private const val CACHE_KEY_REMEMBER_LAST_SPEED = "remember_last_speed"
@@ -1758,6 +1856,15 @@ object SettingsManager {
         return context.getSharedPreferences("mini_player", Context.MODE_PRIVATE)
             .getBoolean("stop_playback_on_exit", false)
     }
+
+    fun getVideoAiSummaryEntryEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences -> preferences[KEY_VIDEO_AI_SUMMARY_ENTRY_ENABLED] ?: true }
+
+    suspend fun setVideoAiSummaryEntryEnabled(context: Context, enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[KEY_VIDEO_AI_SUMMARY_ENTRY_ENABLED] = enabled
+        }
+    }
     
     // ==========  底栏显示模式 ==========
     
@@ -2367,5 +2474,148 @@ object SettingsManager {
             val key = if (isTablet) KEY_PROFILE_BG_ALIGNMENT_TABLET else KEY_PROFILE_BG_ALIGNMENT_MOBILE
             preferences[key] = bias.coerceIn(-1f, 1f)
         }
+    }
+
+    private val shareableSettingDefinitions: List<ShareablePreferenceDefinition> by lazy {
+        listOf(
+            IntShareablePreferenceDefinition(KEY_THEME_MODE, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_DYNAMIC_COLOR, SettingsShareSection.APPEARANCE),
+            IntShareablePreferenceDefinition(KEY_THEME_COLOR_INDEX, SettingsShareSection.APPEARANCE),
+            StringShareablePreferenceDefinition(KEY_APP_ICON, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_BOTTOM_BAR_FLOATING, SettingsShareSection.APPEARANCE),
+            IntShareablePreferenceDefinition(KEY_BOTTOM_BAR_LABEL_MODE, SettingsShareSection.APPEARANCE),
+            IntShareablePreferenceDefinition(KEY_TOP_TAB_LABEL_MODE, SettingsShareSection.APPEARANCE),
+            StringShareablePreferenceDefinition(KEY_TOP_TAB_ORDER, SettingsShareSection.APPEARANCE),
+            StringShareablePreferenceDefinition(KEY_TOP_TAB_VISIBLE_TABS, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_HEADER_BLUR_ENABLED, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_HEADER_COLLAPSE_ENABLED, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_BOTTOM_BAR_BLUR_ENABLED, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_LIQUID_GLASS_ENABLED, SettingsShareSection.APPEARANCE),
+            IntShareablePreferenceDefinition(KEY_LIQUID_GLASS_STYLE, SettingsShareSection.APPEARANCE),
+            StringShareablePreferenceDefinition(KEY_BLUR_INTENSITY, SettingsShareSection.APPEARANCE),
+            IntShareablePreferenceDefinition(KEY_DISPLAY_MODE, SettingsShareSection.APPEARANCE),
+            IntShareablePreferenceDefinition(KEY_GRID_COLUMN_COUNT, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_CARD_ANIMATION_ENABLED, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_CARD_TRANSITION_ENABLED, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_PREDICTIVE_BACK_ANIMATION_ENABLED, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_COMPACT_VIDEO_STATS_ON_COVER, SettingsShareSection.APPEARANCE),
+
+            BooleanShareablePreferenceDefinition(KEY_AUTO_PLAY, SettingsShareSection.PLAYBACK),
+            IntShareablePreferenceDefinition(KEY_PLAYBACK_COMPLETION_BEHAVIOR, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_HW_DECODE, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_BG_PLAY, SettingsShareSection.PLAYBACK),
+            FloatShareablePreferenceDefinition(KEY_DEFAULT_PLAYBACK_SPEED, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_REMEMBER_LAST_PLAYBACK_SPEED, SettingsShareSection.PLAYBACK),
+            IntShareablePreferenceDefinition(KEY_COMMENT_DEFAULT_SORT_MODE, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_STOP_PLAYBACK_ON_EXIT, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_VIDEO_AI_SUMMARY_ENTRY_ENABLED, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_CLICK_TO_PLAY, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_RESUME_PLAYBACK_PROMPT_ENABLED, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_AUTO_ROTATE_ENABLED, SettingsShareSection.PLAYBACK),
+            IntShareablePreferenceDefinition(KEY_WIFI_QUALITY, SettingsShareSection.PLAYBACK),
+            IntShareablePreferenceDefinition(KEY_MOBILE_QUALITY, SettingsShareSection.PLAYBACK),
+            StringShareablePreferenceDefinition(KEY_VIDEO_CODEC, SettingsShareSection.PLAYBACK),
+            StringShareablePreferenceDefinition(KEY_VIDEO_SECOND_CODEC, SettingsShareSection.PLAYBACK),
+            IntShareablePreferenceDefinition(KEY_AUDIO_QUALITY, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_AUTO_HIGHEST_QUALITY, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_SPONSOR_BLOCK_ENABLED, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_SPONSOR_BLOCK_AUTO_SKIP, SettingsShareSection.PLAYBACK),
+            IntShareablePreferenceDefinition(KEY_DATA_SAVER_MODE, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_PORTRAIT_FULLSCREEN_ENABLED, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_AUTO_PORTRAIT_FULLSCREEN, SettingsShareSection.PLAYBACK),
+            FloatShareablePreferenceDefinition(KEY_VERTICAL_VIDEO_RATIO, SettingsShareSection.PLAYBACK),
+            IntShareablePreferenceDefinition(KEY_FULLSCREEN_MODE, SettingsShareSection.PLAYBACK),
+            IntShareablePreferenceDefinition(KEY_FULLSCREEN_ASPECT_RATIO, SettingsShareSection.PLAYBACK),
+            IntShareablePreferenceDefinition(KEY_SUBTITLE_AUTO_PREFERENCE, SettingsShareSection.PLAYBACK),
+            IntShareablePreferenceDefinition(KEY_BOTTOM_PROGRESS_BEHAVIOR, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_HORIZONTAL_ADAPTATION, SettingsShareSection.PLAYBACK),
+            BooleanShareablePreferenceDefinition(KEY_SHOW_ONLINE_COUNT, SettingsShareSection.PLAYBACK),
+
+            BooleanShareablePreferenceDefinition(KEY_HAPTIC_FEEDBACK_ENABLED, SettingsShareSection.GESTURE),
+            FloatShareablePreferenceDefinition(KEY_GESTURE_SENSITIVITY, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_SLIDE_VOLUME_BRIGHTNESS_ENABLED, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_SET_SYSTEM_BRIGHTNESS, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_DOUBLE_TAP_SEEK_ENABLED, SettingsShareSection.GESTURE),
+            IntShareablePreferenceDefinition(KEY_SEEK_FORWARD_SECONDS, SettingsShareSection.GESTURE),
+            IntShareablePreferenceDefinition(KEY_SEEK_BACKWARD_SECONDS, SettingsShareSection.GESTURE),
+            FloatShareablePreferenceDefinition(KEY_LONG_PRESS_SPEED, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_PIP_NO_DANMAKU, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_DOUBLE_TAP_LIKE, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_SWIPE_HIDE_PLAYER, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_PORTRAIT_SWIPE_TO_FULLSCREEN, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_CENTER_SWIPE_TO_FULLSCREEN, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_FULLSCREEN_SWIPE_SEEK_ENABLED, SettingsShareSection.GESTURE),
+            IntShareablePreferenceDefinition(KEY_FULLSCREEN_SWIPE_SEEK_SECONDS, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_FULLSCREEN_GESTURE_REVERSE, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_AUTO_ENTER_FULLSCREEN, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_AUTO_EXIT_FULLSCREEN, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_SHOW_FULLSCREEN_LOCK_BUTTON, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_SHOW_FULLSCREEN_SCREENSHOT_BUTTON, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_SHOW_FULLSCREEN_BATTERY_LEVEL, SettingsShareSection.GESTURE),
+            BooleanShareablePreferenceDefinition(KEY_SHOW_FULLSCREEN_ACTION_ITEMS, SettingsShareSection.GESTURE),
+
+            BooleanShareablePreferenceDefinition(KEY_DANMAKU_ENABLED, SettingsShareSection.DANMAKU),
+            FloatShareablePreferenceDefinition(KEY_DANMAKU_OPACITY, SettingsShareSection.DANMAKU),
+            FloatShareablePreferenceDefinition(KEY_DANMAKU_FONT_SCALE, SettingsShareSection.DANMAKU),
+            FloatShareablePreferenceDefinition(KEY_DANMAKU_SPEED, SettingsShareSection.DANMAKU),
+            FloatShareablePreferenceDefinition(KEY_DANMAKU_AREA, SettingsShareSection.DANMAKU),
+            BooleanShareablePreferenceDefinition(KEY_DANMAKU_ALLOW_SCROLL, SettingsShareSection.DANMAKU),
+            BooleanShareablePreferenceDefinition(KEY_DANMAKU_ALLOW_TOP, SettingsShareSection.DANMAKU),
+            BooleanShareablePreferenceDefinition(KEY_DANMAKU_ALLOW_BOTTOM, SettingsShareSection.DANMAKU),
+            BooleanShareablePreferenceDefinition(KEY_DANMAKU_ALLOW_COLORFUL, SettingsShareSection.DANMAKU),
+            BooleanShareablePreferenceDefinition(KEY_DANMAKU_ALLOW_SPECIAL, SettingsShareSection.DANMAKU),
+            BooleanShareablePreferenceDefinition(KEY_DANMAKU_SMART_OCCLUSION, SettingsShareSection.DANMAKU),
+            StringShareablePreferenceDefinition(KEY_DANMAKU_BLOCK_RULES, SettingsShareSection.DANMAKU),
+            BooleanShareablePreferenceDefinition(KEY_DANMAKU_MERGE_DUPLICATES, SettingsShareSection.DANMAKU),
+
+            StringShareablePreferenceDefinition(KEY_BOTTOM_BAR_ORDER, SettingsShareSection.NAVIGATION),
+            StringShareablePreferenceDefinition(KEY_BOTTOM_BAR_VISIBLE_TABS, SettingsShareSection.NAVIGATION),
+            StringShareablePreferenceDefinition(KEY_BOTTOM_BAR_ITEM_COLORS, SettingsShareSection.NAVIGATION),
+            IntShareablePreferenceDefinition(KEY_BOTTOM_BAR_VISIBILITY_MODE, SettingsShareSection.NAVIGATION),
+            BooleanShareablePreferenceDefinition(KEY_TABLET_NAVIGATION_MODE, SettingsShareSection.NAVIGATION),
+            IntShareablePreferenceDefinition(KEY_DYNAMIC_PAGE_LAYOUT_DIRECTION, SettingsShareSection.NAVIGATION),
+            IntShareablePreferenceDefinition(KEY_FEED_API_TYPE, SettingsShareSection.NAVIGATION),
+            BooleanShareablePreferenceDefinition(KEY_INCREMENTAL_TIMELINE_REFRESH, SettingsShareSection.NAVIGATION)
+        )
+    }
+
+    fun getShareableSettingsEntryDefinitions(): List<SettingsShareEntryDefinition> {
+        return shareableSettingDefinitions.map { it.entryDefinition }
+    }
+
+    suspend fun exportShareableSettingsSnapshot(context: Context): Map<String, JsonElement> {
+        val preferences = context.settingsDataStore.data.first()
+        return linkedMapOf<String, JsonElement>().apply {
+            shareableSettingDefinitions.forEach { definition ->
+                definition.read(preferences)?.let { value ->
+                    put(definition.entryDefinition.storageKey, value)
+                }
+            }
+        }
+    }
+
+    suspend fun applyShareableSettingsSnapshot(
+        context: Context,
+        settings: Map<String, JsonElement>
+    ): SettingsShareApplyResult {
+        val definitionsByKey = shareableSettingDefinitions.associateBy { it.entryDefinition.storageKey }
+        val appliedKeys = mutableListOf<String>()
+        val skippedKeys = mutableListOf<String>()
+
+        context.settingsDataStore.edit { preferences ->
+            settings.forEach { (key, value) ->
+                val definition = definitionsByKey[key]
+                when {
+                    definition == null -> skippedKeys += key
+                    definition.write(preferences, value) -> appliedKeys += key
+                    else -> skippedKeys += key
+                }
+            }
+        }
+
+        return SettingsShareApplyResult(
+            appliedKeys = appliedKeys.distinct().sorted(),
+            skippedKeys = skippedKeys.distinct().sorted()
+        )
     }
 }

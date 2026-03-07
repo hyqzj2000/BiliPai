@@ -92,6 +92,25 @@ internal fun resolveProfileWallpaperActionColumnCount(screenWidthDp: Int): Int {
     return if (screenWidthDp < 360) 1 else 2
 }
 
+internal fun resolveProfileTopBarScrimAlpha(
+    isImmersive: Boolean,
+    collapsedFraction: Float
+): Float {
+    if (!isImmersive) return 0f
+    val normalizedFraction = collapsedFraction.coerceIn(0f, 1f)
+    val delayedFraction = ((normalizedFraction - 0.08f) / 0.42f).coerceIn(0f, 1f)
+    return 0.72f * delayedFraction
+}
+
+internal fun resolveProfileLightStatusBars(
+    isImmersive: Boolean,
+    useSplitLayout: Boolean,
+    isDarkTheme: Boolean
+): Boolean {
+    if (!useSplitLayout && isImmersive) return false
+    return !isDarkTheme
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -113,39 +132,50 @@ fun ProfileScreen(
     val context = LocalContext.current
     val view = LocalView.current
     val windowSizeClass = LocalWindowSizeClass.current
+    val isDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val isLoggedOut = state is ProfileUiState.LoggedOut
+    val isImmersiveMobileProfile = !windowSizeClass.shouldUseSplitLayout &&
+        (state as? ProfileUiState.Success)?.user?.topPhoto?.isNotEmpty() == true
+    val shouldControlSystemBars = isLoggedOut || isImmersiveMobileProfile
+    val lightStatusBars = resolveProfileLightStatusBars(
+        isImmersive = shouldControlSystemBars,
+        useSplitLayout = windowSizeClass.shouldUseSplitLayout,
+        isDarkTheme = isDarkTheme
+    )
     
     // [Blur] Haze State
     val hazeState = remember { HazeState() }
 
     //  设置沉浸式状态栏和导航栏（进入时修改，离开时恢复）
-    DisposableEffect(state) {
+    DisposableEffect(shouldControlSystemBars, lightStatusBars) {
         val window = (context as? Activity)?.window
         val insetsController = if (window != null) {
             WindowInsetsControllerCompat(window, view)
         } else null
-        val isLoggedOut = state is ProfileUiState.LoggedOut
         
         // 保存原始配置
         val originalStatusBarColor = window?.statusBarColor ?: android.graphics.Color.TRANSPARENT
         val originalNavBarColor = window?.navigationBarColor ?: android.graphics.Color.TRANSPARENT
         val originalLightStatusBars = insetsController?.isAppearanceLightStatusBars ?: true
+        val originalLightNavigationBars = insetsController?.isAppearanceLightNavigationBars ?: true
         val originalDecorFits = window?.decorView?.fitsSystemWindows ?: true
         
-        if (isLoggedOut && window != null) {
+        if (shouldControlSystemBars && window != null) {
             WindowCompat.setDecorFitsSystemWindows(window, false)
             window.statusBarColor = Color.Transparent.toArgb()
             window.navigationBarColor = Color.Transparent.toArgb()
-            insetsController?.isAppearanceLightStatusBars = false
-            insetsController?.isAppearanceLightNavigationBars = false
+            insetsController?.isAppearanceLightStatusBars = lightStatusBars
+            insetsController?.isAppearanceLightNavigationBars = lightStatusBars
         }
         
         onDispose {
             // 离开时恢复原始配置
-            if (isLoggedOut && window != null && insetsController != null) {
+            if (shouldControlSystemBars && window != null && insetsController != null) {
                 WindowCompat.setDecorFitsSystemWindows(window, originalDecorFits)
                 window.statusBarColor = originalStatusBarColor
                 window.navigationBarColor = originalNavBarColor
                 insetsController.isAppearanceLightStatusBars = originalLightStatusBars
+                insetsController.isAppearanceLightNavigationBars = originalLightNavigationBars
             }
         }
     }
@@ -729,6 +759,18 @@ fun MobileProfileContent(
     
     val isImmersive = user.topPhoto.isNotEmpty()
     val contentColor = if (isImmersive) Color.White else MaterialTheme.colorScheme.onSurface
+    val collapsedFraction = scrollBehavior.state.collapsedFraction.coerceIn(0f, 1f)
+    val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val topBarScrimColor = if (isImmersive) {
+        Color.Black.copy(
+            alpha = resolveProfileTopBarScrimAlpha(
+                isImmersive = true,
+                collapsedFraction = collapsedFraction
+            )
+        )
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = collapsedFraction)
+    }
 
         // [Modified] Background logic moved to ProfileBackground()
         // No need to duplicate here, but MobileProfileContent is called separately in Split Layout?
@@ -840,6 +882,13 @@ fun MobileProfileContent(
         }
         
         // 🏗️ 沉浸式 TopBar (Standard)
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(statusBarTopPadding + 64.dp)
+                .background(topBarScrimColor)
+        )
         CenterAlignedTopAppBar(
             title = { Text("我的", fontWeight = FontWeight.Bold) },
             navigationIcon = {
@@ -855,9 +904,7 @@ fun MobileProfileContent(
             scrollBehavior = scrollBehavior,
             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                 containerColor = Color.Transparent,
-                // [Style] 滚动后变为半透明黑底 (配合白色文字)，或保持透明?
-                // 建议使用深色背景以保证文字清晰
-                scrolledContainerColor = if (isImmersive) Color.Black.copy(alpha = 0.7f) else MaterialTheme.colorScheme.surface,
+                scrolledContainerColor = Color.Transparent,
                 titleContentColor = contentColor,
                 actionIconContentColor = contentColor,
                 navigationIconContentColor = contentColor
