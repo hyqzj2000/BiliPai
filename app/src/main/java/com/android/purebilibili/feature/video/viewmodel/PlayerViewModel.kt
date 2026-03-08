@@ -4108,63 +4108,117 @@ class PlayerViewModel : ViewModel() {
     fun closeDownloadDialog() {
         _showDownloadDialog.value = false
     }
+
+    private fun resolveDownloadQualityDescription(
+        current: PlayerUiState.Success,
+        qualityId: Int
+    ): String {
+        return current.qualityLabels.getOrNull(
+            current.qualityIds.indexOf(qualityId)
+        ) ?: "${qualityId}P"
+    }
+
+    private fun resolveBatchDownloadTaskTitle(
+        rootTitle: String,
+        candidateTitle: String,
+        candidateLabel: String
+    ): String {
+        val normalizedRootTitle = rootTitle.trim()
+        val normalizedCandidateTitle = candidateTitle.trim()
+        val normalizedCandidateLabel = candidateLabel.trim()
+        return when {
+            normalizedCandidateTitle.isBlank() -> normalizedRootTitle
+            normalizedCandidateTitle == normalizedRootTitle && normalizedCandidateLabel.isNotBlank() ->
+                "$normalizedRootTitle - $normalizedCandidateLabel"
+            else -> normalizedCandidateTitle
+        }
+    }
+
+    private suspend fun buildDownloadTaskForTarget(
+        current: PlayerUiState.Success,
+        targetBvid: String,
+        targetCid: Long,
+        targetTitle: String,
+        targetLabel: String,
+        targetCover: String,
+        qualityId: Int
+    ): com.android.purebilibili.feature.download.DownloadTask? {
+        val qualityDesc = resolveDownloadQualityDescription(current, qualityId)
+        val isCurrentTarget = targetBvid == currentBvid && targetCid == currentCid
+        val resolvedTitle = resolveBatchDownloadTaskTitle(
+            rootTitle = current.info.title,
+            candidateTitle = targetTitle,
+            candidateLabel = targetLabel
+        )
+
+        val currentDashVideo = current.cachedDashVideos.find { it.id == qualityId }
+        val currentDashAudio = current.cachedDashAudios.firstOrNull()
+
+        val directVideoUrl = when {
+            isCurrentTarget && qualityId == current.currentQuality -> current.playUrl
+            isCurrentTarget && currentDashVideo != null -> currentDashVideo.getValidUrl()
+            else -> ""
+        }
+        val directAudioUrl = when {
+            isCurrentTarget && qualityId == current.currentQuality -> current.audioUrl.orEmpty()
+            isCurrentTarget && currentDashAudio != null -> currentDashAudio.getValidUrl()
+            else -> ""
+        }
+
+        val resolvedUrls = if (directVideoUrl.isNotBlank() && directAudioUrl.isNotBlank()) {
+            directVideoUrl to directAudioUrl
+        } else {
+            val playUrlData = VideoRepository.getPlayUrlData(targetBvid, targetCid, qualityId)
+            val dash = playUrlData?.dash
+            val dashVideo = dash?.video?.firstOrNull { it.id == qualityId }
+                ?: dash?.video?.maxByOrNull { it.id }
+            val dashAudio = dash?.audio?.firstOrNull()
+            val videoUrl = dashVideo?.getValidUrl().orEmpty()
+            val audioUrl = dashAudio?.getValidUrl().orEmpty()
+            if (videoUrl.isBlank() || audioUrl.isBlank()) {
+                return null
+            }
+            videoUrl to audioUrl
+        }
+
+        return com.android.purebilibili.feature.download.DownloadTask(
+            bvid = targetBvid,
+            cid = targetCid,
+            title = resolvedTitle,
+            cover = targetCover.ifBlank { current.info.pic },
+            ownerName = current.info.owner.name,
+            ownerFace = current.info.owner.face,
+            duration = 0,
+            quality = qualityId,
+            qualityDesc = qualityDesc,
+            videoUrl = resolvedUrls.first,
+            audioUrl = resolvedUrls.second
+        )
+    }
     
     fun downloadWithQuality(qualityId: Int) {
         val current = _uiState.value as? PlayerUiState.Success ?: return
         _showDownloadDialog.value = false
         
         viewModelScope.launch {
-            // 如果选择的画质不同，需要获取对应画质的 URL
-            val videoUrl: String
-            val audioUrl: String?
-            val qualityDesc: String
-            
-            if (qualityId == current.currentQuality) {
-                // 使用当前画质
-                videoUrl = current.playUrl
-                audioUrl = current.audioUrl
-                qualityDesc = current.qualityLabels.getOrNull(
-                    current.qualityIds.indexOf(qualityId)
-                ) ?: "${qualityId}P"
-            } else {
-                // 从缓存或 API 获取指定画质的 URL
-                val dashVideo = current.cachedDashVideos.find { it.id == qualityId }
-                val dashAudio = current.cachedDashAudios.firstOrNull()
-                
-                if (dashVideo != null) {
-                    videoUrl = dashVideo.getValidUrl() ?: current.playUrl
-                    audioUrl = dashAudio?.getValidUrl() ?: current.audioUrl
-                    qualityDesc = current.qualityLabels.getOrNull(
-                        current.qualityIds.indexOf(qualityId)
-                    ) ?: "${qualityId}P"
-                } else {
-                    // 使用当前画质
-                    videoUrl = current.playUrl
-                    audioUrl = current.audioUrl
-                    qualityDesc = current.qualityLabels.getOrNull(
-                        current.qualityIds.indexOf(current.currentQuality)
-                    ) ?: "${current.currentQuality}P"
-                }
-            }
-            
-            // 创建下载任务
-            val task = com.android.purebilibili.feature.download.DownloadTask(
-                bvid = currentBvid,
-                cid = currentCid,
-                title = current.info.title,
-                cover = current.info.pic,
-                ownerName = current.info.owner.name,
-                ownerFace = current.info.owner.face,
-                duration = 0,
-                quality = qualityId,
-                qualityDesc = qualityDesc,
-                videoUrl = videoUrl,
-                audioUrl = audioUrl ?: ""
+            val task = buildDownloadTaskForTarget(
+                current = current,
+                targetBvid = currentBvid,
+                targetCid = currentCid,
+                targetTitle = current.info.title,
+                targetLabel = current.info.title,
+                targetCover = current.info.pic,
+                qualityId = qualityId
             )
             
+            if (task == null) {
+                toast("无法获取下载地址")
+                return@launch
+            }
+
             val added = com.android.purebilibili.feature.download.DownloadManager.addTask(task)
             if (added) {
-                toast("开始下载: ${current.info.title} [$qualityDesc]")
+                toast("开始下载: ${task.title} [${task.qualityDesc}]")
                 // 开始监听下载进度
                 com.android.purebilibili.feature.download.DownloadManager.tasks.collect { tasks ->
                     val downloadTask = tasks[task.id]
@@ -4173,6 +4227,62 @@ class PlayerViewModel : ViewModel() {
             } else {
                 toast("下载任务已存在")
             }
+        }
+    }
+
+    internal fun downloadBatchWithQuality(
+        qualityId: Int,
+        candidates: List<com.android.purebilibili.feature.download.BatchDownloadCandidate>
+    ) {
+        val current = _uiState.value as? PlayerUiState.Success ?: return
+        _showDownloadDialog.value = false
+
+        viewModelScope.launch {
+            var addedCount = 0
+            var skippedExistingCount = 0
+            var failedCount = 0
+
+            candidates.filter { it.selected }.forEach { candidate ->
+                val existingTask = com.android.purebilibili.feature.download.DownloadManager.getTask(
+                    candidate.bvid,
+                    candidate.cid
+                )
+                if (existingTask != null && !existingTask.isFailed) {
+                    skippedExistingCount += 1
+                    return@forEach
+                }
+
+                val task = buildDownloadTaskForTarget(
+                    current = current,
+                    targetBvid = candidate.bvid,
+                    targetCid = candidate.cid,
+                    targetTitle = candidate.title,
+                    targetLabel = candidate.label,
+                    targetCover = candidate.cover,
+                    qualityId = qualityId
+                )
+                if (task == null) {
+                    failedCount += 1
+                    return@forEach
+                }
+
+                val added = com.android.purebilibili.feature.download.DownloadManager.addTask(task)
+                if (added) {
+                    addedCount += 1
+                } else {
+                    skippedExistingCount += 1
+                }
+            }
+
+            toast(
+                com.android.purebilibili.feature.download.summarizeBatchDownloadQueueResult(
+                    com.android.purebilibili.feature.download.BatchDownloadQueueResult(
+                        addedCount = addedCount,
+                        skippedExistingCount = skippedExistingCount,
+                        failedCount = failedCount
+                    )
+                )
+            )
         }
     }
     

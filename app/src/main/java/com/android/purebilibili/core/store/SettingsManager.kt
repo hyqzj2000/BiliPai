@@ -114,6 +114,14 @@ internal fun normalizePlaybackSpeed(speed: Float): Float {
     return speed.coerceIn(0.1f, 8.0f)
 }
 
+internal const val DEFAULT_LONG_PRESS_SPEED = 2.0f
+internal val LONG_PRESS_SPEED_OPTIONS = listOf(1.5f, 2.0f, 2.5f, 3.0f)
+
+internal fun normalizeLongPressSpeed(speed: Float): Float {
+    return LONG_PRESS_SPEED_OPTIONS.minByOrNull { option -> abs(option - speed) }
+        ?: DEFAULT_LONG_PRESS_SPEED
+}
+
 internal fun normalizeDanmakuDisplayArea(value: Float): Float {
     val normalized = value.coerceIn(0.25f, 1.0f)
     val supportedOptions = floatArrayOf(0.25f, 0.5f, 0.75f, 1.0f)
@@ -389,6 +397,7 @@ object SettingsManager {
     private val KEY_COMMENT_DEFAULT_SORT_MODE = intPreferencesKey("comment_default_sort_mode")
     //  [新增] 离开播放页后停止播放（优先于小窗/画中画模式）
     private val KEY_STOP_PLAYBACK_ON_EXIT = booleanPreferencesKey("stop_playback_on_exit")
+    private val KEY_AUDIO_MODE_AUTO_PIP_ENABLED = booleanPreferencesKey("audio_mode_auto_pip_enabled")
     private val KEY_VIDEO_AI_SUMMARY_ENTRY_ENABLED = booleanPreferencesKey("video_ai_summary_entry_enabled")
     private const val PLAYBACK_SPEED_CACHE_PREFS = "playback_speed_cache"
     private const val CACHE_KEY_DEFAULT_PLAYBACK_SPEED = "default_speed"
@@ -677,13 +686,13 @@ object SettingsManager {
         }
     }
 
-    //  [新增] --- 长按倍速 (默认 1.5x，兼容更稳定) ---
+    //  [新增] --- 长按倍速 (默认 2.0x，Hi-Res 音频运行时单独限速) ---
     fun getLongPressSpeed(context: Context): Flow<Float> = context.settingsDataStore.data
-        .map { preferences -> (preferences[KEY_LONG_PRESS_SPEED] ?: 1.5f).coerceIn(1.25f, 1.5f) }
+        .map { preferences -> normalizeLongPressSpeed(preferences[KEY_LONG_PRESS_SPEED] ?: DEFAULT_LONG_PRESS_SPEED) }
 
     suspend fun setLongPressSpeed(context: Context, speed: Float) {
         context.settingsDataStore.edit { preferences -> 
-            preferences[KEY_LONG_PRESS_SPEED] = speed.coerceIn(1.25f, 1.5f)
+            preferences[KEY_LONG_PRESS_SPEED] = normalizeLongPressSpeed(speed)
         }
     }
 
@@ -1867,6 +1876,26 @@ object SettingsManager {
     fun getStopPlaybackOnExitSync(context: Context): Boolean {
         return context.getSharedPreferences("mini_player", Context.MODE_PRIVATE)
             .getBoolean("stop_playback_on_exit", false)
+    }
+
+    fun getAudioModeAutoPipEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences -> preferences[KEY_AUDIO_MODE_AUTO_PIP_ENABLED] ?: false }
+
+    suspend fun setAudioModeAutoPipEnabled(context: Context, value: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[KEY_AUDIO_MODE_AUTO_PIP_ENABLED] = value
+        }
+        context.getSharedPreferences("mini_player", Context.MODE_PRIVATE)
+            .edit().putBoolean("audio_mode_auto_pip_enabled", value).apply()
+    }
+
+    fun getAudioModeAutoPipEnabledSync(context: Context): Boolean {
+        return context.getSharedPreferences("mini_player", Context.MODE_PRIVATE)
+            .getBoolean("audio_mode_auto_pip_enabled", false)
+    }
+
+    internal fun shouldEnableAudioModeAutoPipToggle(mode: MiniPlayerMode): Boolean {
+        return mode == MiniPlayerMode.SYSTEM_PIP
     }
 
     fun getVideoAiSummaryEntryEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data

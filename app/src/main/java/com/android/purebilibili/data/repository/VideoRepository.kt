@@ -28,6 +28,8 @@ import java.util.concurrent.ConcurrentHashMap
 private const val HOME_PRELOAD_WAIT_MAX_MS = 1200L
 private const val HOME_PRELOAD_WAIT_STEP_MS = 35L
 private const val SUBTITLE_CUE_CACHE_MAX_ENTRIES = 512
+private const val SUBTITLE_CUE_CACHE_ENTRY_OVERHEAD_BYTES = 512L
+private const val SUBTITLE_CUE_ESTIMATED_BYTES_PER_CUE = 160L
 
 internal fun shouldPrimeBuvidForHomePreload(feedApiType: SettingsManager.FeedApiType): Boolean {
     return feedApiType == SettingsManager.FeedApiType.MOBILE
@@ -65,6 +67,22 @@ internal fun buildSubtitleCueCacheKey(
     return "${bvid.ifBlank { "unknown" }}:${cid.coerceAtLeast(0L)}:${idPart}:${subtitleLan.ifBlank { "unknown" }}:$urlHash"
 }
 
+internal fun estimateSubtitleCueCacheBytes(
+    entryCount: Int,
+    totalCueCount: Int
+): Long {
+    val normalizedEntryCount = entryCount.coerceAtLeast(0)
+    val normalizedCueCount = totalCueCount.coerceAtLeast(0)
+    return normalizedEntryCount * SUBTITLE_CUE_CACHE_ENTRY_OVERHEAD_BYTES +
+        normalizedCueCount * SUBTITLE_CUE_ESTIMATED_BYTES_PER_CUE
+}
+
+data class SubtitleCueCacheStats(
+    val entryCount: Int,
+    val totalCueCount: Int,
+    val estimatedBytes: Long
+)
+
 data class CreatorCardStats(
     val followerCount: Int,
     val videoCount: Int
@@ -81,6 +99,24 @@ object VideoRepository {
     
     //  [新增] 确保 buvid3 来自 Bilibili SPI API + 激活（解决 412 问题）
     private var buvidInitialized = false
+
+    fun getSubtitleCueCacheStats(): SubtitleCueCacheStats {
+        val snapshot = subtitleCueCache.values.toList()
+        val entryCount = snapshot.size
+        val totalCueCount = snapshot.sumOf { it.size }
+        return SubtitleCueCacheStats(
+            entryCount = entryCount,
+            totalCueCount = totalCueCount,
+            estimatedBytes = estimateSubtitleCueCacheBytes(
+                entryCount = entryCount,
+                totalCueCount = totalCueCount
+            )
+        )
+    }
+
+    fun clearSubtitleCueCache() {
+        subtitleCueCache.clear()
+    }
 
     private fun isDirectedTrafficModeActive(): Boolean {
         val context = NetworkModule.appContext ?: return false

@@ -784,7 +784,7 @@ private fun VideoPageItem(
     val faceMaskStabilizer = remember { FaceOcclusionMaskStabilizer() }
     val longPressSpeed by SettingsManager
         .getLongPressSpeed(context)
-        .collectAsState(initial = 1.75f)
+        .collectAsState(initial = 2.0f)
     val currentAudioQuality by viewModel.audioQualityPreference.collectAsState(initial = -1)
     val bvid = if (item is ViewInfo) item.bvid else (item as RelatedVideo).bvid
     val aid = if (item is ViewInfo) item.aid else (item as RelatedVideo).aid.toLong()

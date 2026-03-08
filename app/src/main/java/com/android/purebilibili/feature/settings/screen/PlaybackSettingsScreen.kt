@@ -126,6 +126,8 @@ fun PlaybackSettingsContent(
         )
     val stopPlaybackOnExit by com.android.purebilibili.core.store.SettingsManager
         .getStopPlaybackOnExit(context).collectAsState(initial = false)
+    val audioModeAutoPipEnabled by com.android.purebilibili.core.store.SettingsManager
+        .getAudioModeAutoPipEnabled(context).collectAsState(initial = false)
     val defaultPlaybackSpeed by com.android.purebilibili.core.store.SettingsManager
         .getDefaultPlaybackSpeed(context).collectAsState(initial = 1.0f)
     val rememberLastPlaybackSpeed by com.android.purebilibili.core.store.SettingsManager
@@ -330,6 +332,10 @@ fun PlaybackSettingsContent(
                     val pipNoDanmakuEnabled by com.android.purebilibili.core.store.SettingsManager
                         .getPipNoDanmakuEnabled(context)
                         .collectAsState(initial = false)
+                    val audioModeAutoPipToggleEnabled = remember(miniPlayerMode) {
+                        com.android.purebilibili.core.store.SettingsManager
+                            .shouldEnableAudioModeAutoPipToggle(miniPlayerMode)
+                    }
                     val miniPlayerOptions = listOf(
                         PlaybackSegmentOption(com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.OFF, "默认"),
                         PlaybackSegmentOption(com.android.purebilibili.core.store.SettingsManager.MiniPlayerMode.IN_APP_ONLY, "应用内小窗"),
@@ -433,6 +439,31 @@ fun PlaybackSettingsContent(
                                 }
                             },
                             iconTint = com.android.purebilibili.core.theme.iOSPurple
+                        )
+                        Divider()
+                        IOSSwitchItem(
+                            icon = CupertinoIcons.Default.Headphones,
+                            title = "听视频离开时自动进入画中画",
+                            subtitle = if (audioModeAutoPipToggleEnabled) {
+                                if (audioModeAutoPipEnabled) {
+                                    "已开启：按 Home 或离开手势时会自动进入系统画中画"
+                                } else {
+                                    "关闭后仅保留听视频页内的显式 PiP 按钮"
+                                }
+                            } else {
+                                "仅系统画中画模式下生效"
+                            },
+                            checked = audioModeAutoPipEnabled,
+                            onCheckedChange = {
+                                if (!audioModeAutoPipToggleEnabled) {
+                                    return@IOSSwitchItem
+                                }
+                                scope.launch {
+                                    com.android.purebilibili.core.store.SettingsManager
+                                        .setAudioModeAutoPipEnabled(context, it)
+                                }
+                            },
+                            iconTint = iOSTeal
                         )
                     }
                 }
