@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.android.purebilibili.core.theme.LocalUiPreset
+import com.android.purebilibili.core.theme.UiPreset
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.android.purebilibili.core.theme.iOSBlue
@@ -30,6 +32,20 @@ fun IOSAlertDialog(
     dismissButton: @Composable (() -> Unit)? = null,
     properties: DialogProperties = DialogProperties()
 ) {
+    if (LocalUiPreset.current == UiPreset.MD3) {
+        AlertDialog(
+            onDismissRequest = onDismissRequest,
+            title = title,
+            text = text,
+            confirmButton = { confirmButton?.invoke() ?: Spacer(modifier = Modifier) },
+            dismissButton = dismissButton,
+            properties = properties,
+            shape = MaterialTheme.shapes.extraLarge,
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+        return
+    }
+
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = properties

@@ -1299,10 +1299,13 @@ fun VideoPlayerSection(
                                     onToggleFullscreen()
                                     // 震动反馈 (可选)
                                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                                    com.android.purebilibili.core.util.Logger.d(
-                                        "VideoPlayerSection",
-                                        if (isFullscreen) "👇 Swipe to exit fullscreen triggered" else "👆 Swipe to fullscreen triggered"
-                                    )
+                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
+                                        if (isFullscreen) {
+                                            "👇 Swipe to exit fullscreen triggered"
+                                        } else {
+                                            "👆 Swipe to fullscreen triggered"
+                                        }
+                                    }
                                 }
                             }
                             isGestureVisible = false
@@ -1371,7 +1374,9 @@ fun VideoPlayerSection(
                                 // [修复] 使用累积距离判断方向，而非单帧增量
                                 if (abs(totalDragDistanceX) > abs(totalDragDistanceY)) {
                                     gestureMode = VideoGestureMode.Seek
-                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection", "🎯 Gesture: Seek (cumDx=$totalDragDistanceX, cumDy=$totalDragDistanceY)")
+                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
+                                        "🎯 Gesture: Seek (cumDx=$totalDragDistanceX, cumDy=$totalDragDistanceY)"
+                                    }
                                 } else {
                                     // 根据起始 X 坐标判断区域 (左1/3=亮度, 右1/3=音量, 中间1/3=功能区)
                                     val width = size.width.toFloat()
@@ -1397,14 +1402,15 @@ fun VideoPlayerSection(
                                     // 横屏中间 1/3 的垂直手势直接忽略，避免误触亮度/音量
                                     if (isFullscreen && gestureMode == VideoGestureMode.None) {
                                         isGestureVisible = false
-                                        com.android.purebilibili.core.util.Logger.d(
-                                            "VideoPlayerSection",
+                                        com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
                                             "🎯 Gesture ignored in center zone (fullscreen, startX=$startX, width=$width)"
-                                        )
+                                        }
                                         return@detectDragGestures
                                     }
 
-                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection", "🎯 Gesture: $gestureMode (startX=$startX, width=$width, isFullscreen=$isFullscreen)")
+                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
+                                        "🎯 Gesture: $gestureMode (startX=$startX, width=$width, isFullscreen=$isFullscreen)"
+                                    }
                                 }
                             }
 
@@ -1536,10 +1542,9 @@ fun VideoPlayerSection(
                         isLongPressing = true
                         totalDragDistanceY = 0f
                         longPressSpeedFeedbackVisible = true
-                        com.android.purebilibili.core.util.Logger.d(
-                            "VideoPlayerSection",
+                        com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
                             "⏩ LongPress: speed ${effectiveLongPressSpeed}x (requested=${longPressSpeed}x, audio=$currentAudioQuality)"
-                        )
+                        }
                     },
                     onDoubleTap = { offset ->
                         // 🔒 锁定时禁用双击
@@ -1566,7 +1571,9 @@ fun VideoPlayerSection(
                                     danmakuManager.seekTo(newPos)
                                     seekFeedbackText = "+${seekForwardSeconds}s"
                                     seekFeedbackVisible = true
-                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection", "⏩ DoubleTap right: +${seekForwardSeconds}s")
+                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
+                                        "⏩ DoubleTap right: +${seekForwardSeconds}s"
+                                    }
                                 }
                                 // 左侧 1/3：后退
                                 offset.x < screenWidth / 3 -> {
@@ -1576,18 +1583,24 @@ fun VideoPlayerSection(
                                     danmakuManager.seekTo(newPos)
                                     seekFeedbackText = "-${seekBackwardSeconds}s"
                                     seekFeedbackVisible = true
-                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection", "⏪ DoubleTap left: -${seekBackwardSeconds}s")
+                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
+                                        "⏪ DoubleTap left: -${seekBackwardSeconds}s"
+                                    }
                                 }
                                 // 中间：暂停/播放
                                 else -> {
                                     togglePlayerPlaybackFromUserAction(player)
-                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection", "⏯️ DoubleTap center: toggle play/pause")
+                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
+                                        "⏯️ DoubleTap center: toggle play/pause"
+                                    }
                                 }
                             }
                         } else {
                             // 关闭跳转时，全屏双击暂停/播放
                             togglePlayerPlaybackFromUserAction(player)
-                            com.android.purebilibili.core.util.Logger.d("VideoPlayerSection", "⏯️ DoubleTap (Seek Disabled): toggle play/pause")
+                            com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
+                                "⏯️ DoubleTap (Seek Disabled): toggle play/pause"
+                            }
                         }
                     },
                     onPress = { offset ->
@@ -1606,14 +1619,13 @@ fun VideoPlayerSection(
                             isLongPressing = false
                             longPressSpeedFeedbackVisible = false
                             totalDragDistanceY = 0f
-                            com.android.purebilibili.core.util.Logger.d(
-                                "VideoPlayerSection",
+                            com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
                                 if (longPressSpeedLocked) {
                                     "🔒 LongPress locked: speed ${lockedLongPressSpeed}x"
                                 } else {
                                     "⏹️ LongPress released: speed ${originalPlaybackParameters.speed}x"
                                 }
-                            )
+                            }
                         }
                     }
                 )
