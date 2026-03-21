@@ -409,6 +409,8 @@ See full changelog: [CHANGELOG.md](CHANGELOG.md)
 
 - 🧵 **Thread-detail presentation is unified**: portrait pager comments and video-detail thread detail now share the same comment sheet host instead of diverging into separate implementations.
 - 📺 **Thread detail preserves player visibility more reliably**: opening a subreply thread now prefers switching content inside the current drawer instead of falling back to a separate blocking overlay.
+- ⏱️ **Seek behavior is more consistent**: progress-bar scrubbing and chapter jumps now share the same user-seek path, which keeps playback state and displayed progress aligned more reliably.
+- 🗑️ **History deletion animation is cleaner**: when removing a history item, only neighboring cards keep the jiggle feedback while the dissolving card itself stays stable.
 - 📦 **The APK is now 64-bit only**: release packaging keeps `arm64-v8a` and drops `armeabi-v7a`.
 - 🏷️ **Artifact names are cleaner**: APK outputs no longer carry the `universal` suffix.
 
