@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.luminance
 import com.android.purebilibili.R
 import com.android.purebilibili.core.ui.blur.rememberRecoverableHazeState
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.purebilibili.core.ui.LocalBottomBarVisible
 import com.android.purebilibili.core.store.SettingsManager
 import com.android.purebilibili.core.util.AnalyticsHelper
 import com.android.purebilibili.core.util.CacheUtils
@@ -589,6 +590,9 @@ fun SettingsScreen(
             maxResults = 12
         )
     }
+    BackHandler(enabled = shouldConsumeSettingsBack(showBlockedList)) {
+        showBlockedList = false
+    }
     val onSettingsSearchResultClick: (SettingsSearchTarget) -> Unit = { target ->
         settingsSearchQuery = ""
         when (target) {
@@ -740,6 +744,8 @@ fun SettingsScreen(
                     isCheckingUpdate = isCheckingUpdate,
                     autoCheckUpdateEnabled = autoCheckUpdateEnabled,
                     cardAnimationEnabled = state.cardAnimationEnabled,
+                    isBottomBarFloating = state.isBottomBarFloating,
+                    bottomBarLabelMode = state.bottomBarLabelMode,
                     feedApiType = feedApiType,
                     onFeedApiTypeChange = { type ->
                         scope.launch {
@@ -884,6 +890,8 @@ private fun MobileSettingsLayout(
     isCheckingUpdate: Boolean,
     autoCheckUpdateEnabled: Boolean,
     cardAnimationEnabled: Boolean,
+    isBottomBarFloating: Boolean,
+    bottomBarLabelMode: Int,
     feedApiType: SettingsManager.FeedApiType,
     onFeedApiTypeChange: (SettingsManager.FeedApiType) -> Unit,
     incrementalTimelineRefreshEnabled: Boolean,
@@ -905,7 +913,14 @@ private fun MobileSettingsLayout(
         )
     }
     val sectionOrder = remember { resolveMobileSettingsRootSectionOrder() }
-    val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val bottomBarVisible = LocalBottomBarVisible.current
+    val bottomInset = resolveSettingsContentBottomPadding(
+        navigationBarsBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+        bottomBarVisible = bottomBarVisible,
+        isBottomBarFloating = isBottomBarFloating,
+        bottomBarLabelMode = bottomBarLabelMode,
+        isTablet = windowSizeClass.isTablet
+    )
     val screenTitle = stringResource(R.string.settings_title)
     val backLabel = stringResource(R.string.common_back)
 
@@ -942,7 +957,7 @@ private fun MobileSettingsLayout(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize(),
-            contentPadding = PaddingValues(bottom = bottomInset + 28.dp)
+            contentPadding = PaddingValues(bottom = bottomInset)
         ) {
             item {
                 SettingsSearchBarSection(
@@ -1084,7 +1099,7 @@ fun DonateDialog(onDismiss: () -> Unit) {
                 Box(contentAlignment = Alignment.TopStart) {
                     Image(
                         painter = painterResource(id = com.android.purebilibili.R.drawable.author_qr),
-                        contentDescription = "Donate QR Code",
+                        contentDescription = "打赏二维码",
                         modifier = Modifier
                             .fillMaxWidth(0.85f)
                             .aspectRatio(1f)
@@ -1103,7 +1118,7 @@ fun DonateDialog(onDismiss: () -> Unit) {
                     ) {
                         Icon(
                             imageVector = CupertinoIcons.Default.Xmark, // Fixed: Filled.Xmark -> Default.Xmark or correct path
-                            contentDescription = "Close",
+                            contentDescription = "关闭",
                             tint = Color.White,
                             modifier = Modifier.size(20.dp)
                         )
