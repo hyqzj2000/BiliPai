@@ -27,6 +27,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,6 +39,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import com.android.purebilibili.R
 import com.android.purebilibili.core.ui.blur.rememberRecoverableHazeState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.android.purebilibili.core.store.SettingsManager
@@ -893,6 +895,8 @@ private fun MobileSettingsLayout(
     }
     val sectionOrder = remember { resolveMobileSettingsRootSectionOrder() }
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val screenTitle = stringResource(R.string.settings_title)
+    val backLabel = stringResource(R.string.common_back)
 
     LaunchedEffect(Unit) { isVisible = true }
 
@@ -900,7 +904,7 @@ private fun MobileSettingsLayout(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("设置", fontWeight = FontWeight.Bold)
+                    Text(screenTitle, fontWeight = FontWeight.Bold)
                 },
                 navigationIcon = {
                     IconButton(
@@ -908,7 +912,7 @@ private fun MobileSettingsLayout(
                     ) {
                         Icon(
                             rememberAppBackIcon(),
-                            contentDescription = "返回"
+                            contentDescription = backLabel
                         )
                     }
                 },

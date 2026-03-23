@@ -64,7 +64,10 @@ import com.android.purebilibili.feature.settings.AppUpdateChecker
 import com.android.purebilibili.feature.settings.AppUpdateDownloadState
 import com.android.purebilibili.feature.settings.AppUpdateDownloadStatus
 import com.android.purebilibili.feature.settings.AppUpdateInstallAction
+import com.android.purebilibili.feature.settings.AppLanguage
 import com.android.purebilibili.feature.settings.AppThemeMode
+import com.android.purebilibili.feature.settings.DarkThemeStyle
+import com.android.purebilibili.feature.settings.applyAppLanguage
 import com.android.purebilibili.core.theme.resolveEffectiveDynamicColorEnabled
 import com.android.purebilibili.core.theme.UiPreset
 import com.android.purebilibili.feature.settings.RELEASE_DISCLAIMER_ACK_KEY
@@ -76,6 +79,7 @@ import com.android.purebilibili.feature.settings.resolveAppUpdateDialogTextColor
 import com.android.purebilibili.feature.settings.resolveUpdateReleaseNotesText
 import com.android.purebilibili.feature.settings.selectPreferredAppUpdateAsset
 import com.android.purebilibili.feature.settings.shouldRunAppEntryAutoCheck
+import com.android.purebilibili.feature.settings.resolveThemePreferenceState
 import com.android.purebilibili.feature.video.player.MiniPlayerManager
 import com.android.purebilibili.feature.video.ui.overlay.FullscreenPlayerOverlay
 import com.android.purebilibili.feature.video.ui.overlay.MiniPlayerOverlay
@@ -870,6 +874,8 @@ class MainActivity : ComponentActivity() {
             // 1. 获取存储的模式 (默认为跟随系统)
             val uiPreset by SettingsManager.getUiPreset(context).collectAsState(initial = UiPreset.IOS)
             val themeMode by SettingsManager.getThemeMode(context).collectAsState(initial = AppThemeMode.FOLLOW_SYSTEM)
+            val darkThemeStyle by SettingsManager.getDarkThemeStyle(context).collectAsState(initial = DarkThemeStyle.DEFAULT)
+            val appLanguage by SettingsManager.getAppLanguage(context).collectAsState(initial = AppLanguage.FOLLOW_SYSTEM)
 
             //  检查并请求所有文件访问权限 (Android 11+)
             //  检查并请求所有文件访问权限 (已移除启动时强制检查，改为按需申请)
@@ -892,13 +898,13 @@ class MainActivity : ComponentActivity() {
             val systemInDark = isSystemInDarkTheme()
 
             // 5. 根据枚举值决定是否开启 DarkTheme
-            val useDarkTheme = when (themeMode) {
-                AppThemeMode.FOLLOW_SYSTEM -> systemInDark // 跟随系统：系统黑则黑，系统白则白
-                AppThemeMode.LIGHT -> false                // 强制浅色
-                AppThemeMode.DARK -> true                  // 强制深色
-                AppThemeMode.AMOLED -> true                // 强制纯黑
-            }
-            val useAmoledDarkTheme = themeMode == AppThemeMode.AMOLED
+            val themePreferenceState = resolveThemePreferenceState(
+                themeMode = themeMode,
+                darkThemeStyle = darkThemeStyle,
+                systemInDark = systemInDark
+            )
+            val useDarkTheme = themePreferenceState.useDarkTheme
+            val useAmoledDarkTheme = themePreferenceState.useAmoledDarkTheme
             val effectiveDynamicColor = resolveEffectiveDynamicColorEnabled(
                 dynamicColorEnabled = dynamicColor,
                 amoledDarkTheme = useAmoledDarkTheme
@@ -916,6 +922,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 )
+            }
+
+            LaunchedEffect(appLanguage) {
+                applyAppLanguage(appLanguage)
             }
             
             //  全局 Haze 状态，用于实现毛玻璃效果
