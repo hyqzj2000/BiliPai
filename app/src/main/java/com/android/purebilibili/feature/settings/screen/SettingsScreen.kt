@@ -801,6 +801,17 @@ internal fun resolveMobileSettingsRootSectionOrder(): List<MobileSettingsRootSec
     MobileSettingsRootSection.SUPPORT
 )
 
+internal fun resolveMobileSettingsRootSectionTitleRes(section: MobileSettingsRootSection): Int = when (section) {
+    MobileSettingsRootSection.FOLLOW_AUTHOR -> R.string.settings_section_follow_author
+    MobileSettingsRootSection.GENERAL -> R.string.settings_section_general
+    MobileSettingsRootSection.PRIVACY -> R.string.settings_section_privacy
+    MobileSettingsRootSection.STORAGE -> R.string.settings_section_storage
+    MobileSettingsRootSection.DEVELOPER -> R.string.settings_section_developer
+    MobileSettingsRootSection.FEED -> R.string.settings_section_feed
+    MobileSettingsRootSection.ABOUT -> R.string.settings_section_about
+    MobileSettingsRootSection.SUPPORT -> R.string.settings_section_support
+}
+
 internal fun shouldMarkCacheClearAnimationComplete(clearSucceeded: Boolean): Boolean = clearSucceeded
 
 internal fun resolveCacheClearFailureMessage(error: Throwable?): String {
@@ -953,16 +964,7 @@ private fun MobileSettingsLayout(
                     item {
                         Box(modifier = Modifier.staggeredEntrance(index * 2, isVisible, motionTier = effectiveMotionTier)) {
                             SettingsCategoryHeader(
-                                title = when (section) {
-                                    MobileSettingsRootSection.FOLLOW_AUTHOR -> "关注作者"
-                                    MobileSettingsRootSection.GENERAL -> "常规"
-                                    MobileSettingsRootSection.PRIVACY -> "隐私与安全"
-                                    MobileSettingsRootSection.STORAGE -> "数据与存储"
-                                    MobileSettingsRootSection.DEVELOPER -> "开发者选项"
-                                    MobileSettingsRootSection.FEED -> "推荐流"
-                                    MobileSettingsRootSection.ABOUT -> "关于"
-                                    MobileSettingsRootSection.SUPPORT -> "帮助与系统"
-                                }
+                                title = stringResource(resolveMobileSettingsRootSectionTitleRes(section))
                             )
                         }
                     }

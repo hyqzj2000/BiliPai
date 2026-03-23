@@ -23,3 +23,19 @@ internal fun resolveAppLanguageLocaleTags(appLanguage: AppLanguage): List<String
         AppLanguage.ENGLISH -> listOf("en")
     }
 }
+
+internal fun shouldPromptAppRestartForLanguageChange(
+    current: AppLanguage,
+    requested: AppLanguage
+): Boolean = current != requested
+
+internal suspend fun persistAndApplyAppLanguageBeforeRestart(
+    appLanguage: AppLanguage,
+    persist: suspend (AppLanguage) -> Unit,
+    apply: (AppLanguage) -> Unit = ::applyAppLanguage,
+    restart: () -> Unit
+) {
+    persist(appLanguage)
+    apply(appLanguage)
+    restart()
+}

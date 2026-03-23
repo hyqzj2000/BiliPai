@@ -1,7 +1,9 @@
 package com.android.purebilibili.feature.settings
 
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AppLanguagePolicyTest {
@@ -48,6 +50,39 @@ class AppLanguagePolicyTest {
         assertEquals(
             listOf("en"),
             resolveAppLanguageLocaleTags(AppLanguage.ENGLISH)
+        )
+    }
+
+    @Test
+    fun restartPrompt_onlyAppearsWhenLanguageActuallyChanges() {
+        assertFalse(shouldPromptAppRestartForLanguageChange(AppLanguage.ENGLISH, AppLanguage.ENGLISH))
+        assertTrue(shouldPromptAppRestartForLanguageChange(AppLanguage.FOLLOW_SYSTEM, AppLanguage.ENGLISH))
+        assertTrue(
+            shouldPromptAppRestartForLanguageChange(
+                AppLanguage.TRADITIONAL_CHINESE_TAIWAN,
+                AppLanguage.SIMPLIFIED_CHINESE
+            )
+        )
+    }
+
+    @Test
+    fun languageRestart_persistsBeforeApplyAndRestart() = runTest {
+        val events = mutableListOf<String>()
+
+        persistAndApplyAppLanguageBeforeRestart(
+            appLanguage = AppLanguage.TRADITIONAL_CHINESE_TAIWAN,
+            persist = { events += "persist:${it.name}" },
+            apply = { events += "apply:${it.name}" },
+            restart = { events += "restart" }
+        )
+
+        assertEquals(
+            listOf(
+                "persist:TRADITIONAL_CHINESE_TAIWAN",
+                "apply:TRADITIONAL_CHINESE_TAIWAN",
+                "restart"
+            ),
+            events
         )
     }
 }

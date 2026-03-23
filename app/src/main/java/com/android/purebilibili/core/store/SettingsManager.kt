@@ -862,7 +862,7 @@ object SettingsManager {
         context.getSharedPreferences("theme_cache", Context.MODE_PRIVATE)
             .edit()
             .putInt("app_language", appLanguage.value)
-            .apply()
+            .commit()
     }
 
     fun getAppLanguageSync(context: Context): AppLanguage {

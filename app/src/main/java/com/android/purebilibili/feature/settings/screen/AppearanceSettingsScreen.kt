@@ -63,8 +63,13 @@ fun AppearanceSettingsScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+    var pendingLanguageRestart by remember { mutableStateOf<AppLanguage?>(null) }
     val backLabel = stringResource(R.string.common_back)
     val screenTitle = stringResource(R.string.appearance_settings_title)
+    val restartDialogTitle = stringResource(R.string.app_language_restart_dialog_title)
+    val restartDialogMessage = stringResource(R.string.app_language_restart_dialog_message)
+    val restartDialogConfirm = stringResource(R.string.app_language_restart_dialog_confirm)
 
     val displayLevel = when (state.displayMode) {
         0 -> 0.35f
@@ -120,7 +125,41 @@ fun AppearanceSettingsScreen(
             onNavigateToIconSettings = onNavigateToIconSettings,
             onNavigateToAnimationSettings = onNavigateToAnimationSettings,
             viewModel = viewModel,
-            context = context
+            context = context,
+            onAppLanguageChange = { language ->
+                if (shouldPromptAppRestartForLanguageChange(state.appLanguage, language)) {
+                    pendingLanguageRestart = language
+                }
+            }
+        )
+    }
+
+    pendingLanguageRestart?.let { pendingLanguage ->
+        AlertDialog(
+            onDismissRequest = { pendingLanguageRestart = null },
+            title = { Text(restartDialogTitle) },
+            text = { Text(restartDialogMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingLanguageRestart = null
+                        coroutineScope.launch {
+                            persistAndApplyAppLanguageBeforeRestart(
+                                appLanguage = pendingLanguage,
+                                persist = { SettingsManager.setAppLanguage(context, it) },
+                                restart = { restartApp(context) }
+                            )
+                        }
+                    }
+                ) {
+                    Text(restartDialogConfirm)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingLanguageRestart = null }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            }
         )
     }
 }
@@ -134,7 +173,8 @@ fun AppearanceSettingsContent(
     onNavigateToIconSettings: () -> Unit,
     onNavigateToAnimationSettings: () -> Unit,
     viewModel: SettingsViewModel,
-    context: android.content.Context
+    context: android.content.Context,
+    onAppLanguageChange: (AppLanguage) -> Unit
 ) {
     // Animation Trigger
     var isVisible by remember { mutableStateOf(false) }
@@ -315,7 +355,7 @@ fun AppearanceSettingsContent(
                             options = appLanguageOptions,
                             selectedValue = state.appLanguage,
                             onSelectionChange = { language ->
-                                viewModel.setAppLanguage(language)
+                                onAppLanguageChange(language)
                             }
                         )
                         
@@ -1154,6 +1194,13 @@ fun AppearanceSettingsContent(
         
 
     }
+}
+
+internal fun restartApp(context: android.content.Context) {
+    val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
+    launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    (context as? android.app.Activity)?.finishAffinity()
+    context.startActivity(launchIntent)
 }
 
 
