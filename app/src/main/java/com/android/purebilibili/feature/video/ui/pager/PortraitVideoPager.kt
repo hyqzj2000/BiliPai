@@ -1198,8 +1198,9 @@ private fun VideoPageItem(
                     },
                     onDragEnd = {
                         if (isCurrentPage && isSeekGesture) {
-                            exoPlayer.seekTo(seekTargetPosition.toLong())
-                            danmakuManager.seekTo(seekTargetPosition.toLong())
+                            val targetPosition = seekTargetPosition.toLong()
+                            seekPlayerFromUserAction(exoPlayer, targetPosition)
+                            danmakuManager.seekTo(targetPosition)
                             isSeekGesture = false
                         }
                     },

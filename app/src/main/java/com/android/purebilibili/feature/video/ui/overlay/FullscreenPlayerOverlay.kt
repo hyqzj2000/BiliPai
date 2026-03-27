@@ -360,7 +360,7 @@ fun FullscreenPlayerOverlay(
                                 FullscreenDoubleTapAction.SeekBackward -> {
                                     val seekMs = seekBackwardSeconds * 1000L
                                     val newPos = (p.currentPosition - seekMs).coerceAtLeast(0L)
-                                    p.seekTo(newPos)
+                                    seekPlayerFromUserAction(p, newPos)
                                     danmakuManager.seekTo(newPos)
                                 }
                                 FullscreenDoubleTapAction.SeekForward -> {
@@ -372,7 +372,7 @@ fun FullscreenPlayerOverlay(
                                     } else {
                                         target
                                     }
-                                    p.seekTo(newPos)
+                                    seekPlayerFromUserAction(p, newPos)
                                     danmakuManager.seekTo(newPos)
                                 }
                                 FullscreenDoubleTapAction.TogglePlayPause -> {
@@ -427,7 +427,7 @@ fun FullscreenPlayerOverlay(
                             )
                         ) {
                             player?.let {
-                                it.seekTo(seekPreviewPosition)
+                                seekPlayerFromUserAction(it, seekPreviewPosition)
                                 danmakuManager.seekTo(seekPreviewPosition)
                             }
                         }

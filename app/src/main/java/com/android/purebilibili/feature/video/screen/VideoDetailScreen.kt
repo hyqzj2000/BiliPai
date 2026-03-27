@@ -121,6 +121,7 @@ import kotlin.math.roundToInt
 import com.android.purebilibili.feature.video.subtitle.SubtitleDisplayMode
 import com.android.purebilibili.feature.video.subtitle.resolveSubtitleDisplayModePreference
 import com.android.purebilibili.feature.video.usecase.playPlayerFromUserAction
+import com.android.purebilibili.feature.video.usecase.seekPlayerFromUserAction
 import com.android.purebilibili.feature.video.policy.reduceVideoDetailPostScroll
 import com.android.purebilibili.feature.video.policy.reduceVideoDetailPreScroll
 import com.android.purebilibili.feature.video.policy.resolveVideoDetailCollapseProgress
@@ -2428,8 +2429,7 @@ fun VideoDetailScreen(
                                                         onWatchLaterClick = { viewModel.toggleWatchLater() },
                                                         //  [新增] 时间戳点击跳转
                                                         onTimestampClick = { positionMs ->
-                                                            playerState.player.seekTo(positionMs)
-                                                            playPlayerFromUserAction(playerState.player)
+                                                            seekPlayerFromUserAction(playerState.player, positionMs)
                                                         },
                                                         //  [新增] 弹幕发送
                                                         onDanmakuSendClick = {
@@ -3298,8 +3298,7 @@ fun VideoDetailScreen(
             screenHeightPx = screenHeightPx,
             topReservedPx = danmakuDialogTopReservePx,
             onTimestampClick = { positionMs ->
-                playerState.player.seekTo(positionMs)
-                playPlayerFromUserAction(playerState.player)
+                seekPlayerFromUserAction(playerState.player, positionMs)
                 commentViewModel.closeSubReply()
             }
         )

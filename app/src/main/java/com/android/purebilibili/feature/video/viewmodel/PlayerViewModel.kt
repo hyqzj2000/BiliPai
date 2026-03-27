@@ -384,6 +384,18 @@ internal fun clearSubtitleFields(state: PlayerUiState.Success): PlayerUiState.Su
     )
 }
 
+internal fun clearTransientPlaybackPreviewData(state: PlayerUiState.Success): PlayerUiState.Success {
+    return if (state.videoshotData == null) state else state.copy(videoshotData = null)
+}
+
+internal fun shouldApplyVideoshotResult(
+    currentState: PlayerUiState.Success,
+    videoshotBvid: String,
+    videoshotCid: Long
+): Boolean {
+    return currentState.info.bvid == videoshotBvid && currentState.info.cid == videoshotCid
+}
+
 internal data class SubtitleTrackLoadDecision(
     val primaryLanguage: String?,
     val secondaryLanguage: String?,
@@ -3309,7 +3321,13 @@ class PlayerViewModel : ViewModel() {
                 val videoshotData = VideoRepository.getVideoshot(bvid, cid)
                 if (videoshotData != null && videoshotData.isValid) {
                     _uiState.update { current ->
-                        if (current is PlayerUiState.Success) {
+                        if (current is PlayerUiState.Success &&
+                            shouldApplyVideoshotResult(
+                                currentState = current,
+                                videoshotBvid = bvid,
+                                videoshotCid = cid
+                            )
+                        ) {
                             current.copy(videoshotData = videoshotData)
                         } else current
                     }
@@ -4550,9 +4568,32 @@ class PlayerViewModel : ViewModel() {
             val audioPref = appContext?.let { 
                 com.android.purebilibili.core.store.SettingsManager.getAudioQualitySync(it) 
             } ?: -1
+            val videoCodecPreference = _videoCodecPreference.value
+            val videoSecondCodecPreference = _videoSecondCodecPreference.value
+            val isHevcSupported = com.android.purebilibili.core.util.MediaUtils.isHevcSupported()
+            val isAv1Supported = com.android.purebilibili.core.util.MediaUtils.isAv1Supported()
             
-            val result = playbackUseCase.changeQualityFromCache(qualityId, current.cachedDashVideos, current.cachedDashAudios, currentPos, audioPref)
-                ?: playbackUseCase.changeQualityFromApi(currentBvid, currentCid, qualityId, currentPos, audioPref)
+            val result = playbackUseCase.changeQualityFromCache(
+                qualityId = qualityId,
+                cachedVideos = current.cachedDashVideos,
+                cachedAudios = current.cachedDashAudios,
+                currentPos = currentPos,
+                audioQualityPreference = audioPref,
+                videoCodecPreference = videoCodecPreference,
+                videoSecondCodecPreference = videoSecondCodecPreference,
+                isHevcSupported = isHevcSupported,
+                isAv1Supported = isAv1Supported
+            ) ?: playbackUseCase.changeQualityFromApi(
+                bvid = currentBvid,
+                cid = currentCid,
+                qualityId = qualityId,
+                currentPos = currentPos,
+                audioQualityPreference = audioPref,
+                videoCodecPreference = videoCodecPreference,
+                videoSecondCodecPreference = videoSecondCodecPreference,
+                isHevcSupported = isHevcSupported,
+                isAv1Supported = isAv1Supported
+            )
             
             if (result != null) {
                 _uiState.value = current.copy(
@@ -4592,7 +4633,7 @@ class PlayerViewModel : ViewModel() {
         if (page.cid == currentCid) { toast("\u5df2\u662f\u5f53\u524d\u5206P"); return }
         playbackCoordinator.dismissResumeSuggestion()
         subtitleLoadToken += 1
-        val subtitleClearedState = clearSubtitleFields(current)
+        val subtitleClearedState = clearTransientPlaybackPreviewData(clearSubtitleFields(current))
         val previousCid = currentCid
         if (currentBvid.isNotEmpty() && previousCid > 0L) {
             playbackUseCase.savePosition(currentBvid, previousCid)
@@ -4647,6 +4688,7 @@ class PlayerViewModel : ViewModel() {
                         )
                         interactiveCurrentEdgeId = 0L
                         loadPlayerInfo(currentBvid, page.cid)
+                        loadVideoshot(currentBvid, page.cid)
                         toast("\u5df2\u5207\u6362\u81f3 P${pageIndex + 1}")
                         return@launch
                     }
@@ -4784,7 +4826,7 @@ class PlayerViewModel : ViewModel() {
 
             currentCid = targetCid
             subtitleLoadToken += 1
-            _uiState.value = clearSubtitleFields(current).copy(
+            _uiState.value = clearTransientPlaybackPreviewData(clearSubtitleFields(current)).copy(
                 info = current.info.copy(cid = targetCid),
                 playUrl = selection.videoUrl,
                 audioUrl = selection.audioUrl,
