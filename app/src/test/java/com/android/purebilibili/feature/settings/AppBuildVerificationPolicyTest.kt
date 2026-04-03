@@ -154,10 +154,59 @@ class AppBuildVerificationPolicyTest {
     }
 
     @Test
+    fun `resolveAppBuildVerificationState returns likely verified when mutable release digest matches without embedded provenance`() {
+        val state = resolveAppBuildVerificationState(
+            currentVersion = "7.4.0",
+            localBuildCommitSha = "local",
+            localWorkflowRunId = "",
+            localWorkflowRunUrl = "",
+            localReleaseTag = "",
+            localApkSha256 = "feedbeef",
+            remoteRelease = AppUpdateCheckResult(
+                isUpdateAvailable = false,
+                currentVersion = "7.4.0",
+                latestVersion = "7.4.0",
+                releaseUrl = "https://example.com/release",
+                releaseNotes = "notes",
+                publishedAt = null,
+                assets = listOf(
+                    AppUpdateAsset(
+                        name = "BiliPai-release-7.4.0.apk",
+                        downloadUrl = "https://example.com/app.apk",
+                        sizeBytes = 100,
+                        contentType = "application/vnd.android.package-archive",
+                        digest = "sha256:feedbeef"
+                    )
+                ),
+                message = "已是最新版本",
+                releaseIsImmutable = false,
+                buildMetadata = AppReleaseBuildMetadata(
+                    releaseTag = "v7.4.0"
+                )
+            )
+        )
+
+        assertEquals(AppBuildVerificationStatus.LIKELY_VERIFIED, state.status)
+        assertEquals("v7.4.0", state.releaseTag)
+        assertTrue(state.summary.contains("SHA-256"))
+        assertTrue(state.summary.contains("还可被修改"))
+    }
+
+    @Test
     fun `resolveBuildFingerprintValue shortens sha256 for about screen`() {
         val value = resolveBuildFingerprintValue("0123456789abcdef0123456789abcdef")
 
         assertEquals("0123456789ab", value)
+    }
+
+    @Test
+    fun `resolveBuildSourceValue uses provided fallback when commit is missing`() {
+        val value = resolveBuildSourceValue(
+            commitSha = "",
+            fallback = "GitHub Release"
+        )
+
+        assertEquals("GitHub Release", value)
     }
 
     @Test

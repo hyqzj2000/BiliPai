@@ -148,8 +148,25 @@ fun SettingsScreen(
     val buildVerificationLabel = remember(buildVerificationState.status) {
         resolveAppBuildVerificationLabel(buildVerificationState.status)
     }
-    val buildSourceValue = remember(buildVerificationState.sourceCommitSha, installedBuildProvenance.commitSha) {
-        resolveBuildSourceValue(buildVerificationState.sourceCommitSha ?: installedBuildProvenance.commitSha)
+    val buildSourceFallback = remember(buildVerificationState.releaseTag, buildVerificationState.workflowRunId) {
+        if (
+            !buildVerificationState.releaseTag.isNullOrBlank() ||
+            !buildVerificationState.workflowRunId.isNullOrBlank()
+        ) {
+            "GitHub Release"
+        } else {
+            "本地构建"
+        }
+    }
+    val buildSourceValue = remember(
+        buildVerificationState.sourceCommitSha,
+        installedBuildProvenance.commitSha,
+        buildSourceFallback
+    ) {
+        resolveBuildSourceValue(
+            buildVerificationState.sourceCommitSha ?: installedBuildProvenance.commitSha,
+            fallback = buildSourceFallback
+        )
     }
     val buildSourceSubtitle = remember(buildVerificationState.workflowRunId, buildVerificationState.releaseTag) {
         resolveBuildSourceSubtitle(

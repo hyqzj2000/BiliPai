@@ -82,6 +82,30 @@ internal fun resolveAppBuildVerificationState(
     }
 
     if (
+        remoteRelease != null &&
+        !remoteRelease.releaseIsImmutable &&
+        remoteMatchesCurrentVersion &&
+        digestMatches
+    ) {
+        return AppBuildVerificationState(
+            status = AppBuildVerificationStatus.LIKELY_VERIFIED,
+            summary = if (hasAttestation) {
+                "当前安装包 SHA-256 已对上当前 GitHub Release，并已找到 provenance；但该 Release 还可被修改，暂不能当成最终校验结果。"
+            } else {
+                "当前安装包 SHA-256 已对上当前 GitHub Release；但该 Release 还可被修改，暂不能当成最终校验结果。"
+            },
+            sourceCommitSha = remoteCommit,
+            workflowRunId = remoteRunId,
+            workflowRunUrl = remoteRunUrl,
+            releaseTag = remoteTag,
+            localApkSha256 = localApkSha256,
+            remoteApkSha256 = remoteDigest,
+            releaseIsImmutable = false,
+            hasAttestation = hasAttestation
+        )
+    }
+
+    if (
         hasEmbeddedProvenance &&
         remoteRelease != null &&
         remoteRelease.releaseIsImmutable &&
