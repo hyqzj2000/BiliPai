@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-  <sub>Last updated: 2026-04-05 · Synced to v7.4.2 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
+  <sub>Last updated: 2026-04-05 · Synced to v7.4.3 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-7.4.2-fb7299?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/Version-7.4.3-fb7299?style=flat-square" alt="Version">
   <img src="https://img.shields.io/github/stars/jay3-yy/BiliPai?style=flat-square&color=yellow" alt="Stars">
   <img src="https://img.shields.io/github/forks/jay3-yy/BiliPai?style=flat-square&color=green" alt="Forks">
   <img src="https://img.shields.io/github/last-commit/jay3-yy/BiliPai?style=flat-square&color=purple" alt="Last Commit">
@@ -388,7 +388,7 @@ A lightweight plugin format requiring **no coding**, just a simple JSON file to 
 ## 🗺️ Roadmap
 
 > [!TIP]
-> Roadmap last refreshed on 2026-04-05 (v7.4.2). For current behavior, prefer the latest release notes, `CHANGELOG.md`, and code.
+> Roadmap last refreshed on 2026-04-05 (v7.4.3). For current behavior, prefer the latest release notes, `CHANGELOG.md`, and code.
 
 ### ✅ Completed
 
@@ -430,14 +430,14 @@ A lightweight plugin format requiring **no coding**, just a simple JSON file to 
 
 See full changelog: [CHANGELOG.md](CHANGELOG.md)
 
-### Latest (v7.4.2 · 2026-04-05)
+### Latest (v7.4.3 · 2026-04-05)
 
-- 🎯 **Regular video startup is now closer to PiliPlus**: the first `WBI` request starts from `qn=80`, and downgraded-but-playable results are accepted so playback can choose the actual track locally.
-- 🛟 **Playback URL fallback is more resilient**: logged-in users now keep `APP access_token -> legacy -> guest` as recovery paths, while guest playback retains a `legacy` fallback for empty `WBI` payloads.
-- 🌫️ **Glass badges on thumbnails are easier to read**: history/favorites/home cover pills now use a darker glass base so duration and watched-progress text stay legible on bright thumbnails.
-- 💬 **Danmaku spacing settings finally take effect**: line-height settings are now converted into the pixel values expected by the renderer, fixing the “comments collapse into each other” issue.
-- 🔒 **Player gesture/lock behavior is cleaner**: pinch-based viewport transforms are no longer active during playback, and the fullscreen lock button now shows the correct lock/unlock icon state.
-- ⚙️ **Build stability improved**: KSP incremental flags, configuration-cache-safe directory prep, and a policy split for the large player section file make incremental builds steadier.
+- 🎯 **Seek, quality switching, and buffering feedback are more reliable**: danmaku no longer freezes after scrubbing back, and quality-switch / seek buffering now show a clearer loading state with bandwidth feedback.
+- 🖼️ **Seek preview thumbnails track your finger again**: the preview frame follows the live scrub target instead of lagging behind the displayed position.
+- 🧹 **Cache cleanup is now selectable**: users can clear playback-quality, network, preview-image, subtitle/danmaku, temp/log, and app metadata caches independently.
+- 🔢 **The cache number now matches the selected options**: the dialog shows “selected cache” and updates immediately when checkboxes change.
+- 📚 **Collection UX is stronger**: collection entry points and sheets now support subscriptions plus ascending, descending, and recent-first sorting.
+- ◼️ **Android Native home chrome is softer**: the top unified panel now uses a subtle radius instead of hard square corners.
 
 ---
 
