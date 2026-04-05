@@ -9,11 +9,11 @@
 </p>
 
 <p align="center">
-  <sub>最后更新：2026-04-05 · 文档已同步至 v7.4.2（以 <a href="CHANGELOG.md">CHANGELOG</a> 与源码为准）</sub>
+  <sub>最后更新：2026-04-05 · 文档已同步至 v7.4.3（以 <a href="CHANGELOG.md">CHANGELOG</a> 与源码为准）</sub>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-7.4.2-fb7299?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/Version-7.4.3-fb7299?style=flat-square" alt="Version">
   <img src="https://img.shields.io/github/stars/jay3-yy/BiliPai?style=flat-square&color=yellow" alt="Stars">
   <img src="https://img.shields.io/github/forks/jay3-yy/BiliPai?style=flat-square&color=green" alt="Forks">
   <img src="https://img.shields.io/github/last-commit/jay3-yy/BiliPai?style=flat-square&color=purple" alt="Last Commit">
@@ -527,7 +527,7 @@ app/src/main/java/com/android/purebilibili
 ## 🗺️ 路线图
 
 > [!TIP]
-> 路线图最后同步于 2026-04-05（v7.4.2）。功能以最新 Release、`CHANGELOG.md` 与主分支代码为准。
+> 路线图最后同步于 2026-04-05（v7.4.3）。功能以最新 Release、`CHANGELOG.md` 与主分支代码为准。
 
 ### ✅ 已完成功能
 
@@ -572,14 +572,14 @@ app/src/main/java/com/android/purebilibili
 
 查看完整更新记录：[CHANGELOG.md](CHANGELOG.md)
 
-### 最近更新 (v7.4.2 · 2026-04-05)
+### 最近更新 (v7.4.3 · 2026-04-05)
 
-- 🎯 **普通视频起播继续向 PiliPlus 对齐**：首个 `WBI` 请求固定从 `qn=80` 起步，可播但降级的结果也会先接住，再交给播放层本地选轨。
-- 🛟 **播放地址获取失败时的回退链更完整**：登录态补上 `APP access_token -> legacy -> guest`，游客态保留 `legacy` 兜底，减少“无法获取任何画质播放地址”的硬失败页。
-- 🌫️ **玻璃封面上的时长与进度更清楚**：历史记录、收藏等封面胶囊统一改成深色玻璃基底，亮封面下也能保持白字对比度。
-- 💬 **弹幕不再整片挤成一团**：行高设置会正确换算成像素行高，调整行高、显示区域和海量模式时终于会真实生效。
-- 🔒 **播放器误触和锁定图标语义修正**：观看时不再响应双指改画面比例，横屏锁定按钮的开锁/闭锁图标与高亮状态也已修正。
-- ⚙️ **构建链更稳**：补上 KSP 增量与 configuration-cache-safe 的目录预创建任务，并把播放器大文件的纯策略逻辑拆出，增量编译稳定性更好。
+- 🎯 **seek、切画质和缓冲提示更稳了**：修复回拉进度后弹幕卡死，切清晰度与 seek 缓冲不再误显示暂停，并会优先显示当前网速。
+- 🖼️ **进度条预览图不再卡住**：拖动时预览帧直接跟随手指目标位置，减少滑动过程中“画面不更新”的错觉。
+- 🧹 **缓存清理支持按项选择**：新增播放地址/画质、网络、预览图、字幕弹幕、临时文件、元数据等细分清理项，默认更偏向播放排障场景。
+- 🔢 **缓存数字终于和勾选项一致**：清理弹窗中的体积提示现在显示“已选缓存”，取消某项后数字会立即跟着变化。
+- 📚 **合集体验继续补强**：合集入口与弹窗支持订阅，以及正序/倒序/最近观看三种排序方式。
+- ◼️ **安卓原生首页顶部更顺眼**：顶部统一面板从直角收口为轻圆角，保留原生风格的同时减少生硬感。
 
 ### 历史版本
 
