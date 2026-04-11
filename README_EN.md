@@ -433,7 +433,7 @@ See full changelog: [CHANGELOG.md](CHANGELOG.md)
 ### Latest (v7.7.0 · 2026-04-12)
 
 - 💬 **Comment fetching**: main replies, sub replies, and conversation replies now use a gRPC path with REST fallback.
-- 🎖️ **Comment badges**: level, UP, fan-group decoration, fan medal, and nameplate rendering now stays closer to PiliPlus, including during playback.
+- 🎖️ **Comment badges**: level, UP, fan-group decoration, fan medal, and nameplate rendering now use a more polished local badge style, including during playback.
 - 🧩 **Rich comments**: mentions, topics, server link titles, BVID links, votes, notes, opus entries, timestamps, and image previews are parsed consistently.
 - ✍️ **Comment actions**: long press now supports copy, free copy, save, reply, report, pin/unpin, and delete; the composer can insert playback progress and sync to dynamic.
 - 🎧 **Audio mode artwork**: covers are larger rounded rectangles with retained 3D flipping, blurred artwork background, and stronger card depth.
