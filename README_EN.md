@@ -434,6 +434,8 @@ See full changelog: [CHANGELOG.md](CHANGELOG.md)
 
 - 🔴 **Live stack upgrades**: followed-live loading, room snapshots, danmaku history, super chat seeds, and live-room shielding are being filled in to improve live usage first.
 - 🎛️ **Live playback controls**: live stream requests now expose audio-only parameters, richer room APIs, and like-click counts for future control improvements.
+- 💬 **Danmaku speed sync**: scrolling, top, and bottom danmaku durations now scale together with playback speed for more consistent fast-play behavior.
+- ✨ **Danmaku readability**: bitmap danmaku and emoticon danmaku now render with stronger outlines/shadows on busy backgrounds.
 - 🔎 **Search landing refactor**: the search home now includes trending, discovery, suggestions, and a dedicated hot-search page backed by official endpoints.
 - ⚠️ **Search experience notice**: search is still being refactored step by step, so landing, trending, suggestions, and result transitions may feel unstable in some cases.
 - ⚡ **Direct default search**: the top-right search action can now submit the current default suggested keyword even when the text field is empty.
