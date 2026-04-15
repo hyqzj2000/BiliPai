@@ -432,7 +432,7 @@ See full changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ### Latest (v7.8.2 · 2026-04-15)
 
-- 🎬 **Player hot-path parity**: progress dragging, tap seek, and quality switching now follow a shorter PiliPlus-style control path.
+- 🎬 **Player hot-path cleanup**: progress dragging, tap seek, and quality switching now use a shorter and more stable control path.
 - 🧭 **Single seek session**: progress dragging uses one seek session, with old UI-only seek state and unused landscape control code removed.
 - 🎚️ **Stable quality switching**: quality changes now read playback position from the player layer instead of UI callbacks.
 - ▶️ **Playback intent preservation**: seek and source replacement explicitly keep playback intent to reduce unexpected pauses.
