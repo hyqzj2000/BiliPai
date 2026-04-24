@@ -133,6 +133,17 @@ internal fun resolveSeekPreviewTargetPositionMs(
     }
 }
 
+internal fun resolveSeekDragCommitPositionMs(
+    dragStartPositionMs: Long,
+    latestDragPositionMs: Long
+): Long {
+    return if (latestDragPositionMs >= 0L) {
+        latestDragPositionMs
+    } else {
+        dragStartPositionMs.coerceAtLeast(0L)
+    }
+}
+
 internal fun resolveProgressFraction(
     positionMs: Long,
     durationMs: Long
@@ -1138,6 +1149,8 @@ fun VideoProgressBar(
                     }
                 }
                 .pointerInput(duration) {
+                    var dragStartPositionMs = displayPositionMs.coerceAtLeast(0L)
+                    var latestDragPositionMs = dragStartPositionMs
                     detectDragGestures(
                         onDragStart = { offset ->
                             val targetPositionMs = resolveSeekPositionFromTouch(
@@ -1145,6 +1158,8 @@ fun VideoProgressBar(
                                 containerWidthPx = size.width.toFloat(),
                                 durationMs = duration
                             )
+                            dragStartPositionMs = targetPositionMs
+                            latestDragPositionMs = targetPositionMs
                             dragTargetPositionMs = targetPositionMs
                             currentOnSeekStart()
                             currentOnSeekDragStart(targetPositionMs)
@@ -1156,11 +1171,17 @@ fun VideoProgressBar(
                                 containerWidthPx = size.width.toFloat(),
                                 durationMs = duration
                             )
+                            latestDragPositionMs = targetPositionMs
                             dragTargetPositionMs = targetPositionMs
                             currentOnSeekDragUpdate(targetPositionMs)
                         },
                         onDragEnd = {
-                            currentOnSeek(dragTargetPositionMs)
+                            currentOnSeek(
+                                resolveSeekDragCommitPositionMs(
+                                    dragStartPositionMs = dragStartPositionMs,
+                                    latestDragPositionMs = latestDragPositionMs
+                                )
+                            )
                         },
                         onDragCancel = {
                             currentOnSeekDragCancel()
