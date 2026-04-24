@@ -102,6 +102,20 @@ internal fun finishPlaybackSeekInteraction(
     )
 }
 
+internal fun commitPlaybackSeekInteraction(
+    state: PlaybackSeekSessionState,
+    player: Player,
+    positionMs: Long
+): PlaybackSeekSessionCommitResult {
+    return finishPlaybackSeekInteraction(
+        startPlaybackSeekInteraction(
+            state = state,
+            player = player,
+            positionMs = positionMs
+        )
+    )
+}
+
 internal fun cancelPlaybackSeekInteraction(
     state: PlaybackSeekSessionState
 ): PlaybackSeekSessionState {

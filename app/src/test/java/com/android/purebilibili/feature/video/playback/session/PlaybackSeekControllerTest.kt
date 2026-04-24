@@ -152,6 +152,28 @@ class PlaybackSeekControllerTest {
     }
 
     @Test
+    fun directCommitSeek_createsPendingSeekAndKeepsResumeIntent() {
+        val player = mockk<Player>()
+        every { player.playWhenReady } returns true
+        every { player.playbackState } returns Player.STATE_READY
+
+        val result = commitPlaybackSeekInteraction(
+            state = syncPlaybackSeekSession(
+                state = PlaybackSeekSessionState(),
+                playbackPositionMs = 8_000L
+            ),
+            player = player,
+            positionMs = 18_000L
+        )
+
+        assertEquals(18_000L, result.committedPositionMs)
+        assertEquals(18_000L, result.state.sliderPositionMs)
+        assertEquals(18_000L, result.state.pendingSeekPositionMs)
+        assertFalse(result.state.isSliderMoving)
+        assertEquals(true, result.shouldResumePlayback)
+    }
+
+    @Test
     fun pendingSeekRecovery_staysActiveWhilePlayerHasNotResumed() {
         val state = PlaybackSeekSessionState(
             playbackPositionMs = 10_000L,

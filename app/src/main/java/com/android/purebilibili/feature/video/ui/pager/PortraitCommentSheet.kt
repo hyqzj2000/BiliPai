@@ -9,6 +9,7 @@ import com.android.purebilibili.feature.video.viewmodel.VideoCommentViewModel
 fun PortraitCommentSheet(
     visible: Boolean,
     onDismiss: () -> Unit,
+    onVisibilityProgressChange: (Float) -> Unit = {},
     commentViewModel: VideoCommentViewModel,
     aid: Long,
     upMid: Long = 0,
@@ -22,6 +23,7 @@ fun PortraitCommentSheet(
     VideoCommentSheetHost(
         mainSheetVisible = visible,
         onDismiss = onDismiss,
+        onMainSheetVisibilityProgressChange = onVisibilityProgressChange,
         commentViewModel = commentViewModel,
         aid = aid,
         upMid = upMid,

@@ -145,6 +145,7 @@ import com.android.purebilibili.feature.video.playback.session.PlaybackSeekSessi
 import com.android.purebilibili.feature.video.playback.session.SEEK_PLAYBACK_RECOVERY_DELAY_MS
 import com.android.purebilibili.feature.video.playback.session.shouldAttemptPlaybackRecoveryAfterSeek
 import com.android.purebilibili.feature.video.playback.session.cancelPlaybackSeekInteraction
+import com.android.purebilibili.feature.video.playback.session.commitPlaybackSeekInteraction
 import com.android.purebilibili.feature.video.playback.session.finishPlaybackSeekInteraction
 import com.android.purebilibili.feature.video.playback.session.shouldUsePlaybackSeekSessionPosition
 import com.android.purebilibili.feature.video.playback.session.startPlaybackSeekInteraction
@@ -822,6 +823,22 @@ fun VideoPlayerSection(
     val danmakuManager = rememberDanmakuManager()
     val overlayDrawerHazeState = com.android.purebilibili.core.ui.blur.rememberRecoverableHazeState()
 
+    fun commitExplicitSeek(positionMs: Long) {
+        val commitResult = commitPlaybackSeekInteraction(
+            state = sharedSeekSession,
+            player = playerState.player,
+            positionMs = positionMs
+        )
+        sharedSeekSession = commitResult.state
+        seekPlayerFromUserAction(
+            player = playerState.player,
+            positionMs = commitResult.committedPositionMs,
+            shouldResumePlaybackOverride = commitResult.shouldResumePlayback
+        )
+        danmakuManager.seekTo(commitResult.committedPositionMs)
+        onUserSeek(commitResult.committedPositionMs)
+    }
+
     var rootModifier = Modifier
         .fillMaxSize()
         .clipToBounds()
@@ -1404,9 +1421,12 @@ fun VideoPlayerSection(
                                 // 右侧 1/3：快进
                                 offset.x > screenWidth * 2 / 3 -> {
                                     val seekMs = seekForwardSeconds * 1000L
-                                    val newPos = (player.currentPosition + seekMs).coerceAtMost(player.duration.coerceAtLeast(0L))
-                                    seekPlayerFromUserAction(player, newPos)
-                                    danmakuManager.seekTo(newPos)
+                                    val newPos = resolveRelativeSeekTargetPosition(
+                                        currentPositionMs = player.currentPosition,
+                                        deltaMs = seekMs,
+                                        durationMs = player.duration
+                                    )
+                                    commitExplicitSeek(newPos)
                                     seekFeedbackText = "+${seekForwardSeconds}s"
                                     seekFeedbackVisible = true
                                     com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
@@ -1416,9 +1436,12 @@ fun VideoPlayerSection(
                                 // 左侧 1/3：后退
                                 offset.x < screenWidth / 3 -> {
                                     val seekMs = seekBackwardSeconds * 1000L
-                                    val newPos = (player.currentPosition - seekMs).coerceAtLeast(0L)
-                                    seekPlayerFromUserAction(player, newPos)
-                                    danmakuManager.seekTo(newPos)
+                                    val newPos = resolveRelativeSeekTargetPosition(
+                                        currentPositionMs = player.currentPosition,
+                                        deltaMs = -seekMs,
+                                        durationMs = player.duration
+                                    )
+                                    commitExplicitSeek(newPos)
                                     seekFeedbackText = "-${seekBackwardSeconds}s"
                                     seekFeedbackVisible = true
                                     com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {

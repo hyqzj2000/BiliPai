@@ -71,6 +71,42 @@ class VideoPlayerSectionPolicyTest {
     }
 
     @Test
+    fun relativeSeekTarget_clampsBackwardAtZero() {
+        assertEquals(
+            0L,
+            resolveRelativeSeekTargetPosition(
+                currentPositionMs = 3_000L,
+                deltaMs = -10_000L,
+                durationMs = 120_000L
+            )
+        )
+    }
+
+    @Test
+    fun relativeSeekTarget_clampsForwardAtKnownDuration() {
+        assertEquals(
+            120_000L,
+            resolveRelativeSeekTargetPosition(
+                currentPositionMs = 118_000L,
+                deltaMs = 10_000L,
+                durationMs = 120_000L
+            )
+        )
+    }
+
+    @Test
+    fun relativeSeekTarget_keepsOpenEndedStreamsUnclamped() {
+        assertEquals(
+            65_000L,
+            resolveRelativeSeekTargetPosition(
+                currentPositionMs = 55_000L,
+                deltaMs = 10_000L,
+                durationMs = 0L
+            )
+        )
+    }
+
+    @Test
     fun keepScreenAwake_onlyWhilePlaybackIsActiveOrStarting() {
         assertTrue(
             shouldKeepVideoPlaybackAwake(

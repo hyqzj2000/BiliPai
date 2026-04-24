@@ -263,6 +263,21 @@ internal fun resolveHorizontalSeekDeltaMs(
     return (totalDragDistanceX * 200f * gestureSensitivity).toLong()
 }
 
+internal fun resolveRelativeSeekTargetPosition(
+    currentPositionMs: Long,
+    deltaMs: Long,
+    durationMs: Long
+): Long {
+    val basePositionMs = currentPositionMs.coerceAtLeast(0L)
+    val targetPositionMs = (basePositionMs + deltaMs).coerceAtLeast(0L)
+    val safeDurationMs = durationMs.coerceAtLeast(0L)
+    return if (safeDurationMs > 0L) {
+        targetPositionMs.coerceAtMost(safeDurationMs)
+    } else {
+        targetPositionMs
+    }
+}
+
 internal fun shouldCommitGestureSeek(
     currentPositionMs: Long,
     targetPositionMs: Long,

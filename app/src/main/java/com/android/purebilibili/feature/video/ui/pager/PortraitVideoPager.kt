@@ -56,8 +56,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -1143,6 +1145,14 @@ private fun VideoPageItem(
     var showDetailSheet by remember { mutableStateOf(false) }
     var detailSheetUpOnlyMode by remember { mutableStateOf(false) }
     var isOverlayVisible by remember { mutableStateOf(true) }
+    var commentSheetVisibilityProgress by remember { mutableFloatStateOf(0f) }
+    val commentExpandedPlayerScale by animateFloatAsState(
+        targetValue = resolvePortraitCommentExpandedPlayerScale(
+            commentVisibilityProgress = commentSheetVisibilityProgress
+        ),
+        animationSpec = tween(durationMillis = 260),
+        label = "portrait_comment_player_scale"
+    )
 
     // 进度状态 (从播放器获取)
     var progressState by remember(bvid, initialDuration, initialProgressPositionMs) {
@@ -1462,6 +1472,14 @@ private fun VideoPageItem(
                 )
             }
     ) {
+        val mediaLayerModifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                scaleX = commentExpandedPlayerScale
+                scaleY = commentExpandedPlayerScale
+                transformOrigin = TransformOrigin(0.5f, 0f)
+            }
+
         // [核心逻辑]
         // 始终保留 AndroidView 以确保 Surface 准备就绪，但只有当播放器加载了当前视频时才将其绑定或显示
         // 否则显示封面
@@ -1469,7 +1487,7 @@ private fun VideoPageItem(
         if (isCurrentPage && isPlayerReadyForThisVideo) {
             PortraitVideoViewportContainer(
                 currentVideoAspect = currentVideoAspect,
-                modifier = Modifier.fillMaxSize(),
+                modifier = mediaLayerModifier,
                 fillContainer = resolvePortraitPagerFillContainer()
             ) {
                 key(currentPlayingBvid, bvid) {
@@ -1556,9 +1574,7 @@ private fun VideoPageItem(
         
         if (showCover) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black)
+                modifier = mediaLayerModifier.background(Color.Black)
             ) {
                 if (shouldUseViewportBoundPortraitCover(
                         isCurrentPage = isCurrentPage,
@@ -2054,7 +2070,13 @@ private fun VideoPageItem(
 
         PortraitCommentSheet(
             visible = showCommentSheet,
-            onDismiss = { showCommentSheet = false },
+            onDismiss = {
+                showCommentSheet = false
+                commentSheetVisibilityProgress = 0f
+            },
+            onVisibilityProgressChange = { progress ->
+                commentSheetVisibilityProgress = progress
+            },
             commentViewModel = commentViewModel,
             aid = aid,
             upMid = authorMid,
