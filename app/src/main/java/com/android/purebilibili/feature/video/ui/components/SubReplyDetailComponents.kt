@@ -99,6 +99,12 @@ internal data class SubReplyAuxiliaryBadgeVisualSpec(
     val labelLineHeightSp: Int
 )
 
+internal data class SubReplyDetailListScrollResetKey(
+    val rootReplyId: Long,
+    val conversationMode: Boolean,
+    val firstConversationReplyId: Long?
+)
+
 internal typealias SubReplyDetailAppearance = VideoCommentAppearance
 
 internal fun resolveSubReplyDetailLayoutPolicy(
@@ -182,6 +188,22 @@ internal fun resolveSubReplyConversationItems(
                 ))
     }
     return filtered.ifEmpty { listOf(anchorReply) }.distinctBy { it.rpid }
+}
+
+internal fun resolveSubReplyDetailListScrollResetKey(
+    rootReplyId: Long,
+    effectiveConversationMode: Boolean,
+    visibleReplies: List<ReplyItem>
+): SubReplyDetailListScrollResetKey {
+    return SubReplyDetailListScrollResetKey(
+        rootReplyId = rootReplyId,
+        conversationMode = effectiveConversationMode,
+        firstConversationReplyId = if (effectiveConversationMode) {
+            visibleReplies.firstOrNull()?.rpid
+        } else {
+            null
+        }
+    )
 }
 
 internal fun resolveSubReplyAuxiliaryLabel(item: ReplyItem): String? {
@@ -308,6 +330,17 @@ internal fun SubReplyDetailContent(
     }
     val localConversationMode = conversationAnchor != null
     val effectiveConversationMode = isConversationMode || localConversationMode
+    val listScrollResetKey = remember(
+        rootReply.rpid,
+        effectiveConversationMode,
+        visibleReplies
+    ) {
+        resolveSubReplyDetailListScrollResetKey(
+            rootReplyId = rootReply.rpid,
+            effectiveConversationMode = effectiveConversationMode,
+            visibleReplies = visibleReplies
+        )
+    }
     val shouldLoadMore by remember {
         derivedStateOf {
             val layoutInfo = listState.layoutInfo
@@ -320,6 +353,9 @@ internal fun SubReplyDetailContent(
     }
     LaunchedEffect(shouldLoadMore) {
         if (shouldLoadMore) onLoadMore()
+    }
+    LaunchedEffect(listScrollResetKey) {
+        listState.scrollToItem(0)
     }
 
     Column(
