@@ -49,6 +49,37 @@ class VideoPlayerSectionPolicyTest {
     }
 
     @Test
+    fun bottomGestureExclusion_allowsLandscapeCenterDragWhenProgressPreviewIsHidden() {
+        val visibleControlExclusionPx = resolveVideoPlayerBottomGestureExclusionHeightDp(
+            controlBarBottomPaddingDp = 14,
+            progressSpacingDp = 10,
+            progressContainerHeightDp = 40,
+            controlRowHeightDp = 40,
+            extraBufferDp = 12
+        ).toFloat()
+
+        assertFalse(
+            shouldIgnoreVideoPlayerDragStart(
+                offsetY = 210f,
+                containerHeightPx = 360f,
+                edgeSafeZonePx = 48f,
+                bottomGestureExclusionPx = visibleControlExclusionPx
+            )
+        )
+    }
+
+    @Test
+    fun bottomGestureExclusion_usesVisibleProgressHeightInVideoPlayerSection() {
+        val source = File("src/main/java/com/android/purebilibili/feature/video/ui/section/VideoPlayerSection.kt")
+            .readText()
+
+        assertTrue(
+            source.contains("progressContainerHeightDp = videoProgressBarLayoutPolicy.baseHeightWithChapterDp"),
+            "Background drag exclusion should use the visible idle progress bar height; the expanded preview height is only visible while the progress bar itself is scrubbing."
+        )
+    }
+
+    @Test
     fun dragStart_ignoresProgressPreviewZoneAboveBottomControls() {
         assertTrue(
             shouldIgnoreVideoPlayerDragStart(

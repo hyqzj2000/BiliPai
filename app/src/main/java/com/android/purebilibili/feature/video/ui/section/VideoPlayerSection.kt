@@ -394,7 +394,7 @@ fun VideoPlayerSection(
         resolveVideoPlayerBottomGestureExclusionHeightDp(
             controlBarBottomPaddingDp = bottomControlBarLayoutPolicy.bottomPaddingDp,
             progressSpacingDp = bottomControlBarLayoutPolicy.progressSpacingDp,
-            progressContainerHeightDp = videoProgressBarLayoutPolicy.draggingContainerHeightDp,
+            progressContainerHeightDp = videoProgressBarLayoutPolicy.baseHeightWithChapterDp,
             controlRowHeightDp = bottomControlBarLayoutPolicy.playButtonSizeDp
         )
     }
