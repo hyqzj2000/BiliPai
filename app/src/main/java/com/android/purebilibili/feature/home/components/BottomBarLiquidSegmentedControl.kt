@@ -170,7 +170,7 @@ fun BottomBarLiquidSegmentedControl(
         val motionProgress = maxOf(pressMotionProgress, refractionMotionProfile.progress)
         val contentBackdrop = rememberLayerBackdrop()
         val combinedIndicatorBackdrop = rememberCombinedBackdrop(shellBackdrop, contentBackdrop)
-        val shouldRefractContent = dragState.isDragging || abs(dragState.dragOffset) > 0.5f
+        val shouldRefractContent = dragState.isDragging
         val indicatorEffectProgress = if (shouldRefractContent) motionProgress else 0f
         val panelOffsetPx by remember(density, itemWidthPx) {
             derivedStateOf {
