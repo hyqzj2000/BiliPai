@@ -170,6 +170,8 @@ fun BottomBarLiquidSegmentedControl(
         val motionProgress = maxOf(pressMotionProgress, refractionMotionProfile.progress)
         val contentBackdrop = rememberLayerBackdrop()
         val combinedIndicatorBackdrop = rememberCombinedBackdrop(shellBackdrop, contentBackdrop)
+        val shouldRefractContent = dragState.isDragging || abs(dragState.dragOffset) > 0.5f
+        val indicatorEffectProgress = if (shouldRefractContent) motionProgress else 0f
         val panelOffsetPx by remember(density, itemWidthPx) {
             derivedStateOf {
                 val fraction = (dragState.dragOffset / itemWidthPx).coerceIn(-1f, 1f)
@@ -241,34 +243,42 @@ fun BottomBarLiquidSegmentedControl(
                 .run {
                     if (liquidGlassEnabled) {
                         drawBackdrop(
-                            backdrop = combinedIndicatorBackdrop,
+                            backdrop = if (shouldRefractContent) {
+                                combinedIndicatorBackdrop
+                            } else {
+                                shellBackdrop
+                            },
                             shape = { indicatorShape },
                             effects = {
                                 lens(
                                     refractionHeight = 12.dp.toPx() *
-                                        motionProgress *
+                                        indicatorEffectProgress *
                                         refractionMotionProfile.indicatorLensHeightScale,
                                     refractionAmount = 18.dp.toPx() *
-                                        motionProgress *
+                                        indicatorEffectProgress *
                                         refractionMotionProfile.indicatorLensAmountScale,
                                     depthEffect = true,
-                                    chromaticAberration = true
+                                    chromaticAberration = shouldRefractContent
                                 )
                             },
                             highlight = {
-                                Highlight.Default.copy(alpha = motionProgress)
+                                Highlight.Default.copy(alpha = indicatorEffectProgress)
                             },
                             shadow = {
-                                Shadow(alpha = motionProgress)
+                                Shadow(alpha = indicatorEffectProgress)
                             },
                             innerShadow = {
                                 InnerShadow(
-                                    radius = 8.dp * motionProgress,
-                                    alpha = motionProgress
+                                    radius = 8.dp * indicatorEffectProgress,
+                                    alpha = indicatorEffectProgress
                                 )
                             },
                             layerBlock = {
-                                val indicatorScale = androidx.compose.ui.util.lerp(1f, 78f / 56f, motionProgress)
+                                val indicatorScale = androidx.compose.ui.util.lerp(
+                                    1f,
+                                    78f / 56f,
+                                    indicatorEffectProgress
+                                )
                                 val velocity = dragState.velocity / 10f
                                 scaleX = indicatorScale / (
                                     1f - (
@@ -288,9 +298,9 @@ fun BottomBarLiquidSegmentedControl(
                                     } else {
                                         Color.Black.copy(0.1f)
                                     },
-                                    alpha = 1f - motionProgress
+                                    alpha = 1f - indicatorEffectProgress
                                 )
-                                drawRect(Color.Black.copy(alpha = 0.03f * motionProgress))
+                                drawRect(Color.Black.copy(alpha = 0.03f * indicatorEffectProgress))
                             }
                         )
                     } else {
