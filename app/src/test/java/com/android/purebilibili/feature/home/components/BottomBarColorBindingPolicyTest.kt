@@ -91,6 +91,22 @@ class BottomBarColorBindingPolicyTest {
     }
 
     @Test
+    fun `sliding indicator uses filled icon for the covered item`() {
+        val visual = resolveBottomBarItemMotionVisual(
+            itemIndex = 1,
+            indicatorPosition = 1f,
+            currentSelectedIndex = 0,
+            motionProgress = 0.7f,
+            selectionEmphasis = 0.28f
+        )
+
+        assertTrue(
+            visual.useSelectedIcon,
+            "Item directly covered by the moving indicator should use the filled icon so theme color fills the symbol during drag."
+        )
+    }
+
+    @Test
     fun `selected foreground uses custom item color when configured`() {
         val color = resolveBottomBarSelectedContentColor(
             item = BottomNavItem.HOME,

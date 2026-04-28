@@ -52,6 +52,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -140,6 +141,7 @@ fun LivePlayerScreen(
     var isPipRequested by remember { mutableStateOf(false) }
     var wasPlaybackActiveBeforePause by remember { mutableStateOf(false) }
     var playerViewRef by remember { mutableStateOf<PlayerView?>(null) }
+    var trackSelectionBeforeAudioOnly by remember { mutableStateOf<TrackSelectionParameters?>(null) }
     var videoAspectRatio by remember { mutableStateOf(VideoAspectRatio.FIT) }
     var backgroundPlaybackEnabled by remember {
         mutableStateOf(SettingsManager.getBackgroundPlaybackEnabledSync(context))
@@ -148,6 +150,7 @@ fun LivePlayerScreen(
     val showLivePipButton = remember { shouldShowLivePipButton(android.os.Build.VERSION.SDK_INT) }
     var showRoomMenu by remember { mutableStateOf(false) }
     val successState = uiState as? LivePlayerState.Success
+    val isLiveAudioOnly = successState?.isAudioOnly == true
     val superChatItems by viewModel.superChatItems.collectAsState()
     val roomInfo = successState?.roomInfo ?: RoomInfo()
     val anchorInfo = successState?.anchorInfo ?: AnchorInfo()
@@ -349,6 +352,28 @@ fun LivePlayerScreen(
             .build().apply { playWhenReady = true }
     }
 
+    LaunchedEffect(exoPlayer, isLiveAudioOnly) {
+        if (isLiveAudioOnly) {
+            if (trackSelectionBeforeAudioOnly == null) {
+                trackSelectionBeforeAudioOnly = exoPlayer.trackSelectionParameters
+            }
+            exoPlayer.trackSelectionParameters = resolveLiveTrackSelectionParametersForAudioOnly(
+                currentTrackSelectionParameters = exoPlayer.trackSelectionParameters,
+                isAudioOnly = true
+            )
+            exoPlayer.clearVideoSurface()
+            playerViewRef?.player = null
+            CrashReporter.markLivePlaybackStage("audio_only_video_disabled")
+        } else {
+            trackSelectionBeforeAudioOnly?.let { originalParams ->
+                exoPlayer.trackSelectionParameters = originalParams
+                trackSelectionBeforeAudioOnly = null
+                CrashReporter.markLivePlaybackStage("audio_only_video_restored")
+            }
+            playerViewRef?.player = exoPlayer
+        }
+    }
+
     LaunchedEffect(shutdownAtMillis) {
         val target = shutdownAtMillis ?: return@LaunchedEffect
         val delayMillis = (target - System.currentTimeMillis()).coerceAtLeast(0L)
@@ -459,6 +484,7 @@ fun LivePlayerScreen(
     }
     
     // 生命周期管理
+    val currentIsLiveAudioOnly by rememberUpdatedState(isLiveAudioOnly)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
@@ -512,7 +538,7 @@ fun LivePlayerScreen(
                     )
                     Logger.d(TAG, "ON_RESUME live policy: shouldResume=$shouldResumePlayback")
                     val view = playerViewRef
-                    if (shouldRebindFullscreenSurfaceOnResume(
+                    if (!currentIsLiveAudioOnly && shouldRebindFullscreenSurfaceOnResume(
                             hasPlayerView = view != null,
                             hasPlayer = true
                         )
@@ -594,14 +620,14 @@ fun LivePlayerScreen(
             AndroidView(
                 factory = { ctx ->
                     PlayerView(ctx).apply {
-                        player = exoPlayer
+                        player = if (shouldBindLivePlayerViewForAudioOnly(isLiveAudioOnly)) exoPlayer else null
                         useController = false
                         resizeMode = videoAspectRatio.playerResizeMode
                         layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                     }
                 },
                 update = { playerView ->
-                    playerView.player = exoPlayer
+                    playerView.player = if (shouldBindLivePlayerViewForAudioOnly(isLiveAudioOnly)) exoPlayer else null
                     if (playerView.resizeMode != videoAspectRatio.playerResizeMode) {
                         playerView.resizeMode = videoAspectRatio.playerResizeMode
                     }
@@ -612,7 +638,11 @@ fun LivePlayerScreen(
             
             // Danmaku Overlay (Only render if enabled)
             val successState = uiState as? LivePlayerState.Success
-            if (successState?.isDanmakuEnabled == true) {
+            if (shouldRenderLiveDanmakuOverlayForAudioOnly(
+                    isDanmakuEnabled = successState?.isDanmakuEnabled == true,
+                    isAudioOnly = isLiveAudioOnly
+                )
+            ) {
                 LiveDanmakuOverlay(
                     danmakuFlow = viewModel.danmakuFlow,
                     modifier = Modifier.fillMaxSize()
