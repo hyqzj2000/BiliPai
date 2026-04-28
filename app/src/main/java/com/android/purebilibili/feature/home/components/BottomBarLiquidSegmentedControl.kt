@@ -49,7 +49,6 @@ import com.android.purebilibili.core.ui.motion.BottomBarMotionProfile
 import com.android.purebilibili.core.ui.motion.resolveBottomBarMotionSpec
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
-import com.kyant.backdrop.backdrops.rememberCombinedBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.highlight.Highlight
@@ -120,7 +119,7 @@ fun BottomBarLiquidSegmentedControl(
         liquidGlassProgress = liquidGlassTuning.progress,
         contentLuminance = if (liquidGlassEnabled && isDarkTheme) 0.18f else 0f
     ).copy(alpha = if (enabled) 0.78f else 0.42f)
-    val shellBackdrop = rememberLayerBackdrop()
+    val indicatorColor = if (isDarkTheme) Color.White.copy(0.1f) else Color.Black.copy(0.1f)
 
     LaunchedEffect(safeSelectedIndex) {
         dragState.updateIndex(safeSelectedIndex)
@@ -168,9 +167,6 @@ fun BottomBarLiquidSegmentedControl(
         )
         val motionProgress = maxOf(pressMotionProgress, refractionMotionProfile.progress)
         val contentBackdrop = rememberLayerBackdrop()
-        val combinedIndicatorBackdrop = rememberCombinedBackdrop(shellBackdrop, contentBackdrop)
-        val shouldRefractContent = dragState.isDragging
-        val indicatorEffectProgress = if (shouldRefractContent) motionProgress else 0f
         val panelOffsetPx by remember(density, itemWidthPx) {
             derivedStateOf {
                 val fraction = (dragState.dragOffset / itemWidthPx).coerceIn(-1f, 1f)
@@ -183,26 +179,7 @@ fun BottomBarLiquidSegmentedControl(
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .layerBackdrop(shellBackdrop)
                 .background(containerColor, containerShape)
-        )
-
-        BottomBarLiquidSegmentedLabels(
-            items = items,
-            selectedIndex = safeSelectedIndex,
-            indicatorPosition = indicatorPosition,
-            motionProgress = motionProgress,
-            selectionEmphasis = refractionMotionProfile.visibleSelectionEmphasis,
-            selectedTextColor = selectedTextColor,
-            unselectedTextColor = unselectedTextColor,
-            enabled = enabled,
-            labelFontSize = labelFontSize,
-            indicatorCorner = indicatorCorner,
-            onSelected = onSelected,
-            interactive = false,
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { translationX = panelOffsetPx }
         )
 
         Box(
@@ -242,47 +219,39 @@ fun BottomBarLiquidSegmentedControl(
                 .run {
                     if (liquidGlassEnabled) {
                         drawBackdrop(
-                            backdrop = if (shouldRefractContent) {
-                                combinedIndicatorBackdrop
-                            } else {
-                                shellBackdrop
-                            },
-                            shape = { indicatorShape },
+                            backdrop = contentBackdrop,
+                            shape = { containerShape },
                             effects = {
                                 lens(
                                     refractionHeight = 12.dp.toPx() *
-                                        indicatorEffectProgress *
+                                        motionProgress *
                                         refractionMotionProfile.indicatorLensHeightScale,
                                     refractionAmount = 18.dp.toPx() *
-                                        indicatorEffectProgress *
+                                        motionProgress *
                                         refractionMotionProfile.indicatorLensAmountScale,
                                     depthEffect = true,
-                                    chromaticAberration = shouldRefractContent
+                                    chromaticAberration = true
                                 )
                             },
                             highlight = {
-                                Highlight.Default.copy(alpha = indicatorEffectProgress)
+                                Highlight.Default.copy(alpha = motionProgress)
                             },
                             shadow = {
-                                Shadow(alpha = indicatorEffectProgress)
+                                Shadow(alpha = if (liquidGlassEnabled) motionProgress else 0f)
                             },
                             innerShadow = {
                                 InnerShadow(
-                                    radius = 8.dp * indicatorEffectProgress,
-                                    alpha = indicatorEffectProgress
+                                    radius = 8.dp * motionProgress,
+                                    alpha = if (liquidGlassEnabled) motionProgress else 0f
                                 )
                             },
                             layerBlock = {
                                 val indicatorScale = androidx.compose.ui.util.lerp(
                                     1f,
                                     78f / 56f,
-                                    indicatorEffectProgress
+                                    motionProgress
                                 )
-                                val velocity = if (shouldRefractContent) {
-                                    dragState.velocity / 10f
-                                } else {
-                                    0f
-                                }
+                                val velocity = dragState.velocity / 10f
                                 scaleX = indicatorScale / (
                                     1f - (
                                         velocity * 0.75f
@@ -295,24 +264,32 @@ fun BottomBarLiquidSegmentedControl(
                                 )
                             },
                             onDrawSurface = {
-                                drawRect(
-                                    color = if (isDarkTheme) {
-                                        Color.White.copy(0.1f)
-                                    } else {
-                                        Color.Black.copy(0.1f)
-                                    },
-                                    alpha = 1f - indicatorEffectProgress
-                                )
-                                drawRect(Color.Black.copy(alpha = 0.03f * indicatorEffectProgress))
+                                drawRect(indicatorColor, alpha = 1f - motionProgress)
+                                drawRect(Color.Black.copy(alpha = 0.03f * motionProgress))
                             }
                         )
                     } else {
-                        background(
-                            if (isDarkTheme) Color.White.copy(0.1f) else Color.Black.copy(0.1f),
-                            indicatorShape
-                        )
+                        background(indicatorColor, indicatorShape)
                     }
                 }
+        )
+
+        BottomBarLiquidSegmentedLabels(
+            items = items,
+            selectedIndex = safeSelectedIndex,
+            indicatorPosition = indicatorPosition,
+            motionProgress = motionProgress,
+            selectionEmphasis = refractionMotionProfile.visibleSelectionEmphasis,
+            selectedTextColor = selectedTextColor,
+            unselectedTextColor = unselectedTextColor,
+            enabled = enabled,
+            labelFontSize = labelFontSize,
+            indicatorCorner = indicatorCorner,
+            onSelected = onSelected,
+            interactive = false,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { translationX = panelOffsetPx }
         )
 
         BottomBarLiquidSegmentedLabels(
