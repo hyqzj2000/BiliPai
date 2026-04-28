@@ -273,7 +273,7 @@ class BottomBarIndicatorPolicyTest {
     }
 
     @Test
-    fun `sliding item visual keeps icon state stable while color follows indicator`() {
+    fun `sliding item visual fills icon for item covered by indicator`() {
         val home = resolveBottomBarItemMotionVisual(
             itemIndex = 0,
             indicatorPosition = 0.8f,
@@ -292,7 +292,7 @@ class BottomBarIndicatorPolicyTest {
         assertTrue(home.themeWeight in 0f..1f)
         assertTrue(dynamic.themeWeight in 0f..1f)
         assertFalse(home.useSelectedIcon)
-        assertFalse(dynamic.useSelectedIcon)
+        assertTrue(dynamic.useSelectedIcon)
     }
 
     @Test

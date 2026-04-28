@@ -646,10 +646,16 @@ internal fun resolveBottomBarItemMotionVisual(
         lerp(1f, maxScale, indicatorWeight * normalizedMotionProgress)
     }
 
+    val useSelectedIcon = if (isIdle) {
+        idleSelected
+    } else {
+        indicatorWeight >= 0.5f
+    }
+
     return BottomBarItemMotionVisual(
         themeWeight = themeWeight,
         scale = scale,
-        useSelectedIcon = isIdle && idleSelected
+        useSelectedIcon = useSelectedIcon
     )
 }
 
