@@ -8,9 +8,11 @@ internal enum class FullscreenDoubleTapAction {
 
 internal fun resolveFullscreenDoubleTapAction(
     relativeX: Float,
-    doubleTapSeekEnabled: Boolean
+    doubleTapSeekEnabled: Boolean,
+    playWhenReady: Boolean = true
 ): FullscreenDoubleTapAction {
     if (!doubleTapSeekEnabled) return FullscreenDoubleTapAction.TogglePlayPause
+    if (!playWhenReady) return FullscreenDoubleTapAction.TogglePlayPause
 
     return when {
         relativeX < 0.3f -> FullscreenDoubleTapAction.SeekBackward

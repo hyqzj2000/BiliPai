@@ -1035,6 +1035,7 @@ interface DynamicApi {
     suspend fun getDynamicFeed(
         @Query("type") type: String = "all",
         @Query("offset") offset: String = "",
+        @Query("update_baseline") updateBaseline: String = "",
         @Query("page") page: Int = 1,
         @Query("features") features: String = DYNAMIC_FEED_FEATURES
     ): DynamicFeedResponse

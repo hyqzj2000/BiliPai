@@ -46,7 +46,6 @@ import com.android.purebilibili.core.ui.blur.currentUnifiedBlurIntensity
 import com.android.purebilibili.feature.dynamic.resolveDynamicSidebarWidth
 import com.android.purebilibili.core.ui.blur.rememberRecoverableHazeState
 import com.android.purebilibili.core.ui.blur.unifiedBlur
-import com.android.purebilibili.feature.dynamic.resolveDynamicUserLiveBadgeReservedSpace
 import com.android.purebilibili.feature.dynamic.shouldShowDynamicUserLiveBadge
 import com.android.purebilibili.feature.dynamic.SidebarUser
 
@@ -330,9 +329,7 @@ fun SidebarUserItem(
                     }
                 }
 
-                Box(
-                    modifier = Modifier.padding(bottom = resolveDynamicUserLiveBadgeReservedSpace())
-                ) {
+                Box {
                     Box(
                         modifier = Modifier
                             .size(44.dp) // 稍大一点的头像
@@ -355,14 +352,10 @@ fun SidebarUserItem(
                             contentScale = ContentScale.Crop
                         )
                     }
+                }
 
-                    if (shouldShowDynamicUserLiveBadge(user.isLive)) {
-                        DynamicUserLiveBadge(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .offset(y = resolveDynamicUserLiveBadgeReservedSpace() / 2)
-                        )
-                    }
+                if (shouldShowDynamicUserLiveBadge(user.isLive)) {
+                    DynamicUserLiveBadge(modifier = Modifier.padding(top = 2.dp))
                 }
             }
 

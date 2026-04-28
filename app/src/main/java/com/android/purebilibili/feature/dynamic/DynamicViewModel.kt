@@ -14,6 +14,7 @@ import com.android.purebilibili.core.util.prependDistinctByKey
 import com.android.purebilibili.data.model.response.DynamicItem
 import com.android.purebilibili.data.model.response.FollowingUser
 import com.android.purebilibili.data.model.response.LiveRoom
+import com.android.purebilibili.data.repository.ActionRepository
 import com.android.purebilibili.data.repository.CommentRepository
 import com.android.purebilibili.data.repository.DynamicFeedScope
 import com.android.purebilibili.data.repository.DynamicRepository
@@ -1054,6 +1055,20 @@ class DynamicViewModel(application: Application) : AndroidViewModel(application)
             } catch (e: Exception) {
                 onResult(false, e.message ?: "网络错误")
             }
+        }
+    }
+
+    fun addToWatchLater(aid: Long, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            if (aid <= 0L) {
+                onResult(false, "无法添加到稍后再看")
+                return@launch
+            }
+
+            val result = ActionRepository.toggleWatchLater(aid = aid, add = true)
+            result
+                .onSuccess { onResult(true, "已添加到稍后再看") }
+                .onFailure { onResult(false, it.message ?: "添加失败") }
         }
     }
     

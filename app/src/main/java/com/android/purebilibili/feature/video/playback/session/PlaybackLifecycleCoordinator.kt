@@ -50,6 +50,7 @@ internal fun resolvePlaybackPauseDecision(
 internal fun resolvePlaybackResumeDecision(
     wasPlaybackActive: Boolean,
     hasTransientResumeIntent: Boolean,
+    hasForegroundResumeIntent: Boolean = false,
     isPlaying: Boolean,
     playWhenReady: Boolean,
     playbackState: Int,
@@ -65,6 +66,7 @@ internal fun resolvePlaybackResumeDecision(
     }
 
     val shouldResumePlayback = hasTransientResumeIntent ||
+        hasForegroundResumeIntent ||
         shouldKickPlaybackOnForegroundResume(
             playWhenReady = playWhenReady,
             isPlaying = isPlaying,

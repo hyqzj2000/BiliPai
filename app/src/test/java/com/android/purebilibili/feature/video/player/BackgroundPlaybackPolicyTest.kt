@@ -451,6 +451,53 @@ class BackgroundPlaybackPolicyTest {
     }
 
     @Test
+    fun foregroundEntryKicksPlaybackWhenAndroid16ClearsPlayWhenReadyButResumeIntentExists() {
+        assertTrue(
+            shouldKickPlaybackAfterForegroundTrackRestore(
+                hadSavedTrackParams = true,
+                playWhenReady = false,
+                playbackState = Player.STATE_READY,
+                hasForegroundResumeIntent = true
+            )
+        )
+        assertFalse(
+            shouldKickPlaybackAfterForegroundTrackRestore(
+                hadSavedTrackParams = true,
+                playWhenReady = false,
+                playbackState = Player.STATE_READY,
+                hasForegroundResumeIntent = true,
+                isLeavingByNavigation = true
+            )
+        )
+    }
+
+    @Test
+    fun foregroundEntryPreparesIdlePlayerOnlyWhenResumeIntentExists() {
+        assertTrue(
+            shouldPreparePlaybackOnForegroundResume(
+                hasForegroundResumeIntent = true,
+                hasMediaItems = true,
+                playbackState = Player.STATE_IDLE
+            )
+        )
+        assertFalse(
+            shouldPreparePlaybackOnForegroundResume(
+                hasForegroundResumeIntent = false,
+                hasMediaItems = true,
+                playbackState = Player.STATE_IDLE
+            )
+        )
+        assertFalse(
+            shouldPreparePlaybackOnForegroundResume(
+                hasForegroundResumeIntent = true,
+                hasMediaItems = true,
+                playbackState = Player.STATE_IDLE,
+                isLeavingByNavigation = true
+            )
+        )
+    }
+
+    @Test
     fun bufferingWithPlayWhenReadyShouldNotBeTreatedAsInactiveInBackground() {
         assertFalse(
             shouldPauseBackgroundBuffering(

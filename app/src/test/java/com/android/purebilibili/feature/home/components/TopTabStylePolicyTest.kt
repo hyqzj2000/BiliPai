@@ -306,6 +306,22 @@ class TopTabStylePolicyTest {
     }
 
     @Test
+    fun `md3 liquid glass top tabs bypass material indicator`() {
+        assertFalse(
+            shouldUseMd3TopTabMaterialIndicator(
+                uiPreset = UiPreset.MD3,
+                liquidGlassEnabled = true
+            )
+        )
+        assertTrue(
+            shouldUseMd3TopTabMaterialIndicator(
+                uiPreset = UiPreset.MD3,
+                liquidGlassEnabled = false
+            )
+        )
+    }
+
+    @Test
     fun `md3 top tabs use underline row semantics and tighter action shape`() {
         assertEquals(
             "UNDERLINE_FIXED",

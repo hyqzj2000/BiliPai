@@ -168,7 +168,8 @@ internal fun playPlayerFromUserAction(player: Player) {
 
 private fun playPlayerForUserIntent(
     player: Player,
-    trackUserAction: Boolean
+    trackUserAction: Boolean,
+    ensurePlayWhenReady: Boolean = true
 ) {
     if (trackUserAction) {
         PlaybackUserActionTracker.recordAction(
@@ -185,6 +186,9 @@ private fun playPlayerForUserIntent(
     val hasMediaItems = player.mediaItemCount > 0
     if (shouldPreparePlayerBeforeExplicitPlay(player.playbackState, hasMediaItems)) {
         player.prepare()
+    }
+    if (ensurePlayWhenReady && !player.playWhenReady) {
+        player.playWhenReady = true
     }
     player.play()
     Logger.d(
@@ -223,7 +227,8 @@ internal fun seekPlayerFromUserAction(
     if (shouldResume) {
         playPlayerForUserIntent(
             player = player,
-            trackUserAction = false
+            trackUserAction = false,
+            ensurePlayWhenReady = false
         )
     }
 }
@@ -243,7 +248,7 @@ internal fun togglePlayerPlaybackFromUserAction(player: Player) {
         playPlayerFromUserAction(player)
         return
     }
-    if (player.isPlaying) {
+    if (player.playWhenReady) {
         PlaybackUserActionTracker.recordAction(
             player = player,
             type = PlaybackUserActionType.PAUSE

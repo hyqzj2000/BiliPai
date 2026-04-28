@@ -70,6 +70,7 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import com.android.purebilibili.core.util.FormatUtils
 
@@ -117,11 +118,16 @@ internal fun resolveWatchLaterPlayAllStartTarget(
     return first.bvid to first.cid
 }
 
+internal fun resolveWatchLaterTitle(itemCount: Int): String {
+    return "稍后再看 ($itemCount)"
+}
+
 /**
  * 稍后再看 UI 状态
  */
 data class WatchLaterUiState(
     val items: List<VideoItem> = emptyList(),
+    val totalCount: Int = 0,
     val isLoading: Boolean = false,
     val error: String? = null,
     val dissolvingIds: Set<String> = emptySet() // [新增] 用于已播放 Thanos Snap 动画的卡片
@@ -169,7 +175,11 @@ class WatchLaterViewModel(application: Application) : AndroidViewModel(applicati
                             pubdate = item.pubdate ?: 0L
                         )
                     } ?: emptyList()
-                    _uiState.value = _uiState.value.copy(isLoading = false, items = items)
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        items = items,
+                        totalCount = response.data.count.takeIf { it > 0 } ?: items.size
+                    )
                 } else {
                     _uiState.value = _uiState.value.copy(isLoading = false, error = response.message ?: "加载失败")
                 }
@@ -203,11 +213,13 @@ class WatchLaterViewModel(application: Application) : AndroidViewModel(applicati
      */
     fun deleteItem(aid: Long) {
         // 乐观更新：直接从列表中移除，不需要重新请求
-        val currentList = _uiState.value.items
+        val snapshotState = _uiState.value
+        val currentList = snapshotState.items
         val newList = currentList.filter { it.id != aid }
         val removedBvid = currentList.firstOrNull { it.id == aid }?.bvid
         _uiState.value = _uiState.value.copy(
             items = newList,
+            totalCount = (snapshotState.totalCount - (currentList.size - newList.size)).coerceAtLeast(newList.size),
             dissolvingIds = if (removedBvid == null) {
                 _uiState.value.dissolvingIds
             } else {
@@ -219,7 +231,7 @@ class WatchLaterViewModel(application: Application) : AndroidViewModel(applicati
             try {
                 val csrf = com.android.purebilibili.core.store.TokenManager.csrfCache ?: ""
                 if (csrf.isEmpty()) {
-                    _uiState.value = _uiState.value.copy(items = currentList)
+                    _uiState.value = snapshotState
                     android.widget.Toast.makeText(getApplication(), "请先登录", android.widget.Toast.LENGTH_SHORT).show()
                     return@launch
                 }
@@ -227,7 +239,7 @@ class WatchLaterViewModel(application: Application) : AndroidViewModel(applicati
                 if (result.isSuccess) {
                     android.widget.Toast.makeText(getApplication(), "已从稍后再看移除", android.widget.Toast.LENGTH_SHORT).show()
                 } else {
-                    _uiState.value = _uiState.value.copy(items = currentList)
+                    _uiState.value = snapshotState
                     android.widget.Toast.makeText(
                         getApplication(),
                         "移除失败: ${result.exceptionOrNull()?.message ?: "请稍后重试"}",
@@ -236,7 +248,7 @@ class WatchLaterViewModel(application: Application) : AndroidViewModel(applicati
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                _uiState.value = _uiState.value.copy(items = currentList)
+                _uiState.value = snapshotState
                 android.widget.Toast.makeText(getApplication(), "移除失败: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
             }
         }
@@ -245,9 +257,13 @@ class WatchLaterViewModel(application: Application) : AndroidViewModel(applicati
     fun deleteItems(aids: List<Long>) {
         if (aids.isEmpty()) return
         val aidSet = aids.toSet()
-        val snapshot = _uiState.value.items
+        val snapshotState = _uiState.value
+        val snapshot = snapshotState.items
+        val removeCount = snapshot.count { it.id in aidSet }
+        val optimisticItems = snapshot.filterNot { it.id in aidSet }
         _uiState.value = _uiState.value.copy(
-            items = snapshot.filterNot { it.id in aidSet },
+            items = optimisticItems,
+            totalCount = (snapshotState.totalCount - removeCount).coerceAtLeast(optimisticItems.size),
             dissolvingIds = _uiState.value.dissolvingIds - snapshot.filter { it.id in aidSet }.map { it.bvid }.toSet()
         )
 
@@ -256,7 +272,7 @@ class WatchLaterViewModel(application: Application) : AndroidViewModel(applicati
                 val csrf = com.android.purebilibili.core.store.TokenManager.csrfCache ?: ""
                 if (csrf.isEmpty()) {
                     withContext(Dispatchers.Main.immediate) {
-                        _uiState.value = _uiState.value.copy(items = snapshot)
+                        _uiState.value = snapshotState
                         android.widget.Toast.makeText(getApplication(), "请先登录", android.widget.Toast.LENGTH_SHORT).show()
                     }
                     return@launch
@@ -268,6 +284,9 @@ class WatchLaterViewModel(application: Application) : AndroidViewModel(applicati
                     val successCount = successIds.size
                     _uiState.value = _uiState.value.copy(
                         items = snapshot.filterNot { it.id in successIds },
+                        totalCount = (snapshotState.totalCount - successCount).coerceAtLeast(
+                            snapshot.count { it.id !in successIds }
+                        ),
                         dissolvingIds = _uiState.value.dissolvingIds -
                             snapshot.filter { it.id in successIds }.map { it.bvid }.toSet()
                     )
@@ -285,7 +304,7 @@ class WatchLaterViewModel(application: Application) : AndroidViewModel(applicati
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main.immediate) {
-                    _uiState.value = _uiState.value.copy(items = snapshot)
+                    _uiState.value = snapshotState
                     android.widget.Toast.makeText(getApplication(), "批量删除失败: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
                 }
             }
@@ -398,7 +417,9 @@ fun WatchLaterScreen(
                     .unifiedBlur(hazeState)
             ) {
                 AdaptiveTopAppBar(
-                    title = "稍后再看",
+                    title = resolveWatchLaterTitle(
+                        state.totalCount.takeIf { it > 0 } ?: state.items.size
+                    ),
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(rememberAppBackIcon(), contentDescription = "返回")
@@ -599,9 +620,6 @@ fun WatchLaterScreen(
                                         transitionEnabled = cardTransitionEnabled,
                                         showPublishTime = true,
                                         showOnlineCount = showOnlineCount,
-                                        dismissMenuText = "\uD83D\uDDD1\uFE0F 删除",
-                                        // 触发 Thanos 响指动画 (开始消散)
-                                        onDismiss = if (isBatchMode) null else ({ viewModel.startVideoDissolve(item.bvid) }),
                                         onClick = { bvid, _ ->
                                             if (isBatchMode) {
                                                 selectedBvids = if (bvid in selectedBvids) {
@@ -628,6 +646,22 @@ fun WatchLaterScreen(
                                             }
                                         }
                                     )
+
+                                    if (!isBatchMode) {
+                                        IconButton(
+                                            onClick = { viewModel.startVideoDissolve(item.bvid) },
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(6.dp)
+                                                .size(32.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Close,
+                                                contentDescription = "删除",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
 
                                     if (isBatchMode) {
                                         Box(

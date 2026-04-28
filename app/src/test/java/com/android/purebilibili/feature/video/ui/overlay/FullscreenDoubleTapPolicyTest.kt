@@ -40,4 +40,24 @@ class FullscreenDoubleTapPolicyTest {
             resolveFullscreenDoubleTapAction(relativeX = 0.8f, doubleTapSeekEnabled = true)
         )
     }
+
+    @Test
+    fun seekEnabled_pausedPlaybackAlwaysTogglePlayPause() {
+        assertEquals(
+            FullscreenDoubleTapAction.TogglePlayPause,
+            resolveFullscreenDoubleTapAction(
+                relativeX = 0.1f,
+                doubleTapSeekEnabled = true,
+                playWhenReady = false
+            )
+        )
+        assertEquals(
+            FullscreenDoubleTapAction.TogglePlayPause,
+            resolveFullscreenDoubleTapAction(
+                relativeX = 0.9f,
+                doubleTapSeekEnabled = true,
+                playWhenReady = false
+            )
+        )
+    }
 }

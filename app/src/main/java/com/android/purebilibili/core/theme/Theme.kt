@@ -564,6 +564,36 @@ internal fun createStaticMd3ColorScheme(
     }
 }
 
+internal fun alignStaticColorSchemeWithThemePrimary(
+    scheme: ColorScheme,
+    themePrimaryColor: Color,
+    darkTheme: Boolean
+): ColorScheme {
+    val source = themePrimaryColor.toHslColorModel()
+    val primary = if (darkTheme) {
+        deriveAccentColor(
+            source = source,
+            hueShift = 0f,
+            saturationScale = 0.90f,
+            lightness = maxOf(source.lightness, 0.78f),
+            minimumSaturation = 0.22f
+        )
+    } else {
+        themePrimaryColor
+    }
+    val primaryContainer = blendColors(
+        background = scheme.background,
+        foreground = primary,
+        foregroundRatio = if (darkTheme) 0.34f else 0.18f
+    )
+    return scheme.copy(
+        primary = primary,
+        onPrimary = chooseReadableOnColor(primary),
+        primaryContainer = primaryContainer,
+        onPrimaryContainer = chooseReadableOnColor(primaryContainer)
+    )
+}
+
 private fun createMd3DarkColorScheme(primaryColor: Color) = createStaticMd3ColorScheme(
     primaryColor = primaryColor,
     darkTheme = true,
@@ -609,10 +639,19 @@ private fun rememberKernelSuStyleColorScheme(
         )
     }
 
-    return if (!darkTheme) {
+    val readableScheme = if (!darkTheme) {
         enforceDynamicLightTextContrast(scheme)
     } else {
         scheme
+    }
+    return if (dynamicBaseScheme == null) {
+        alignStaticColorSchemeWithThemePrimary(
+            scheme = readableScheme,
+            themePrimaryColor = seedColor,
+            darkTheme = darkTheme
+        )
+    } else {
+        readableScheme
     }
 }
 

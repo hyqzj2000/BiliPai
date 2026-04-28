@@ -492,10 +492,16 @@ fun FullscreenPlayerOverlay(
                         if (showControls) lastInteractionTime = System.currentTimeMillis()
                     },
                     onDoubleTap = { offset ->
-                        // 分区双击策略可由设置控制：关闭跳转时全屏双击仅暂停/播放
-                        val relativeX = offset.x / screenWidth
+                        // 分区双击策略可由设置和当前播放意图控制。
+                        val relativeX = if (screenWidth > 0f) offset.x / screenWidth else 0.5f
                         player?.let { p ->
-                            when (resolveFullscreenDoubleTapAction(relativeX, doubleTapSeekEnabled)) {
+                            when (
+                                resolveFullscreenDoubleTapAction(
+                                    relativeX = relativeX,
+                                    doubleTapSeekEnabled = doubleTapSeekEnabled,
+                                    playWhenReady = p.playWhenReady
+                                )
+                            ) {
                                 FullscreenDoubleTapAction.SeekBackward -> {
                                     val seekMs = seekBackwardSeconds * 1000L
                                     val newPos = (p.currentPosition - seekMs).coerceAtLeast(0L)

@@ -183,9 +183,24 @@ internal fun shouldRefreshVideoFrameOnEnterForeground(
 internal fun shouldKickPlaybackAfterForegroundTrackRestore(
     hadSavedTrackParams: Boolean,
     playWhenReady: Boolean,
-    playbackState: Int
+    playbackState: Int,
+    hasForegroundResumeIntent: Boolean = false,
+    isLeavingByNavigation: Boolean = false
 ): Boolean {
-    return hadSavedTrackParams && playWhenReady && playbackState != Player.STATE_IDLE
+    if (isLeavingByNavigation) return false
+    return hadSavedTrackParams &&
+        (playWhenReady || hasForegroundResumeIntent) &&
+        playbackState != Player.STATE_IDLE
+}
+
+internal fun shouldPreparePlaybackOnForegroundResume(
+    hasForegroundResumeIntent: Boolean,
+    hasMediaItems: Boolean,
+    playbackState: Int,
+    isLeavingByNavigation: Boolean = false
+): Boolean {
+    if (isLeavingByNavigation) return false
+    return hasForegroundResumeIntent && hasMediaItems && playbackState == Player.STATE_IDLE
 }
 
 internal fun shouldResumePlaybackOnEnterForeground(
@@ -582,6 +597,11 @@ class MiniPlayerManager private constructor(private val context: Context) :
         
         isLowMemoryMode = true
         val currentPlayer = player ?: return
+        foregroundResumeIntent = isPlaybackActiveForLifecycle(
+            isPlaying = currentPlayer.isPlaying,
+            playWhenReady = currentPlayer.playWhenReady,
+            playbackState = currentPlayer.playbackState
+        )
         
         // 🔧 [优化] 如果未在播放，直接暂停/停止缓冲，避免浪费 CDN 请求
         val shouldPauseBuffering = shouldPauseBackgroundBuffering(
@@ -654,13 +674,27 @@ class MiniPlayerManager private constructor(private val context: Context) :
             Logger.d(TAG, "🎬 前台模式：请求重新渲染当前帧，避免返回视频页黑屏")
         }
 
+        val shouldPrepareForegroundPlayback = shouldPreparePlaybackOnForegroundResume(
+            hasForegroundResumeIntent = foregroundResumeIntent,
+            hasMediaItems = currentPlayer.mediaItemCount > 0,
+            playbackState = currentPlayer.playbackState,
+            isLeavingByNavigation = isLeavingByNavigation
+        )
+        if (shouldPrepareForegroundPlayback) {
+            currentPlayer.prepare()
+        }
         if (shouldKickPlaybackAfterForegroundTrackRestore(
                 hadSavedTrackParams = hadSavedTrackParams,
                 playWhenReady = currentPlayer.playWhenReady,
-                playbackState = currentPlayer.playbackState
+                playbackState = currentPlayer.playbackState,
+                hasForegroundResumeIntent = foregroundResumeIntent,
+                isLeavingByNavigation = isLeavingByNavigation
             )
+            || shouldPrepareForegroundPlayback
         ) {
+            currentPlayer.playWhenReady = true
             currentPlayer.play()
+            foregroundResumeIntent = false
             Logger.d(TAG, "▶️ 前台模式：恢复视频轨道后主动唤醒渲染链路")
         } else if (shouldResumePlaybackOnEnterForeground(
                 playWhenReady = currentPlayer.playWhenReady,
@@ -668,8 +702,13 @@ class MiniPlayerManager private constructor(private val context: Context) :
                 playbackState = currentPlayer.playbackState
             )
         ) {
+            currentPlayer.playWhenReady = true
             currentPlayer.play()
+            foregroundResumeIntent = false
             Logger.d(TAG, "▶️ 前台模式：恢复卡在 READY 的播放会话")
+        }
+        if (isLeavingByNavigation) {
+            foregroundResumeIntent = false
         }
     }
 
@@ -712,6 +751,8 @@ class MiniPlayerManager private constructor(private val context: Context) :
     private var playbackServiceRequested = false
     @Volatile
     private var lastForegroundStartAtMs = 0L
+    @Volatile
+    private var foregroundResumeIntent = false
 
     // --- 当前视频信息 ---
     var currentBvid by mutableStateOf<String?>(null)

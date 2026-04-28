@@ -76,21 +76,13 @@ import com.android.purebilibili.feature.home.HomeCategory
 import com.android.purebilibili.feature.home.resolveHomeTopCategories
 import com.android.purebilibili.core.store.LiquidGlassStyle
 import com.android.purebilibili.core.ui.adaptive.MotionTier
-import com.android.purebilibili.core.ui.blur.BlurSurfaceType
 import com.android.purebilibili.core.ui.blur.currentUnifiedBlurIntensity
 import com.android.purebilibili.core.ui.blur.shouldAllowDirectHazeLiquidGlassFallback
 import com.android.purebilibili.core.ui.blur.shouldAllowHomeChromeLiquidGlass
-import com.android.purebilibili.core.ui.blur.unifiedBlur
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberCombinedBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
-import com.kyant.backdrop.effects.vibrancy
-import com.kyant.backdrop.highlight.Highlight
-import com.kyant.backdrop.shadow.Shadow
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -542,13 +534,9 @@ internal fun Modifier.homeTopBottomBarMatchedSurface(
     isTransitionRunning: Boolean,
     forceLowBlurBudget: Boolean
 ): Modifier = composed {
-    val tuning = remember(liquidGlassStyle, liquidGlassTuning) {
-        liquidGlassTuning ?: resolveLiquidGlassTuning(liquidGlassStyle)
-    }
     val isGlassEnabled = renderMode == HomeTopChromeRenderMode.LIQUID_GLASS_BACKDROP ||
         renderMode == HomeTopChromeRenderMode.LIQUID_GLASS_HAZE
     val isBlurEnabled = renderMode != HomeTopChromeRenderMode.PLAIN
-    val isDarkTheme = isSystemInDarkTheme()
     val blurIntensity = currentUnifiedBlurIntensity()
     val containerColor = if (isGlassEnabled) {
         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
@@ -559,57 +547,17 @@ internal fun Modifier.homeTopBottomBarMatchedSurface(
             blurIntensity = blurIntensity
         )
     }
-    val useHazeBlur = shouldUseAndroidNativeFloatingHazeBlur(
+    this.kernelSuFloatingDockSurface(
+        shape = shape,
+        backdrop = backdrop,
+        containerColor = containerColor,
         blurEnabled = isBlurEnabled,
         glassEnabled = isGlassEnabled,
-        hasHazeState = hazeState != null
+        hazeState = hazeState,
+        motionTier = motionTier,
+        isTransitionRunning = isTransitionRunning,
+        forceLowBlurBudget = forceLowBlurBudget
     )
-    this
-        .then(
-            if (useHazeBlur && hazeState != null) {
-                Modifier.unifiedBlur(
-                    hazeState = hazeState,
-                    shape = shape,
-                    surfaceType = BlurSurfaceType.BOTTOM_BAR,
-                    motionTier = motionTier,
-                    isScrolling = false,
-                    isTransitionRunning = isTransitionRunning,
-                    forceLowBudget = forceLowBlurBudget
-                )
-            } else {
-                Modifier
-            }
-        )
-        .run {
-            if (backdrop != null && !useHazeBlur) {
-                drawBackdrop(
-                    backdrop = backdrop,
-                    shape = { shape },
-                    effects = {
-                        if (isGlassEnabled || (isBlurEnabled && !useHazeBlur)) {
-                            vibrancy()
-                            blur(8.dp.toPx())
-                            if (isGlassEnabled) {
-                                lens(24.dp.toPx(), 24.dp.toPx())
-                            }
-                        }
-                    },
-                    highlight = {
-                        Highlight.Default.copy(alpha = if (isGlassEnabled) 1f else 0f)
-                    },
-                    shadow = {
-                        Shadow.Default.copy(
-                            color = Color.Black.copy(alpha = if (isDarkTheme) 0.2f else 0.1f)
-                        )
-                    },
-                    onDrawSurface = {
-                        drawRect(containerColor)
-                    }
-                )
-            } else {
-                background(containerColor, shape)
-            }
-        }
 }
 
 @Composable
@@ -722,7 +670,12 @@ fun CategoryTabRow(
     val floatingIndicatorEdgeInset = 0.dp
     val floatingIndicatorLeftBias = 0.dp
 
-    if (resolveTopTabIndicatorStyle(uiPreset) == TopTabIndicatorStyle.MATERIAL) {
+    if (
+        shouldUseMd3TopTabMaterialIndicator(
+            uiPreset = uiPreset,
+            liquidGlassEnabled = effectiveLiquidGlassEnabled
+        )
+    ) {
         Md3CategoryTabRow(
             categories = categories,
             categoryKeys = categoryKeys,

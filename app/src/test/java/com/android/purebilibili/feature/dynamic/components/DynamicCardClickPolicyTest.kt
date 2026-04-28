@@ -115,4 +115,46 @@ class DynamicCardClickPolicyTest {
         assertTrue(action is DynamicCardPrimaryAction.OpenVideo)
         assertEquals("av1129813966", (action as DynamicCardPrimaryAction.OpenVideo).bvid)
     }
+
+    @Test
+    fun resolveDynamicWatchLaterAid_usesArchiveAidWhenVideoDynamicHasAid() {
+        val item = DynamicItem(
+            id_str = "123",
+            modules = DynamicModules(
+                module_dynamic = DynamicContentModule(
+                    major = DynamicMajor(
+                        archive = ArchiveMajor(aid = "1129813966", bvid = "BV1xx411c7mD")
+                    )
+                )
+            )
+        )
+
+        assertEquals(1129813966L, resolveDynamicWatchLaterAid(item))
+    }
+
+    @Test
+    fun resolveDynamicWatchLaterAid_usesOriginalItemForForwardedVideoDynamic() {
+        val item = DynamicItem(
+            id_str = "forward",
+            orig = DynamicItem(
+                id_str = "origin",
+                modules = DynamicModules(
+                    module_dynamic = DynamicContentModule(
+                        major = DynamicMajor(
+                            archive = ArchiveMajor(aid = "99887766", bvid = "BV1xx411c7mD")
+                        )
+                    )
+                )
+            )
+        )
+
+        assertEquals(99887766L, resolveDynamicWatchLaterAid(item))
+    }
+
+    @Test
+    fun resolveDynamicWatchLaterAid_returnsNullForNonVideoDynamic() {
+        val item = DynamicItem(id_str = "123")
+
+        assertEquals(null, resolveDynamicWatchLaterAid(item))
+    }
 }

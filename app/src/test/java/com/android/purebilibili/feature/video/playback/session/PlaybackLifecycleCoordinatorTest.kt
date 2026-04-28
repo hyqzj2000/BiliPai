@@ -117,6 +117,25 @@ class PlaybackLifecycleCoordinatorTest {
         val decision = resolvePlaybackResumeDecision(
             wasPlaybackActive = false,
             hasTransientResumeIntent = true,
+            hasForegroundResumeIntent = false,
+            isPlaying = false,
+            playWhenReady = false,
+            playbackState = Player.STATE_READY,
+            currentVolume = 1f,
+            shouldEnsureAudibleOnForeground = true,
+            isLeavingByNavigation = false
+        )
+
+        assertTrue(decision.shouldResumePlayback)
+        assertFalse(decision.shouldRestoreVolume)
+    }
+
+    @Test
+    fun resumeDecision_resumesWhenForegroundIntentSurvivesAndroid16PlayWhenReadyReset() {
+        val decision = resolvePlaybackResumeDecision(
+            wasPlaybackActive = false,
+            hasTransientResumeIntent = false,
+            hasForegroundResumeIntent = true,
             isPlaying = false,
             playWhenReady = false,
             playbackState = Player.STATE_READY,
@@ -134,6 +153,7 @@ class PlaybackLifecycleCoordinatorTest {
         val decision = resolvePlaybackResumeDecision(
             wasPlaybackActive = false,
             hasTransientResumeIntent = false,
+            hasForegroundResumeIntent = false,
             isPlaying = false,
             playWhenReady = true,
             playbackState = Player.STATE_BUFFERING,
