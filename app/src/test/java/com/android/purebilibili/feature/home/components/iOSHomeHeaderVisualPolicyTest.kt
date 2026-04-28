@@ -656,7 +656,7 @@ class iOSHomeHeaderVisualPolicyTest {
     }
 
     @Test
-    fun `home top keeps md3 material shell floating with ordinary blur`() {
+    fun `home top links md3 shell liquid glass to bottom bar`() {
         val appearance = resolveHomeTopLinkedBottomBarAppearance(
             homeSettings = HomeSettings(),
             uiPreset = UiPreset.MD3,
@@ -665,13 +665,13 @@ class iOSHomeHeaderVisualPolicyTest {
 
         assertTrue(appearance.isFloating)
         assertTrue(appearance.blurEnabled)
-        assertFalse(appearance.liquidGlassEnabled)
+        assertTrue(appearance.liquidGlassEnabled)
     }
 
     @Test
-    fun `home top keeps miuix shell floating without inheriting bottom liquid glass`() {
+    fun `home top respects disabled bottom bar liquid glass`() {
         val appearance = resolveHomeTopLinkedBottomBarAppearance(
-            homeSettings = HomeSettings(),
+            homeSettings = HomeSettings(isBottomBarLiquidGlassEnabled = false),
             uiPreset = UiPreset.MD3,
             androidNativeVariant = AndroidNativeVariant.MIUIX
         )

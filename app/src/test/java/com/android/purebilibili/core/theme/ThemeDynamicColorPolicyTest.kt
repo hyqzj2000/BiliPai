@@ -1,6 +1,7 @@
 package com.android.purebilibili.core.theme
 
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
@@ -120,6 +121,28 @@ class ThemeDynamicColorPolicyTest {
         assertTrue(calculateContrastRatio(scheme.onPrimaryContainer, scheme.primaryContainer) >= 4.5f)
         assertTrue(calculateContrastRatio(scheme.onSecondaryContainer, scheme.secondaryContainer) >= 4.5f)
         assertTrue(calculateContrastRatio(scheme.onTertiaryContainer, scheme.tertiaryContainer) >= 4.5f)
+    }
+
+    @Test
+    fun `static palette keeps selected theme color as light primary even when generated palette drifts`() {
+        val selectedThemeColor = Color(0xFF007AFF)
+        val generatedScheme = lightColorScheme(
+            primary = Color(0xFF2E7D32),
+            primaryContainer = Color(0xFFC8E6C9),
+            background = Color(0xFFF8FBFF)
+        )
+
+        val scheme = alignStaticColorSchemeWithThemePrimary(
+            scheme = generatedScheme,
+            themePrimaryColor = selectedThemeColor,
+            darkTheme = false
+        )
+
+        assertEquals(selectedThemeColor, scheme.primary)
+        assertNotEquals(generatedScheme.primary, scheme.primary)
+        assertNotEquals(generatedScheme.primaryContainer, scheme.primaryContainer)
+        assertTrue(calculateContrastRatio(scheme.onPrimary, scheme.primary) >= 4.5f)
+        assertTrue(calculateContrastRatio(scheme.onPrimaryContainer, scheme.primaryContainer) >= 4.5f)
     }
 
     @Test

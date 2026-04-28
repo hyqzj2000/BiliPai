@@ -50,4 +50,10 @@ class WatchLaterPlaybackPolicyTest {
 
         assertNull(result)
     }
+
+    @Test
+    fun `resolveWatchLaterTitle includes loaded item count`() {
+        assertEquals("稍后再看 (0)", resolveWatchLaterTitle(itemCount = 0))
+        assertEquals("稍后再看 (12)", resolveWatchLaterTitle(itemCount = 12))
+    }
 }

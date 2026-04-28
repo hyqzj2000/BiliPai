@@ -10,9 +10,11 @@ import com.android.purebilibili.feature.video.danmaku.resolveDanmakuCloudSyncSta
 import com.android.purebilibili.feature.video.danmaku.shouldRunDanmakuManualCloudSync
 import com.android.purebilibili.feature.video.state.VideoPlayerState
 import com.android.purebilibili.feature.video.viewmodel.PlayerUiState
+import com.android.purebilibili.feature.video.ui.overlay.FullscreenDoubleTapAction
 import com.android.purebilibili.feature.video.ui.overlay.VideoPlayerOverlay
 import com.android.purebilibili.feature.video.ui.overlay.SubtitleControlCallbacks
 import com.android.purebilibili.feature.video.ui.overlay.SubtitleControlUiState
+import com.android.purebilibili.feature.video.ui.overlay.resolveFullscreenDoubleTapAction
 import com.android.purebilibili.feature.video.ui.overlay.resolveBottomControlBarLayoutPolicy
 import com.android.purebilibili.feature.video.ui.overlay.resolveVideoProgressBarLayoutPolicy
 import com.android.purebilibili.feature.video.ui.components.SponsorSkipButton
@@ -1461,62 +1463,53 @@ fun VideoPlayerSection(
                         // 🔒 锁定时禁用双击
                         if (isScreenLocked) return@detectTapGestures
                         
-                        val screenWidth = size.width
+                        val screenWidth = size.width.toFloat()
                         val player = playerState.player
-                        
-                        //  [新增] 读取双击跳转开关
-                        // 注意：这里 directly accessing the state value captured in the closure
-                        // We need to ensure we have access to the latest value. 
-                        // Since `doubleTapSeekEnabled` is a state, we can read it here.
-                        
-                        // 逻辑：如果开启跳转 -> 以前的逻辑 (两侧跳转，中间暂停)
-                        //      如果关闭跳转 -> 全屏双击均为暂停/播放 (解决长屏按不到暂停的问题)
-                        
-                        if (doubleTapSeekEnabled) {
-                            when {
-                                // 右侧 1/3：快进
-                                offset.x > screenWidth * 2 / 3 -> {
-                                    val seekMs = seekForwardSeconds * 1000L
-                                    val newPos = resolveRelativeSeekTargetPosition(
-                                        currentPositionMs = player.currentPosition,
-                                        deltaMs = seekMs,
-                                        durationMs = player.duration
-                                    )
-                                    commitExplicitSeek(newPos)
-                                    seekFeedbackText = "+${seekForwardSeconds}s"
-                                    seekFeedbackVisible = true
-                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
-                                        "⏩ DoubleTap right: +${seekForwardSeconds}s"
-                                    }
-                                }
-                                // 左侧 1/3：后退
-                                offset.x < screenWidth / 3 -> {
-                                    val seekMs = seekBackwardSeconds * 1000L
-                                    val newPos = resolveRelativeSeekTargetPosition(
-                                        currentPositionMs = player.currentPosition,
-                                        deltaMs = -seekMs,
-                                        durationMs = player.duration
-                                    )
-                                    commitExplicitSeek(newPos)
-                                    seekFeedbackText = "-${seekBackwardSeconds}s"
-                                    seekFeedbackVisible = true
-                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
-                                        "⏪ DoubleTap left: -${seekBackwardSeconds}s"
-                                    }
-                                }
-                                // 中间：暂停/播放
-                                else -> {
-                                    togglePlayerPlaybackFromUserAction(player)
-                                    com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
-                                        "⏯️ DoubleTap center: toggle play/pause"
-                                    }
+                        val relativeX = if (screenWidth > 0f) {
+                            offset.x / screenWidth
+                        } else {
+                            0.5f
+                        }
+                        when (
+                            resolveFullscreenDoubleTapAction(
+                                relativeX = relativeX,
+                                doubleTapSeekEnabled = doubleTapSeekEnabled,
+                                playWhenReady = player.playWhenReady
+                            )
+                        ) {
+                            FullscreenDoubleTapAction.SeekForward -> {
+                                val seekMs = seekForwardSeconds * 1000L
+                                val newPos = resolveRelativeSeekTargetPosition(
+                                    currentPositionMs = player.currentPosition,
+                                    deltaMs = seekMs,
+                                    durationMs = player.duration
+                                )
+                                commitExplicitSeek(newPos)
+                                seekFeedbackText = "+${seekForwardSeconds}s"
+                                seekFeedbackVisible = true
+                                com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
+                                    "⏩ DoubleTap right: +${seekForwardSeconds}s"
                                 }
                             }
-                        } else {
-                            // 关闭跳转时，全屏双击暂停/播放
-                            togglePlayerPlaybackFromUserAction(player)
-                            com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
-                                "⏯️ DoubleTap (Seek Disabled): toggle play/pause"
+                            FullscreenDoubleTapAction.SeekBackward -> {
+                                val seekMs = seekBackwardSeconds * 1000L
+                                val newPos = resolveRelativeSeekTargetPosition(
+                                    currentPositionMs = player.currentPosition,
+                                    deltaMs = -seekMs,
+                                    durationMs = player.duration
+                                )
+                                commitExplicitSeek(newPos)
+                                seekFeedbackText = "-${seekBackwardSeconds}s"
+                                seekFeedbackVisible = true
+                                com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
+                                    "⏪ DoubleTap left: -${seekBackwardSeconds}s"
+                                }
+                            }
+                            FullscreenDoubleTapAction.TogglePlayPause -> {
+                                togglePlayerPlaybackFromUserAction(player)
+                                com.android.purebilibili.core.util.Logger.d("VideoPlayerSection") {
+                                    "⏯️ DoubleTap: toggle play/pause"
+                                }
                             }
                         }
                     }

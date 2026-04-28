@@ -65,6 +65,7 @@ fun DynamicCardV2(
     onCommentClick: (dynamicId: String) -> Unit = {},
     onRepostClick: (dynamicId: String) -> Unit = {},
     onLikeClick: (dynamicId: String) -> Unit = {},
+    onWatchLaterClick: ((aid: Long) -> Unit)? = null,
     isLiked: Boolean = false
 ) {
     val author = item.modules.module_author
@@ -72,6 +73,7 @@ fun DynamicCardV2(
     val stat = item.modules.module_stat
     val type = DynamicType.fromApiValue(item.type)
     val cardClickAction = remember(item) { resolveDynamicCardPrimaryAction(item) }
+    val watchLaterAid = remember(item) { resolveDynamicWatchLaterAid(item) }
     val isPrimaryClickEnabled = remember(cardClickAction, onDynamicDetailClick) {
         when (cardClickAction) {
             is DynamicCardPrimaryAction.OpenDynamicDetail -> onDynamicDetailClick != null
@@ -187,6 +189,24 @@ fun DynamicCardV2(
                             }
                         )
                         
+                        if (watchLaterAid != null && onWatchLaterClick != null) {
+                            DropdownMenuItem(
+                                text = { Text("稍后再看", color = MaterialTheme.colorScheme.onSurface) },
+                                leadingIcon = {
+                                    Icon(
+                                        CupertinoIcons.Default.Clock,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                onClick = {
+                                    showMoreMenu = false
+                                    onWatchLaterClick(watchLaterAid)
+                                }
+                            )
+                        }
+
                         // 不感兴趣
                         DropdownMenuItem(
                             text = { Text("不感兴趣", color = MaterialTheme.colorScheme.onSurface) },

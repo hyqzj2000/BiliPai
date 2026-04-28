@@ -178,12 +178,14 @@ internal fun resolveDynamicFeedStateAfterSuccess(
         incrementalRefreshEnabled &&
         currentState.timelineRequestType == requestType
     val mergedItems = when {
-        canUseIncrementalRefresh -> prependDistinctByKey(
-            existing = currentItems,
-            incoming = incomingItems,
-            keySelector = ::dynamicFeedItemKey
+        canUseIncrementalRefresh -> sortDynamicTimelineItemsByPublishTime(
+            prependDistinctByKey(
+                existing = currentItems,
+                incoming = incomingItems,
+                keySelector = ::dynamicFeedItemKey
+            )
         )
-        isRefresh -> incomingItems
+        isRefresh -> sortDynamicTimelineItemsByPublishTime(incomingItems)
         else -> appendDistinctByKey(
             existing = currentItems,
             incoming = incomingItems,
@@ -214,6 +216,18 @@ internal fun resolveDynamicFeedStateAfterSuccess(
         incrementalRefreshBoundaryKey = boundary.boundaryKey,
         incrementalPrependedCount = boundary.prependedCount
     )
+}
+
+internal fun sortDynamicTimelineItemsByPublishTime(items: List<DynamicItem>): List<DynamicItem> {
+    if (items.size <= 1) return items
+    return items
+        .mapIndexed { index, item -> index to item }
+        .sortedWith(
+            compareByDescending<Pair<Int, DynamicItem>> { (_, item) ->
+                item.modules.module_author?.pub_ts ?: 0L
+            }.thenBy { (index, _) -> index }
+        )
+        .map { (_, item) -> item }
 }
 
 internal fun resolveDynamicFeedStateAfterFailure(

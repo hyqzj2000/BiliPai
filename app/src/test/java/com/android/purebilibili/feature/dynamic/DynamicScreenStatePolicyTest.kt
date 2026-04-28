@@ -1,6 +1,8 @@
 package com.android.purebilibili.feature.dynamic
 
+import com.android.purebilibili.data.model.response.DynamicAuthorModule
 import com.android.purebilibili.data.model.response.DynamicItem
+import com.android.purebilibili.data.model.response.DynamicModules
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -307,6 +309,57 @@ class DynamicScreenStatePolicyTest {
     }
 
     @Test
+    fun `incremental refresh keeps merged timeline sorted by publish timestamp`() {
+        val existing = listOf(
+            buildDynamicItem(id = "today_0900", pubTs = 1_800L),
+            buildDynamicItem(id = "yesterday_2300", pubTs = 900L)
+        )
+        val result = resolveDynamicFeedStateAfterSuccess(
+            currentState = DynamicUiState(
+                items = existing,
+                timelineRequestType = "all"
+            ),
+            incomingItems = listOf(
+                buildDynamicItem(id = "today_1000", pubTs = 2_000L),
+                buildDynamicItem(id = "yesterday_2200", pubTs = 800L)
+            ),
+            isRefresh = true,
+            requestType = "all",
+            incrementalRefreshEnabled = true,
+            hasMore = true
+        )
+
+        assertEquals(
+            listOf("today_1000", "today_0900", "yesterday_2300", "yesterday_2200"),
+            result.items.map { it.id_str }
+        )
+    }
+
+    @Test
+    fun `pagination append keeps server page order instead of resorting the entire list`() {
+        val existing = listOf(
+            buildDynamicItem(id = "newer", pubTs = 2_000L),
+            buildDynamicItem(id = "older", pubTs = 1_000L)
+        )
+        val result = resolveDynamicFeedStateAfterSuccess(
+            currentState = DynamicUiState(items = existing),
+            incomingItems = listOf(
+                buildDynamicItem(id = "page_second", pubTs = 1_200L),
+                buildDynamicItem(id = "page_first", pubTs = 1_300L)
+            ),
+            isRefresh = false,
+            requestType = "all",
+            incrementalRefreshEnabled = true,
+            hasMore = true
+        )
+
+        assertEquals(
+            listOf("newer", "older", "page_second", "page_first"),
+            result.items.map { it.id_str }
+        )
+    }
+
+    @Test
     fun `incremental refresh does not merge items from a different dynamic feed type`() {
         val result = resolveDynamicFeedStateAfterSuccess(
             currentState = DynamicUiState(
@@ -396,4 +449,12 @@ class DynamicScreenStatePolicyTest {
     }
 }
 
-private fun buildDynamicItem(id: String) = DynamicItem(id_str = id)
+private fun buildDynamicItem(
+    id: String,
+    pubTs: Long = 0L
+) = DynamicItem(
+    id_str = id,
+    modules = DynamicModules(
+        module_author = DynamicAuthorModule(pub_ts = pubTs)
+    )
+)

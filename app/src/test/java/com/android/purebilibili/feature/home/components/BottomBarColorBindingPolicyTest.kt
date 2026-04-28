@@ -139,6 +139,25 @@ class BottomBarColorBindingPolicyTest {
     }
 
     @Test
+    fun `material docked bottom bar selected icon and text use theme primary`() {
+        val themePrimary = Color(0xFF9C27B0)
+        val onSurfaceVariant = Color(0xFF5F6368)
+        val secondaryContainer = Color(0xFFEADDFF)
+
+        val colors = resolveMaterialDockedBottomBarItemColors(
+            themePrimary = themePrimary,
+            onSurfaceVariant = onSurfaceVariant,
+            secondaryContainer = secondaryContainer
+        )
+
+        assertEquals(themePrimary, colors.selectedIconColor)
+        assertEquals(themePrimary, colors.selectedTextColor)
+        assertEquals(onSurfaceVariant, colors.unselectedIconColor)
+        assertEquals(onSurfaceVariant, colors.unselectedTextColor)
+        assertEquals(secondaryContainer, colors.indicatorColor)
+    }
+
+    @Test
     fun `light mode bottom bar always uses dark readable foreground`() {
         assertEquals(
             Color.Black,

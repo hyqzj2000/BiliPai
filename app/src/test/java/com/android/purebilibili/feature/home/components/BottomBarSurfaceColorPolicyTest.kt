@@ -199,6 +199,40 @@ class BottomBarSurfaceColorPolicyTest {
     }
 
     @Test
+    fun `settled segmented indicator keeps only theme tint`() {
+        val themeColor = Color(0xFF4F7CFF)
+        val neutralColor = Color.White.copy(alpha = 0.1f)
+
+        val color = resolveLiquidSegmentedIndicatorColor(
+            themeColor = themeColor,
+            neutralColor = neutralColor,
+            motionProgress = 0f,
+            darkTheme = true
+        )
+
+        assertEquals(themeColor.red, color.red, 0.001f)
+        assertEquals(themeColor.green, color.green, 0.001f)
+        assertEquals(themeColor.blue, color.blue, 0.001f)
+        assertTrue(color.alpha > neutralColor.alpha)
+        assertTrue(color.alpha < 1f)
+    }
+
+    @Test
+    fun `moving segmented indicator uses neutral glass tint`() {
+        val themeColor = Color(0xFF4F7CFF)
+        val neutralColor = Color.White.copy(alpha = 0.1f)
+
+        val color = resolveLiquidSegmentedIndicatorColor(
+            themeColor = themeColor,
+            neutralColor = neutralColor,
+            motionProgress = 0.35f,
+            darkTheme = true
+        )
+
+        assertEquals(neutralColor, color)
+    }
+
+    @Test
     fun `android native export layer tint keeps theme hue in dark theme`() {
         val color = resolveAndroidNativeExportTintColor(
             themeColor = Color(0xFF4F7CFF),

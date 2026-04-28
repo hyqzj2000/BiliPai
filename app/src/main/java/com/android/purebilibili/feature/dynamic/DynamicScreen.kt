@@ -520,6 +520,11 @@ fun DynamicScreen(
                                                     android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                                                 }
                                             },
+                                            onWatchLaterClick = { aid ->
+                                                viewModel.addToWatchLater(aid) { _, msg ->
+                                                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                                                }
+                                            },
                                             likedDynamics = likedDynamics,
                                             modifier = Modifier
                                                 .then(dynamicTabSwipeModifier)
@@ -602,6 +607,11 @@ fun DynamicScreen(
                                          onRepostClick = { showRepostDialog = it },
                                          onLikeClick = { dynamicId ->
                                              viewModel.likeDynamic(dynamicId) { _, msg ->
+                                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                                             }
+                                         },
+                                         onWatchLaterClick = { aid ->
+                                             viewModel.addToWatchLater(aid) { _, msg ->
                                                  android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                                              }
                                          },
@@ -813,6 +823,7 @@ private fun DynamicList(
     onCommentClick: (String) -> Unit = {},
     onRepostClick: (String) -> Unit = {},
     onLikeClick: (String) -> Unit = {},
+    onWatchLaterClick: (Long) -> Unit = {},
     likedDynamics: Set<String> = emptySet(),
     modifier: Modifier = Modifier
 ) {
@@ -851,6 +862,7 @@ private fun DynamicList(
                 onCommentClick = onCommentClick,
                 onRepostClick = onRepostClick,
                 onLikeClick = onLikeClick,
+                onWatchLaterClick = onWatchLaterClick,
                 isLiked = likedDynamics.contains(item.id_str)
             )
         }
@@ -993,9 +1005,7 @@ private fun HorizontalUserList(
                             .padding(4.dp)
                             .alpha(if (user.isHidden) 0.5f else 1f)
                     ) {
-                        Box(
-                            modifier = Modifier.padding(bottom = resolveDynamicUserLiveBadgeReservedSpace())
-                        ) {
+                        Box {
                             Box(
                                 modifier = Modifier
                                     .size(48.dp)
@@ -1017,14 +1027,9 @@ private fun HorizontalUserList(
                                     contentScale = ContentScale.Crop
                                 )
                             }
-
-                            if (shouldShowDynamicUserLiveBadge(user.isLive)) {
-                                DynamicUserLiveBadge(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomCenter)
-                                        .offset(y = resolveDynamicUserLiveBadgeReservedSpace() / 2)
-                                )
-                            }
+                        }
+                        if (shouldShowDynamicUserLiveBadge(user.isLive)) {
+                            DynamicUserLiveBadge(modifier = Modifier.padding(top = 2.dp))
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(

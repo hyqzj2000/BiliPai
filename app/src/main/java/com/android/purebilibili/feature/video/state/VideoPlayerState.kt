@@ -960,6 +960,7 @@ fun rememberVideoPlayerState(
     //  [修复] 记录是否从后台音频模式恢复（后台音频时不应 seek 回旧位置）
     var wasBackgroundAudio by remember { mutableStateOf(false) }
     var hasTransientResumeIntent by remember { mutableStateOf(false) }
+    var hasForegroundResumeIntent by remember { mutableStateOf(false) }
     
     val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, player) {
@@ -978,6 +979,7 @@ fun rememberVideoPlayerState(
                         playWhenReady = player.playWhenReady,
                         playbackState = player.playbackState
                     )
+                    hasForegroundResumeIntent = wasPlaying
                     
                     //  [新增] 判断是否应该继续播放
                     // 1. 应用内小窗模式 - 继续播放
@@ -1020,6 +1022,7 @@ fun rememberVideoPlayerState(
                     val resumeDecision = resolvePlaybackResumeDecision(
                         wasPlaybackActive = wasPlaying,
                         hasTransientResumeIntent = hasTransientResumeIntent,
+                        hasForegroundResumeIntent = hasForegroundResumeIntent,
                         isPlaying = player.isPlaying,
                         playWhenReady = player.playWhenReady,
                         playbackState = player.playbackState,
@@ -1042,6 +1045,13 @@ fun rememberVideoPlayerState(
                         // 移除 seekTo(savedPosition)，因为 player.currentPosition 才是最新的（即使暂停了也还在该位置）
                         // 且 seekTo 会导致 PiP 返回时回退到进入 PiP 前的旧位置
                         if (shouldEnsureAudibleOnForeground) {
+                             if (
+                                 player.playbackState == Player.STATE_IDLE &&
+                                 player.mediaItemCount > 0
+                             ) {
+                                 player.prepare()
+                             }
+                             player.playWhenReady = true
                              player.play()
                              holder.recordDiagnosticEvent("lifecycleResume -> resumePlayback")
                              com.android.purebilibili.core.util.Logger.d("VideoPlayerState", " ON_RESUME: Resuming playback")
@@ -1054,6 +1064,7 @@ fun rememberVideoPlayerState(
                     // 重置标志
                     wasBackgroundAudio = false
                     hasTransientResumeIntent = false
+                    hasForegroundResumeIntent = false
                 }
                 else -> {}
             }

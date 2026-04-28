@@ -267,6 +267,28 @@ internal data class Md3BottomBarFloatingChromeSpec(
     val showDivider: Boolean
 )
 
+internal data class MaterialDockedBottomBarItemColors(
+    val selectedIconColor: Color,
+    val selectedTextColor: Color,
+    val indicatorColor: Color,
+    val unselectedIconColor: Color,
+    val unselectedTextColor: Color
+)
+
+internal fun resolveMaterialDockedBottomBarItemColors(
+    themePrimary: Color,
+    onSurfaceVariant: Color,
+    secondaryContainer: Color
+): MaterialDockedBottomBarItemColors {
+    return MaterialDockedBottomBarItemColors(
+        selectedIconColor = themePrimary,
+        selectedTextColor = themePrimary,
+        indicatorColor = secondaryContainer,
+        unselectedIconColor = onSurfaceVariant,
+        unselectedTextColor = onSurfaceVariant
+    )
+}
+
 internal fun resolveMd3BottomBarFloatingChromeSpec(
     isFloating: Boolean
 ): Md3BottomBarFloatingChromeSpec {
@@ -1538,6 +1560,11 @@ private fun MaterialBottomBar(
             blurIntensity = blurIntensity
         )
     }
+    val dockedItemColors = resolveMaterialDockedBottomBarItemColors(
+        themePrimary = MaterialTheme.colorScheme.primary,
+        onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant,
+        secondaryContainer = MaterialTheme.colorScheme.secondaryContainer
+    )
 
     if (isFloating) {
         KernelSuAlignedBottomBar(
@@ -1613,11 +1640,11 @@ private fun MaterialBottomBar(
                     },
                     alwaysShowLabel = showText,
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                        indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        selectedIconColor = dockedItemColors.selectedIconColor,
+                        selectedTextColor = dockedItemColors.selectedTextColor,
+                        indicatorColor = dockedItemColors.indicatorColor,
+                        unselectedIconColor = dockedItemColors.unselectedIconColor,
+                        unselectedTextColor = dockedItemColors.unselectedTextColor
                     )
                 )
             }
@@ -1649,11 +1676,11 @@ private fun MaterialBottomBar(
                     },
                     alwaysShowLabel = showText,
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                        indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        selectedIconColor = dockedItemColors.selectedIconColor,
+                        selectedTextColor = dockedItemColors.selectedTextColor,
+                        indicatorColor = dockedItemColors.indicatorColor,
+                        unselectedIconColor = dockedItemColors.unselectedIconColor,
+                        unselectedTextColor = dockedItemColors.unselectedTextColor
                     )
                 )
             }

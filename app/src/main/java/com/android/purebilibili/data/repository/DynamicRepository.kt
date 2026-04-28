@@ -27,22 +27,30 @@ object DynamicRepository {
         type: String = "all"
     ): Result<List<DynamicItem>> = withContext(Dispatchers.IO) {
         try {
-            if (refresh) {
-                feedPagination.reset(scope, type)
+            val refreshUpdateBaseline = if (refresh) {
+                feedPagination.updateBaseline(scope, type)
+            } else {
+                ""
             }
-            
+            val refreshPaginationOffset = if (refresh) {
+                feedPagination.offset(scope, type)
+            } else {
+                ""
+            }
             if (!feedPagination.hasMore(scope, type) && !refresh) {
                 return@withContext Result.success(emptyList())
             }
 
             val visibleItems = mutableListOf<DynamicItem>()
             var pagesFetched = 0
+            var requestOffset = if (refresh) "" else feedPagination.offset(scope, type)
             while (true) {
-                val previousOffset = feedPagination.offset(scope, type)
+                val previousOffset = requestOffset
                 val response = fetchDynamicFeedPageWithRetry {
                     NetworkModule.dynamicApi.getDynamicFeed(
                         type = type,
-                        offset = previousOffset
+                        offset = previousOffset,
+                        updateBaseline = if (previousOffset.isBlank()) refreshUpdateBaseline else ""
                     )
                 }.getOrElse { error ->
                     return@withContext Result.failure(error)
@@ -50,12 +58,33 @@ object DynamicRepository {
 
                 val data = response.data
                 if (data == null) {
-                    feedPagination.update(scope = scope, type = type, offset = previousOffset, hasMore = false)
+                    feedPagination.update(
+                        scope = scope,
+                        type = type,
+                        offset = if (refreshUpdateBaseline.isNotBlank()) {
+                            refreshPaginationOffset
+                        } else {
+                            previousOffset
+                        },
+                        updateBaseline = refreshUpdateBaseline,
+                        hasMore = false
+                    )
                     break
                 }
 
                 // 更新分页状态
-                feedPagination.update(scope = scope, type = type, offset = data.offset, hasMore = data.has_more)
+                requestOffset = data.offset
+                feedPagination.update(
+                    scope = scope,
+                    type = type,
+                    offset = if (refreshUpdateBaseline.isNotBlank()) {
+                        refreshPaginationOffset
+                    } else {
+                        data.offset
+                    },
+                    updateBaseline = data.update_baseline.ifBlank { refreshUpdateBaseline },
+                    hasMore = data.has_more
+                )
 
                 // 过滤不可见的动态
                 visibleItems += data.items.filter { it.visible }
@@ -295,6 +324,7 @@ enum class DynamicFeedScope {
 
 internal data class DynamicPaginationState(
     var offset: String = "",
+    var updateBaseline: String = "",
     var hasMore: Boolean = true
 )
 
@@ -310,13 +340,27 @@ internal class DynamicFeedPaginationRegistry {
         stateByScope[DynamicFeedPaginationKey(scope = scope, type = type)] = DynamicPaginationState()
     }
 
-    fun update(scope: DynamicFeedScope, type: String = "all", offset: String, hasMore: Boolean) {
+    fun update(
+        scope: DynamicFeedScope,
+        type: String = "all",
+        offset: String,
+        updateBaseline: String = "",
+        hasMore: Boolean
+    ) {
         stateByScope[DynamicFeedPaginationKey(scope = scope, type = type)] =
-            DynamicPaginationState(offset = offset, hasMore = hasMore)
+            DynamicPaginationState(
+                offset = offset,
+                updateBaseline = updateBaseline,
+                hasMore = hasMore
+            )
     }
 
     fun offset(scope: DynamicFeedScope, type: String = "all"): String {
         return stateByScope[DynamicFeedPaginationKey(scope = scope, type = type)]?.offset.orEmpty()
+    }
+
+    fun updateBaseline(scope: DynamicFeedScope, type: String = "all"): String {
+        return stateByScope[DynamicFeedPaginationKey(scope = scope, type = type)]?.updateBaseline.orEmpty()
     }
 
     fun hasMore(scope: DynamicFeedScope, type: String = "all"): Boolean {

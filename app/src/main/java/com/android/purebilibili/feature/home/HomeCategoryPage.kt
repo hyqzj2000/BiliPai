@@ -64,6 +64,20 @@ internal fun resolveHomeCategoryVideoGridKey(
     return "home_video_${primaryId}_$index"
 }
 
+internal fun shouldRequestHomeCategoryLoadMore(
+    totalItems: Int,
+    lastVisibleItemIndex: Int,
+    isLoading: Boolean,
+    hasMore: Boolean,
+    hasVisibleContent: Boolean
+): Boolean {
+    return hasVisibleContent &&
+        totalItems > 0 &&
+        lastVisibleItemIndex >= totalItems - 4 &&
+        !isLoading &&
+        hasMore
+}
+
 @Composable
 internal fun HomeCategoryPageContent(
     category: HomeCategory,
@@ -135,7 +149,15 @@ internal fun HomeCategoryPageContent(
             val layoutInfo = gridState.layoutInfo
             val totalItems = layoutInfo.totalItemsCount
             val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            totalItems > 0 && lastVisibleItemIndex >= totalItems - 4 && !categoryState.isLoading && categoryState.hasMore
+            shouldRequestHomeCategoryLoadMore(
+                totalItems = totalItems,
+                lastVisibleItemIndex = lastVisibleItemIndex,
+                isLoading = categoryState.isLoading,
+                hasMore = categoryState.hasMore,
+                hasVisibleContent = categoryState.videos.isNotEmpty() ||
+                    categoryState.liveRooms.isNotEmpty() ||
+                    categoryState.followedLiveRooms.isNotEmpty()
+            )
         }
     }
     LaunchedEffect(shouldLoadMore) {

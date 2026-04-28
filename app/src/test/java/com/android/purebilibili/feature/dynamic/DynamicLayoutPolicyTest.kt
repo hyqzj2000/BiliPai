@@ -59,13 +59,10 @@ class DynamicLayoutPolicyTest {
     }
 
     @Test
-    fun `dynamic user live badge uses compact themed pill sizing`() {
+    fun `dynamic user live badge uses themed text label`() {
         assertEquals(true, shouldShowDynamicUserLiveBadge(isLive = true))
         assertEquals(false, shouldShowDynamicUserLiveBadge(isLive = false))
         assertEquals("直播", resolveDynamicUserLiveBadgeLabel())
-        assertEquals(16.dp, resolveDynamicUserLiveBadgeHeight())
-        assertEquals(24.dp, resolveDynamicUserLiveBadgeMinWidth())
-        assertEquals(8.dp, resolveDynamicUserLiveBadgeReservedSpace())
     }
 
     @Test

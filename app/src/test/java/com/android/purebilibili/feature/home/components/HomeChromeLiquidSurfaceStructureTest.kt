@@ -58,8 +58,8 @@ class HomeChromeLiquidSurfaceStructureTest {
             bottomBar.readText().contains(".appChromeLiquidSurface(")
         )
         assertTrue(
-            "top tab dock should use the same floating dock liquid surface style as the bottom bar",
-            topTabChrome.readText().contains("resolveFloatingDockLiquidSurfaceStyle(")
+            "top tab dock should use the same KSU dock surface renderer as the bottom bar",
+            topBar.readText().contains(".kernelSuFloatingDockSurface(")
         )
         assertTrue(
             "top tab inner dock should use the KSU dock surface renderer",
@@ -70,27 +70,18 @@ class HomeChromeLiquidSurfaceStructureTest {
             topBar.readText().contains("viewportShiftPx = scrollOffset - indicatorPanelOffsetPx")
         )
         assertTrue(
-            "top floating dock should render category text through the bottom-style fixed slot row",
-            topBar.readText().contains("private fun TopDockBottomStyleRow(") &&
-                topBar.readText().contains("TopDockBottomStyleItem(")
+            "top tab indicator should follow pager position during horizontal swipes",
+            topBar.readText().contains("resolveTopTabPagerPosition(") &&
+                topBar.readText().contains("pagerCurrentPageOffsetFraction = pagerState?.currentPageOffsetFraction")
         )
         assertTrue(
-            "top floating dock items should match bottom bar slot shape and text metrics",
-            topBar.readText().contains(".defaultMinSize(minWidth = 76.dp)") &&
-                topBar.readText().contains(".clip(resolveSharedBottomBarCapsuleShape())") &&
-                topBar.readText().contains("fontSize = 11.sp") &&
-                topBar.readText().contains("lineHeight = 14.sp") &&
-                topBar.readText().contains("fontWeight = FontWeight.Medium")
+            "top tab indicator should combine page backdrop and exported tab content while moving",
+            topBar.readText().contains("rememberCombinedBackdrop(backdrop, tabContentBackdrop)") &&
+                topBar.readText().contains("LiquidIndicator(")
         )
         assertTrue(
-            "top tab exported refraction layer should apply the bottom bar capture width scale",
-            topBar.readText().contains("scaleX = topTabRefractionProfile.exportCaptureWidthScale")
-        )
-        assertTrue(
-            "top tab indicator should force chromatic aberration only for combined backdrop refraction",
-            topBar.readText().contains(
-                "forceChromaticAberration = refractionLayerPolicy.useCombinedBackdrop &&"
-            )
+            "top tab indicator should keep bottom-bar style chromatic motion tuning",
+            topBar.readText().contains("forceChromaticAberration = topTabRefractionProfile.forceChromaticAberration")
         )
         assertTrue(
             "bottom bar should use the shared floating dock liquid surface style",

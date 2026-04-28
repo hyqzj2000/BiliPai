@@ -119,7 +119,7 @@ fun BottomBarLiquidSegmentedControl(
         liquidGlassProgress = liquidGlassTuning.progress,
         contentLuminance = if (liquidGlassEnabled && isDarkTheme) 0.18f else 0f
     ).copy(alpha = if (enabled) 0.78f else 0.42f)
-    val indicatorColor = if (isDarkTheme) Color.White.copy(0.1f) else Color.Black.copy(0.1f)
+    val neutralIndicatorColor = if (isDarkTheme) Color.White.copy(0.1f) else Color.Black.copy(0.1f)
 
     LaunchedEffect(safeSelectedIndex) {
         dragState.updateIndex(safeSelectedIndex)
@@ -166,6 +166,13 @@ fun BottomBarLiquidSegmentedControl(
             motionSpec = motionSpec
         )
         val motionProgress = maxOf(pressMotionProgress, refractionMotionProfile.progress)
+        val indicatorColor = resolveLiquidSegmentedIndicatorColor(
+            themeColor = selectedTextColor,
+            neutralColor = neutralIndicatorColor,
+            motionProgress = motionProgress,
+            darkTheme = isDarkTheme
+        )
+        val useIndicatorBackdrop = liquidGlassEnabled && motionProgress > 0f
         val contentBackdrop = rememberLayerBackdrop()
         val panelOffsetPx by remember(density, itemWidthPx) {
             derivedStateOf {
@@ -217,7 +224,7 @@ fun BottomBarLiquidSegmentedControl(
                 .height(indicatorHeight)
                 .align(Alignment.CenterStart)
                 .run {
-                    if (liquidGlassEnabled) {
+                    if (useIndicatorBackdrop) {
                         drawBackdrop(
                             backdrop = contentBackdrop,
                             shape = { containerShape },
@@ -312,6 +319,17 @@ fun BottomBarLiquidSegmentedControl(
                 .then(dragModifier)
         )
     }
+}
+
+internal fun resolveLiquidSegmentedIndicatorColor(
+    themeColor: Color,
+    neutralColor: Color,
+    motionProgress: Float,
+    darkTheme: Boolean
+): Color {
+    if (motionProgress > 0f) return neutralColor
+    val alpha = if (darkTheme) 0.22f else 0.16f
+    return themeColor.copy(alpha = alpha)
 }
 
 @Composable

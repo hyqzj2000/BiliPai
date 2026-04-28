@@ -73,6 +73,22 @@ internal fun resolveUgcSeasonPlayableBvid(season: UgcSeasonMajor): String? {
         ?: season.aid.takeIf { it > 0L }?.let { "av$it" }
 }
 
+internal fun resolveDynamicWatchLaterAid(item: DynamicItem): Long? {
+    val target = item.orig ?: item
+    val major = target.modules.module_dynamic?.major ?: return null
+    major.archive?.aid
+        ?.trim()
+        ?.toLongOrNull()
+        ?.takeIf { it > 0L }
+        ?.let { return it }
+    major.ugc_season?.archive?.aid
+        ?.trim()
+        ?.toLongOrNull()
+        ?.takeIf { it > 0L }
+        ?.let { return it }
+    return major.ugc_season?.aid?.takeIf { it > 0L }
+}
+
 internal fun resolveUgcSeasonArchiveFallback(season: UgcSeasonMajor): ArchiveMajor? {
     season.archive?.let { return it }
     val hasRenderableContent = season.title.isNotBlank() || season.cover.isNotBlank()

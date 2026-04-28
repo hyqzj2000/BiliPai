@@ -68,6 +68,10 @@ internal fun shouldRefreshHomeUserInfoAfterFeedLoad(isLoadMore: Boolean): Boolea
     return !isLoadMore
 }
 
+internal fun shouldKeepHomeCategoryAutoPagingAfterFailure(isLoadMore: Boolean): Boolean {
+    return !isLoadMore
+}
+
 internal fun applyHomeRefreshUndoSnapshot(
     oldState: CategoryContent,
     snapshot: HomeRefreshUndoSnapshot
@@ -986,7 +990,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             updateCategoryState(currentCategory) { oldState ->
                 oldState.copy(
                     isLoading = false,
-                    error = if (!isLoadMore && oldState.videos.isEmpty()) error.message ?: "网络错误" else null
+                    error = if (!isLoadMore && oldState.videos.isEmpty()) error.message ?: "网络错误" else null,
+                    hasMore = if (shouldKeepHomeCategoryAutoPagingAfterFailure(isLoadMore)) {
+                        oldState.hasMore
+                    } else {
+                        false
+                    }
                 )
             }
             if (currentCategory == HomeCategory.RECOMMEND) {

@@ -227,6 +227,14 @@ internal fun resolveTopTabIndicatorStyle(uiPreset: UiPreset): TopTabIndicatorSty
     }
 }
 
+internal fun shouldUseMd3TopTabMaterialIndicator(
+    uiPreset: UiPreset,
+    liquidGlassEnabled: Boolean
+): Boolean {
+    return resolveTopTabIndicatorStyle(uiPreset) == TopTabIndicatorStyle.MATERIAL &&
+        !liquidGlassEnabled
+}
+
 fun resolveTopTabLabelTextSizeSp(labelMode: Int): Float {
     val tuning = resolveTopTabVisualTuning()
     return when (normalizeTopTabLabelMode(labelMode)) {
