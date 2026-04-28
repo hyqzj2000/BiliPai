@@ -5,6 +5,13 @@ import com.android.purebilibili.core.network.NetworkModule
 import com.android.purebilibili.data.model.response.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
 
 data class LiveRoomH5Snapshot(
@@ -32,11 +39,23 @@ data class LivePrefetchDanmaku(
 )
 
 data class LiveSuperChatSeed(
+    val id: Long = 0,
     val uid: Long = 0,
     val uname: String = "",
     val message: String = "",
     val price: String = "",
     val backgroundColor: Int = 0
+)
+
+data class LiveRedPocketInfo(
+    val lotId: Long = 0,
+    val senderName: String = "",
+    val danmu: String = "",
+    val h5Url: String = "",
+    val awardsText: String = "",
+    val totalPrice: Int = 0,
+    val userStatus: Int = 0,
+    val remainingSeconds: Int = 0
 )
 
 enum class LiveContributionRankType(
@@ -47,6 +66,74 @@ enum class LiveContributionRankType(
     DAILY("日榜", "today_rank"),
     WEEKLY("周榜", "current_week_rank"),
     MONTHLY("月榜", "current_month_rank")
+}
+
+private val liveRepositoryJson = Json {
+    ignoreUnknownKeys = true
+}
+
+internal fun parseLiveRedPocketInfo(rawJson: String): LiveRedPocketInfo? {
+    val root = runCatching {
+        liveRepositoryJson.parseToJsonElement(rawJson).jsonObject
+    }.getOrNull() ?: return null
+    if (root.int("code", -1) != 0) return null
+    val pocket = root.obj("data")
+        ?.array("popularity_red_pocket")
+        ?.firstNotNullOfOrNull { it as? JsonObject }
+        ?: return null
+    val lotId = pocket.long("lot_id")
+    if (lotId <= 0L) return null
+    val currentTime = pocket.long("current_time")
+    val endTime = pocket.long("end_time")
+    val remainingSeconds = (endTime - currentTime)
+        .takeIf { it > 0L }
+        ?.coerceAtMost(Int.MAX_VALUE.toLong())
+        ?.toInt()
+        ?: 0
+    return LiveRedPocketInfo(
+        lotId = lotId,
+        senderName = pocket.string("sender_name"),
+        danmu = pocket.string("danmu"),
+        h5Url = pocket.string("h5_url"),
+        awardsText = formatLiveRedPocketAwards(pocket.array("awards")),
+        totalPrice = pocket.int("total_price"),
+        userStatus = pocket.int("user_status"),
+        remainingSeconds = remainingSeconds
+    )
+}
+
+private fun formatLiveRedPocketAwards(awards: JsonArray?): String {
+    return awards
+        ?.mapNotNull { it as? JsonObject }
+        ?.mapNotNull { award ->
+            val name = award.string("gift_name")
+            if (name.isBlank()) return@mapNotNull null
+            val count = award.int("num").takeIf { it > 0 } ?: 1
+            "$name x$count"
+        }
+        ?.take(3)
+        ?.joinToString("、")
+        .orEmpty()
+}
+
+private fun JsonObject.string(name: String): String {
+    return this[name]?.jsonPrimitive?.contentOrNull.orEmpty()
+}
+
+private fun JsonObject.int(name: String, default: Int = 0): Int {
+    return this[name]?.jsonPrimitive?.intOrNull ?: default
+}
+
+private fun JsonObject.long(name: String): Long {
+    return this[name]?.jsonPrimitive?.contentOrNull?.toLongOrNull() ?: 0L
+}
+
+private fun JsonObject.obj(name: String): JsonObject? {
+    return this[name] as? JsonObject
+}
+
+private fun JsonObject.array(name: String): JsonArray? {
+    return this[name] as? JsonArray
 }
 
 /**
@@ -163,21 +250,8 @@ object LiveRepository {
             val followedRooms = resp.data?.list
                 ?.filter { it.liveStatus == 1 }
                 ?: emptyList()
-            
-            // 关注直播 API 不返回在线人数，需要额外获取
-            val liveRooms = followedRooms.map { room ->
-                val liveRoom = room.toLiveRoom()
-                try {
-                    // 获取房间详情以得到在线人数
-                    val roomInfo = api.getRoomInfo(room.roomid)
-                    val online = roomInfo.data?.online ?: 0
-                    com.android.purebilibili.core.util.Logger.d("LiveRepo", "🔴 Room ${room.roomid} online: $online")
-                    liveRoom.copy(online = online)
-                } catch (e: Exception) {
-                    android.util.Log.w("LiveRepo", "Failed to get room info for ${room.roomid}: ${e.message}")
-                    liveRoom  // 失败时使用原数据
-                }
-            }
+
+            val liveRooms = followedRooms.map { it.toLiveRoom() }
             
             Result.success(liveRooms)
         } catch (e: Exception) {
@@ -284,6 +358,7 @@ object LiveRepository {
                         val user = obj.optJSONObject("user_info")
                         add(
                             LiveSuperChatSeed(
+                                id = obj.optLong("id", obj.optLong("message_id", 0L)),
                                 uid = obj.optLong("uid", user?.optLong("uid", 0L) ?: 0L),
                                 uname = user?.optString("uname").orEmpty(),
                                 message = obj.optString("message"),
@@ -299,6 +374,15 @@ object LiveRepository {
                 }
             }
             Result.success(items)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getLiveRedPocketInfo(roomId: Long): Result<LiveRedPocketInfo?> = withContext(Dispatchers.IO) {
+        try {
+            val realRoomId = resolveRealRoomId(roomId)
+            Result.success(parseLiveRedPocketInfo(api.getLiveLotteryInfo(realRoomId).string()))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -477,7 +561,7 @@ object LiveRepository {
             if (resp.code == 0) {
                 Result.success(true)
             } else {
-                Result.failure(Exception(resp.message ?: "发送失败"))
+                Result.failure(Exception(resp.message.ifBlank { "发送失败" }))
             }
         } catch (e: Exception) {
             e.printStackTrace()

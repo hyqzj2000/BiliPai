@@ -91,4 +91,80 @@ class LiveRoomLayoutPolicyTest {
         assertEquals("1.2万", formatLiveViewerCount(12_300))
         assertEquals("-", formatLiveViewerCount(0))
     }
+
+    @Test
+    fun `embedded player controls do not consume system bar insets`() {
+        assertFalse(
+            shouldApplyLiveTopControlSystemInsets(
+                layoutMode = LiveRoomLayoutMode.PortraitPanel,
+                isFullscreen = false
+            )
+        )
+        assertFalse(
+            shouldApplyLiveBottomControlSystemInsets(
+                layoutMode = LiveRoomLayoutMode.LandscapeSplit,
+                isFullscreen = false,
+                hasReservedBottomOverlay = false
+            )
+        )
+    }
+
+    @Test
+    fun `edge player controls only reserve bottom insets when no lower panel is present`() {
+        assertTrue(
+            shouldApplyLiveTopControlSystemInsets(
+                layoutMode = LiveRoomLayoutMode.PortraitVerticalOverlay,
+                isFullscreen = false
+            )
+        )
+        assertFalse(
+            shouldApplyLiveBottomControlSystemInsets(
+                layoutMode = LiveRoomLayoutMode.PortraitVerticalOverlay,
+                isFullscreen = false,
+                hasReservedBottomOverlay = true
+            )
+        )
+        assertTrue(
+            shouldApplyLiveBottomControlSystemInsets(
+                layoutMode = LiveRoomLayoutMode.LandscapeOverlay,
+                isFullscreen = false,
+                hasReservedBottomOverlay = false
+            )
+        )
+    }
+
+    @Test
+    fun `portrait overlay panel leaves room for player controls`() {
+        val metrics = resolveLivePortraitOverlayMetrics(screenHeightDp = 844)
+        val panelHeight = resolveLivePortraitOverlayPanelHeightDp(
+            screenHeightDp = 844,
+            metrics = metrics
+        )
+
+        assertEquals(0.48f, metrics.panelHeightFraction)
+        assertTrue(panelHeight < 844 / 2)
+        assertTrue(844 - panelHeight >= metrics.minPlayerClearanceDp)
+        assertTrue(metrics.playerControlsGapDp >= 8)
+    }
+
+    @Test
+    fun `landscape chat overlay is bounded away from player chrome`() {
+        val metrics = resolveLiveLandscapeChatOverlayMetrics(
+            screenWidthDp = 844,
+            screenHeightDp = 390
+        )
+        val overlayHeight = resolveLiveLandscapeChatOverlayHeightDp(
+            screenHeightDp = 390,
+            metrics = metrics
+        )
+        val overlayWidth = resolveLiveLandscapeChatOverlayWidthDp(
+            screenWidthDp = 844,
+            metrics = metrics
+        )
+
+        assertTrue(metrics.bottomControlReserveDp >= 88)
+        assertTrue(overlayHeight <= 390 - metrics.topControlReserveDp - metrics.bottomControlReserveDp)
+        assertTrue(overlayWidth <= metrics.maxWidthDp)
+        assertTrue(overlayWidth >= metrics.minWidthDp)
+    }
 }

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ForwardToInbox
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.OpenInBrowser
 import androidx.compose.material.icons.outlined.Share
@@ -63,6 +64,7 @@ import com.android.purebilibili.core.util.CrashReporter
 import com.android.purebilibili.core.store.DanmakuSettingsScope
 import com.android.purebilibili.core.store.SettingsManager
 import com.android.purebilibili.data.model.response.LiveQuality
+import com.android.purebilibili.data.repository.LiveRedPocketInfo
 import com.android.purebilibili.feature.live.components.LandscapeChatOverlay
 import com.android.purebilibili.feature.live.components.LiveChatSection
 import com.android.purebilibili.feature.live.components.LiveContributionRankSheet
@@ -92,6 +94,7 @@ import com.android.purebilibili.core.ui.LocalAnimatedVisibilityScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 private const val TAG = "LivePlayerScreen"
 
@@ -169,6 +172,20 @@ fun LivePlayerScreen(
         isFullscreen = isFullscreen,
         isPortraitLive = isPortraitLive
     )
+    val portraitOverlayMetrics = remember(configuration.screenHeightDp) {
+        resolveLivePortraitOverlayMetrics(configuration.screenHeightDp)
+    }
+    val portraitOverlayPanelHeightDp = remember(configuration.screenHeightDp, portraitOverlayMetrics) {
+        resolveLivePortraitOverlayPanelHeightDp(
+            screenHeightDp = configuration.screenHeightDp,
+            metrics = portraitOverlayMetrics
+        )
+    }
+    val reservedBottomOverlayDp = if (liveLayoutMode == LiveRoomLayoutMode.PortraitVerticalOverlay) {
+        portraitOverlayPanelHeightDp
+    } else {
+        0
+    }
     val showChatToggle = remember(liveLayoutMode) {
         shouldShowLiveChatToggle(liveLayoutMode)
     }
@@ -229,6 +246,15 @@ fun LivePlayerScreen(
     fun openLiveUrl() {
         val liveUrl = "https://live.bilibili.com/$roomId"
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(liveUrl)))
+    }
+
+    fun openRedPocket(info: LiveRedPocketInfo) {
+        val url = info.h5Url
+        if (url.isBlank()) {
+            Toast.makeText(context, "红包入口暂不可用", Toast.LENGTH_SHORT).show()
+            return
+        }
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 
     fun shareLiveToMessage() {
@@ -629,7 +655,21 @@ fun LivePlayerScreen(
                 currentQualityDesc = currentQualityDesc,
                 onQualityClick = { showQualityMenu = true },
                 showPipButton = showLivePipButton,
-                onEnterPip = { enterLivePip() }
+                onEnterPip = { enterLivePip() },
+                applyTopSystemBarPadding = shouldApplyLiveTopControlSystemInsets(
+                    layoutMode = liveLayoutMode,
+                    isFullscreen = isFullscreen
+                ),
+                applyBottomSystemBarPadding = shouldApplyLiveBottomControlSystemInsets(
+                    layoutMode = liveLayoutMode,
+                    isFullscreen = isFullscreen,
+                    hasReservedBottomOverlay = reservedBottomOverlayDp > 0
+                ),
+                bottomControlsBottomPadding = if (reservedBottomOverlayDp > 0) {
+                    (reservedBottomOverlayDp + portraitOverlayMetrics.playerControlsGapDp).dp
+                } else {
+                    0.dp
+                }
             )
 
             if (successState?.isAudioOnly == true) {
@@ -738,7 +778,11 @@ fun LivePlayerScreen(
                         onQualityClick = { showQualityMenu = true },
                         onOpenRank = { showContributionRankSheet = true },
                         onOpenSend = { showSendDanmakuSheet = true },
-                        onOpenBlock = { showBlockDialog = true }
+                        onOpenBlock = { showBlockDialog = true },
+                        redPocketInfo = successState?.redPocketInfo,
+                        onRedPocketClick = {
+                            successState?.redPocketInfo?.let { openRedPocket(it) }
+                        }
                     )
                     Row(
                         modifier = Modifier
@@ -772,19 +816,53 @@ fun LivePlayerScreen(
             }
         }
         LiveRoomLayoutMode.LandscapeOverlay -> {
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black)
             ) {
                 playerContent()
+                successState?.redPocketInfo?.let { redPocket ->
+                    LiveRedPocketChip(
+                        info = redPocket,
+                        onClick = { openRedPocket(redPocket) },
+                        compact = false,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 88.dp, end = 16.dp)
+                            .widthIn(max = 220.dp)
+                    )
+                }
                 if (showLandscapeChatOverlay) {
+                    val screenWidthDp = maxWidth.value.roundToInt()
+                    val screenHeightDp = maxHeight.value.roundToInt()
+                    val overlayMetrics = remember(screenWidthDp, screenHeightDp) {
+                        resolveLiveLandscapeChatOverlayMetrics(
+                            screenWidthDp = screenWidthDp,
+                            screenHeightDp = screenHeightDp
+                        )
+                    }
+                    val overlayWidthDp = remember(screenWidthDp, overlayMetrics) {
+                        resolveLiveLandscapeChatOverlayWidthDp(
+                            screenWidthDp = screenWidthDp,
+                            metrics = overlayMetrics
+                        )
+                    }
+                    val overlayHeightDp = remember(screenHeightDp, overlayMetrics) {
+                        resolveLiveLandscapeChatOverlayHeightDp(
+                            screenHeightDp = screenHeightDp,
+                            metrics = overlayMetrics
+                        )
+                    }
                     Surface(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .fillMaxWidth(0.34f)
-                            .fillMaxHeight(0.58f)
-                            .padding(end = 16.dp, bottom = 18.dp),
+                            .padding(
+                                end = overlayMetrics.edgePaddingDp.dp,
+                                bottom = overlayMetrics.bottomControlReserveDp.dp
+                            )
+                            .width(overlayWidthDp.dp)
+                            .height(overlayHeightDp.dp),
                         shape = RoundedCornerShape(24.dp),
                         color = Color.Black.copy(alpha = 0.18f),
                         border = androidx.compose.foundation.BorderStroke(
@@ -836,13 +914,17 @@ fun LivePlayerScreen(
                     onOpenRank = { showContributionRankSheet = true },
                     onOpenSend = { showSendDanmakuSheet = true },
                     onOpenBlock = { showBlockDialog = true },
+                    redPocketInfo = successState?.redPocketInfo,
+                    onRedPocketClick = {
+                        successState?.redPocketInfo?.let { openRedPocket(it) }
+                    },
                     modifier = Modifier.align(Alignment.TopCenter)
                 )
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .fillMaxHeight(0.5f)
+                        .height(portraitOverlayPanelHeightDp.dp)
                 ) {
                     interactionContent(true)
                 }
@@ -877,7 +959,11 @@ fun LivePlayerScreen(
                         onQualityClick = { showQualityMenu = true },
                         onOpenRank = { showContributionRankSheet = true },
                         onOpenSend = { showSendDanmakuSheet = true },
-                        onOpenBlock = { showBlockDialog = true }
+                        onOpenBlock = { showBlockDialog = true },
+                        redPocketInfo = successState?.redPocketInfo,
+                        onRedPocketClick = {
+                            successState?.redPocketInfo?.let { openRedPocket(it) }
+                        }
                     )
                     Box(modifier = Modifier.fillMaxWidth().aspectRatio(16f/9f)) {
                         playerContent()
@@ -1035,6 +1121,8 @@ private fun LivePortraitOverlayAppBar(
     onOpenRank: () -> Unit,
     onOpenSend: () -> Unit,
     onOpenBlock: () -> Unit,
+    redPocketInfo: LiveRedPocketInfo?,
+    onRedPocketClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val palette = rememberLiveChromePalette()
@@ -1086,6 +1174,14 @@ private fun LivePortraitOverlayAppBar(
                 overflow = TextOverflow.Ellipsis
             )
         }
+        if (redPocketInfo != null) {
+            Spacer(Modifier.width(8.dp))
+            LiveRedPocketChip(
+                info = redPocketInfo,
+                onClick = onRedPocketClick,
+                compact = true
+            )
+        }
         Box {
             IconButton(onClick = { onExpandedChange(true) }, modifier = Modifier.size(40.dp)) {
                 Icon(Icons.Filled.MoreVert, contentDescription = "更多", tint = Color.White)
@@ -1104,6 +1200,51 @@ private fun LivePortraitOverlayAppBar(
                 onShare = onShare,
                 onShareToMessage = onShareToMessage,
                 onOpenBrowser = onOpenBrowser
+            )
+        }
+    }
+}
+
+@Composable
+private fun LiveRedPocketChip(
+    info: LiveRedPocketInfo,
+    onClick: () -> Unit,
+    compact: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val label = if (compact) {
+        "红包"
+    } else {
+        info.awardsText.ifBlank { info.danmu.ifBlank { "人气红包" } }
+    }
+    Surface(
+        onClick = onClick,
+        modifier = modifier.heightIn(min = 36.dp),
+        shape = RoundedCornerShape(999.dp),
+        color = Color(0xFFFFE1D6).copy(alpha = 0.94f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            Color.White.copy(alpha = 0.40f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = if (compact) 9.dp else 12.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.CardGiftcard,
+                contentDescription = "直播红包",
+                tint = Color(0xFFB3261E),
+                modifier = Modifier.size(17.dp)
+            )
+            Spacer(Modifier.width(5.dp))
+            Text(
+                text = label,
+                color = Color(0xFF7A271A),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

@@ -386,6 +386,11 @@ interface BilibiliApi {
         @Query("room_id") roomId: Long
     ): ResponseBody
 
+    @GET("https://api.live.bilibili.com/xlive/lottery-interface/v1/lottery/getLotteryInfoWeb")
+    suspend fun getLiveLotteryInfo(
+        @Query("roomid") roomId: Long
+    ): ResponseBody
+
     @GET("https://api.live.bilibili.com/xlive/general-interface/v1/rank/queryContributionRank")
     suspend fun getLiveContributionRank(
         @QueryMap params: Map<String, String>

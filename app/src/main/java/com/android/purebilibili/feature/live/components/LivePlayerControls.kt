@@ -26,6 +26,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.filled.SpeakerWave2
@@ -123,7 +124,10 @@ fun LivePlayerControls(
     currentQualityDesc: String = "",
     onQualityClick: () -> Unit = {},
     showPipButton: Boolean = false,
-    onEnterPip: () -> Unit = {}
+    onEnterPip: () -> Unit = {},
+    applyTopSystemBarPadding: Boolean = true,
+    applyBottomSystemBarPadding: Boolean = true,
+    bottomControlsBottomPadding: Dp = 0.dp
 ) {
     var isControlsVisible by remember { mutableStateOf(true) }
     val palette = rememberLiveChromePalette()
@@ -280,7 +284,7 @@ fun LivePlayerControls(
                             )
                         )
                     )
-                    .statusBarsPadding()
+                    .then(if (applyTopSystemBarPadding) Modifier.statusBarsPadding() else Modifier)
                     .padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -352,7 +356,9 @@ fun LivePlayerControls(
             visible = isControlsVisible,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter)
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = bottomControlsBottomPadding)
         ) {
             val scrollState = rememberScrollState()
             Row(
@@ -367,7 +373,7 @@ fun LivePlayerControls(
                             )
                         )
                     )
-                    .navigationBarsPadding()
+                    .then(if (applyBottomSystemBarPadding) Modifier.navigationBarsPadding() else Modifier)
                     .padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
