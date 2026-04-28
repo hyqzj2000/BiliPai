@@ -30,9 +30,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,6 +58,7 @@ import com.android.purebilibili.data.model.response.LiveFavoriteTagEntry
 import com.android.purebilibili.data.model.response.LiveAreaParent
 import com.android.purebilibili.core.store.SettingsManager
 import com.android.purebilibili.data.repository.LiveRepository
+import com.android.purebilibili.feature.home.components.BottomBarLiquidSegmentedControl
 import kotlinx.coroutines.launch
 
 @Composable
@@ -162,19 +161,12 @@ fun LiveAreaScreen(
                         }
                     }
                 )
-                PrimaryScrollableTabRow(
-                    selectedTabIndex = selectedTab,
-                    containerColor = colorScheme.background,
-                    edgePadding = metrics.safeSpaceDp.dp
-                ) {
-                    areas.forEachIndexed { index, area ->
-                        Tab(
-                            selected = selectedTab == index,
-                            onClick = { selectedTab = index },
-                            text = { Text(area.name) }
-                        )
-                    }
-                }
+                LiveAreaParentTabRow(
+                    areas = areas,
+                    selectedTab = selectedTab,
+                    horizontalPadding = metrics.safeSpaceDp.dp,
+                    onTabSelected = { selectedTab = it }
+                )
                 val selectedArea = areas.getOrNull(selectedTab)
                 if (selectedArea != null) {
                     val displayChildren = remember(selectedArea.list) {
@@ -221,6 +213,31 @@ fun LiveAreaScreen(
             }
         }
     }
+}
+
+@Composable
+private fun LiveAreaParentTabRow(
+    areas: List<LiveAreaParent>,
+    selectedTab: Int,
+    horizontalPadding: androidx.compose.ui.unit.Dp,
+    onTabSelected: (Int) -> Unit
+) {
+    if (areas.isEmpty()) return
+    val segmentedSpec = remember { resolveLiveAreaParentSegmentedControlSpec() }
+    BottomBarLiquidSegmentedControl(
+        items = areas.map { it.name },
+        selectedIndex = selectedTab.coerceIn(0, areas.lastIndex),
+        onSelected = onTabSelected,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = horizontalPadding),
+        itemWidth = segmentedSpec.itemWidthDp?.dp,
+        height = segmentedSpec.heightDp.dp,
+        indicatorHeight = segmentedSpec.indicatorHeightDp.dp,
+        labelFontSize = segmentedSpec.labelFontSizeSp.sp,
+        containerHorizontalPadding = segmentedSpec.containerHorizontalPaddingDp.dp,
+        containerVerticalPadding = segmentedSpec.containerVerticalPaddingDp.dp
+    )
 }
 
 @Composable

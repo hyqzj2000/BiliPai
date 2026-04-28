@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 class BottomBarLiquidSegmentedControlStructureTest {
 
     @Test
-    fun `segmented control keeps ksu sliding glass without shell backdrop fallback`() {
+    fun `segmented control keeps sliding glass by default with opt out flag`() {
         val source = loadSource(
             "app/src/main/java/com/android/purebilibili/feature/home/components/BottomBarLiquidSegmentedControl.kt"
         )
@@ -18,13 +18,14 @@ class BottomBarLiquidSegmentedControlStructureTest {
         assertTrue(source.contains(".background(containerColor, containerShape)"))
         assertTrue(source.contains("val neutralIndicatorColor = if (isDarkTheme) Color.White.copy(0.1f) else Color.Black.copy(0.1f)"))
         assertTrue(source.contains("resolveLiquidSegmentedIndicatorColor("))
-        assertTrue(source.contains("val useIndicatorBackdrop = liquidGlassEnabled && motionProgress > 0f"))
+        assertTrue(source.contains("liquidGlassEffectsEnabled: Boolean = true"))
+        assertTrue(source.contains("dragSelectionEnabled: Boolean = true"))
         assertTrue(source.contains("background(indicatorColor, indicatorShape)"))
         assertFalse(source.contains("rememberCombinedBackdrop("))
         assertFalse(source.contains("shellBackdrop"))
         assertTrue(source.contains("val contentBackdrop = rememberLayerBackdrop()"))
         assertTrue(source.contains(".layerBackdrop(contentBackdrop)"))
-        assertTrue(source.contains("if (useIndicatorBackdrop)"))
+        assertTrue(source.contains("val useIndicatorBackdrop = liquidGlassEnabled && motionProgress > 0f"))
         assertTrue(source.contains("drawBackdrop("))
         assertTrue(source.contains("backdrop = contentBackdrop"))
         assertTrue(source.contains("shape = { containerShape }"))
@@ -33,6 +34,13 @@ class BottomBarLiquidSegmentedControlStructureTest {
         assertTrue(source.contains("Highlight.Default.copy(alpha = motionProgress)"))
         assertTrue(source.contains("Shadow(alpha = if (liquidGlassEnabled) motionProgress else 0f)"))
         assertTrue(source.contains("InnerShadow("))
+        assertTrue(source.contains("getBottomBarLiquidGlassEnabled("))
+        assertTrue(source.contains("getLiquidGlassStyle("))
+        assertTrue(source.contains("storedLiquidGlassEnabled && liquidGlassEffectsEnabled"))
+        assertTrue(source.contains("if (enabled && itemCount > 1)"))
+        assertTrue(source.contains("consumePointerChanges = dragSelectionEnabled"))
+        assertTrue(source.contains("notifyIndexChanged = dragSelectionEnabled"))
+        assertTrue(source.contains("settleIndex = if (dragSelectionEnabled) null else safeSelectedIndex"))
         assertFalse(source.contains("indicatorEffectProgress"))
         assertFalse(source.contains("backdrop = if (shouldRefractContent)"))
         assertFalse(source.contains("backdrop = shellBackdrop"))

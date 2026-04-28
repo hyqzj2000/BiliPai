@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-  <sub>Last updated: 2026-04-28 · Synced to v8.0.0-Alpha7 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
+  <sub>Last updated: 2026-04-29 · Synced to v8.0.0-Alpha8 (source of truth: <a href="CHANGELOG.md">CHANGELOG</a> + code)</sub>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-8.0.0--Alpha7-fb7299?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/Version-8.0.0--Alpha8-fb7299?style=flat-square" alt="Version">
   <img src="https://img.shields.io/github/stars/jay3-yy/BiliPai?style=flat-square&color=yellow" alt="Stars">
   <img src="https://img.shields.io/github/forks/jay3-yy/BiliPai?style=flat-square&color=green" alt="Forks">
   <img src="https://img.shields.io/github/last-commit/jay3-yy/BiliPai?style=flat-square&color=purple" alt="Last Commit">
@@ -430,11 +430,11 @@ A lightweight plugin format requiring **no coding**, just a simple JSON file to 
 
 See full changelog: [CHANGELOG.md](CHANGELOG.md)
 
-### Latest (v8.0.0-Alpha7 · 2026-04-28)
+### Latest (v8.0.0-Alpha8 · 2026-04-29)
 
-- 🏠 Fixed a home video grid crash caused by duplicate `bvid` LazyGrid keys.
-- ✨ Refined Navigation settings grouping, Appearance settings structure, segmented-control liquid-glass indicators, dynamic action buttons, comment width, grouped setting corners, and BiliPai app icons.
-- 🔖 Bumped the app to `8.0.0-Alpha7` with `versionCode` `169`, with a focused duplicate `bvid` key policy test.
+- 📺 Live home primary categories continue to reuse the bottom-bar liquid-glass indicator, drag animation, and chromatic dispersion.
+- ✨ While dragging the indicator, the category row now follows the indicator position in real time; the outer row no longer handles separate horizontal dragging.
+- 🔖 Bumped the app to `8.0.0-Alpha8` with `versionCode` `170`, with focused live-category indicator follow-scroll tests.
 
 ---
 

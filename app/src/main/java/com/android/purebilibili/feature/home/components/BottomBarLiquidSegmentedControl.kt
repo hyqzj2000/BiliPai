@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -47,9 +48,9 @@ import com.android.purebilibili.core.ui.animation.rememberDampedDragAnimationSta
 import com.android.purebilibili.core.ui.blur.currentUnifiedBlurIntensity
 import com.android.purebilibili.core.ui.motion.BottomBarMotionProfile
 import com.android.purebilibili.core.ui.motion.resolveBottomBarMotionSpec
-import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
@@ -69,17 +70,21 @@ fun BottomBarLiquidSegmentedControl(
     indicatorHeight: Dp = 34.dp,
     labelFontSize: TextUnit = 14.sp,
     containerHorizontalPadding: Dp = 3.dp,
-    containerVerticalPadding: Dp = 3.dp
+    containerVerticalPadding: Dp = 3.dp,
+    liquidGlassEffectsEnabled: Boolean = true,
+    dragSelectionEnabled: Boolean = true,
+    onIndicatorPositionChanged: ((Float) -> Unit)? = null
 ) {
     if (items.isEmpty()) return
 
     val context = LocalContext.current
-    val liquidGlassEnabled by SettingsManager
+    val storedLiquidGlassEnabled by SettingsManager
         .getBottomBarLiquidGlassEnabled(context)
         .collectAsState(initial = true)
     val liquidGlassStyle by SettingsManager
         .getLiquidGlassStyle(context)
         .collectAsState(initial = LiquidGlassStyle.SUKISU)
+    val liquidGlassEnabled = storedLiquidGlassEnabled && liquidGlassEffectsEnabled
     val blurIntensity = currentUnifiedBlurIntensity()
     val density = LocalDensity.current
     val itemCount = items.size
@@ -150,12 +155,18 @@ fun BottomBarLiquidSegmentedControl(
         val dragModifier = if (enabled && itemCount > 1) {
             Modifier.horizontalDragGesture(
                 dragState = dragState,
-                itemWidthPx = itemWidthPx
+                itemWidthPx = itemWidthPx,
+                consumePointerChanges = dragSelectionEnabled,
+                settleIndex = if (dragSelectionEnabled) null else safeSelectedIndex,
+                notifyIndexChanged = dragSelectionEnabled
             )
         } else {
             Modifier
         }
         val indicatorPosition = dragState.value
+        SideEffect {
+            onIndicatorPositionChanged?.invoke(indicatorPosition)
+        }
         val pressMotionProgress by remember {
             derivedStateOf { dragState.pressProgress }
         }

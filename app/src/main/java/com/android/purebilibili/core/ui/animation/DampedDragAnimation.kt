@@ -206,7 +206,12 @@ internal class DampedDragAnimationState(
      * @param velocityX 水平速度 (px/s)
      * @param itemWidthPx 项目宽度 (px)
      */
-    fun onDragEnd(velocityX: Float, itemWidthPx: Float) {
+    fun onDragEnd(
+        velocityX: Float,
+        itemWidthPx: Float,
+        settleIndex: Int? = null,
+        notifyIndexChanged: Boolean = true
+    ) {
         if (itemWidthPx <= 0f || itemCount <= 0) return
         isDragging = false
         val generation = motionGeneration
@@ -220,13 +225,14 @@ internal class DampedDragAnimationState(
             velocityPxPerSecond = velocityX,
             itemWidthPx = itemWidthPx
         )
-        val releaseTargetIndex = resolveDampedDragReleaseTargetIndex(
-            currentValue = currentValue,
-            velocityPxPerSecond = velocityX,
-            itemWidthPx = itemWidthPx,
-            itemCount = itemCount,
-            motionSpec = motionSpec
-        )
+        val releaseTargetIndex = settleIndex?.coerceIn(0, itemCount - 1)
+            ?: resolveDampedDragReleaseTargetIndex(
+                currentValue = currentValue,
+                velocityPxPerSecond = velocityX,
+                itemWidthPx = itemWidthPx,
+                itemCount = itemCount,
+                motionSpec = motionSpec
+            )
         targetIndex = releaseTargetIndex
         desiredValue = releaseTargetIndex.toFloat()
         
@@ -240,7 +246,9 @@ internal class DampedDragAnimationState(
             )
             if (generation == motionGeneration) {
                 velocityPxPerSecond = 0f
-                onIndexChanged(releaseTargetIndex)
+                if (notifyIndexChanged) {
+                    onIndexChanged(releaseTargetIndex)
+                }
             }
         }
         // 释放按压缩放 — 参考 LiquidBottomTabs release()
@@ -312,8 +320,17 @@ internal fun rememberDampedDragAnimationState(
  */
 internal fun Modifier.horizontalDragGesture(
     dragState: DampedDragAnimationState,
-    itemWidthPx: Float
-): Modifier = this.pointerInput(dragState, itemWidthPx) {
+    itemWidthPx: Float,
+    consumePointerChanges: Boolean = true,
+    settleIndex: Int? = null,
+    notifyIndexChanged: Boolean = true
+): Modifier = this.pointerInput(
+    dragState,
+    itemWidthPx,
+    consumePointerChanges,
+    settleIndex,
+    notifyIndexChanged
+) {
     val velocityTracker = VelocityTracker()
     
     awaitPointerEventScope {
@@ -325,7 +342,9 @@ internal fun Modifier.horizontalDragGesture(
             
             // [Fix] Wait for touch slop before claiming the gesture (to distinguish from tap)
             val dragStart = awaitHorizontalTouchSlopOrCancellation(down.id) { change, over ->
-                change.consume()
+                if (consumePointerChanges) {
+                    change.consume()
+                }
                 dragState.onDrag(over, itemWidthPx)
             }
 
@@ -338,7 +357,9 @@ internal fun Modifier.horizontalDragGesture(
                 // Continue handling drag events
                 try {
                      horizontalDrag(dragStart.id) { change ->
-                        change.consume()
+                        if (consumePointerChanges) {
+                            change.consume()
+                        }
                         velocityTracker.addPosition(change.uptimeMillis, change.position)
                         
                         val dragAmount = change.position.x - change.previousPosition.x
@@ -351,10 +372,20 @@ internal fun Modifier.horizontalDragGesture(
                 // Drag ended
                 if (!isCancelled) {
                     val velocity = velocityTracker.calculateVelocity()
-                    dragState.onDragEnd(velocity.x, itemWidthPx)
+                    dragState.onDragEnd(
+                        velocityX = velocity.x,
+                        itemWidthPx = itemWidthPx,
+                        settleIndex = settleIndex,
+                        notifyIndexChanged = notifyIndexChanged
+                    )
                 } else {
                     // Cancelled
-                    dragState.onDragEnd(0f, itemWidthPx)
+                    dragState.onDragEnd(
+                        velocityX = 0f,
+                        itemWidthPx = itemWidthPx,
+                        settleIndex = settleIndex,
+                        notifyIndexChanged = notifyIndexChanged
+                    )
                 }
             }
         }

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,9 +27,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +40,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,6 +58,7 @@ import com.android.purebilibili.core.util.LocalWindowSizeClass
 import com.android.purebilibili.core.util.responsiveContentWidth
 import com.android.purebilibili.data.model.response.LiveAreaParent
 import com.android.purebilibili.data.repository.LiveRepository
+import com.android.purebilibili.feature.home.components.BottomBarLiquidSegmentedControl
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -120,7 +127,7 @@ class LiveListViewModel(application: Application) : AndroidViewModel(application
                     LiveRoomItem(
                         roomId = room.roomid,
                         title = room.title,
-                        cover = room.cover.ifEmpty { room.userCover.ifEmpty { room.keyframe } },
+                        cover = room.displayCover(),
                         uname = room.uname,
                         face = room.face,
                         online = room.online,
@@ -153,7 +160,7 @@ class LiveListViewModel(application: Application) : AndroidViewModel(application
                         LiveRoomItem(
                             roomId = room.roomid,
                             title = room.title,
-                            cover = room.cover.ifEmpty { room.userCover.ifEmpty { room.keyframe } },
+                            cover = room.displayCover(),
                             uname = room.uname,
                             face = room.face,
                             online = room.online,
@@ -189,7 +196,7 @@ class LiveListViewModel(application: Application) : AndroidViewModel(application
                         LiveRoomItem(
                             roomId = room.roomid,
                             title = room.title,
-                            cover = room.cover.ifEmpty { room.userCover.ifEmpty { room.keyframe } },
+                            cover = room.displayCover(),
                             uname = room.uname,
                             face = room.face,
                             online = room.online,
@@ -640,53 +647,67 @@ private fun LiveAreaHomeChipRow(
     selectedAreaId: Int,
     onAreaSelected: (Int) -> Unit
 ) {
-    val palette = rememberLiveChromePalette()
-    val chipColors = resolveLivePiliPlusChipColors(
-        selectedContainer = palette.accentStrong,
-        selectedContent = palette.onAccent,
-        unselectedContent = palette.secondaryText
-    )
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        item {
-            val selected = selectedAreaId == 0
-            Surface(
-                onClick = { onAreaSelected(0) },
-                color = if (selected) chipColors.selectedContainerColor else chipColors.unselectedContainerColor,
-                shape = RoundedCornerShape(999.dp),
-                border = null
-            ) {
-                Text(
-                    text = "推荐",
-                    color = if (selected) chipColors.selectedContentColor else chipColors.unselectedContentColor,
-                    fontSize = 14.sp,
-                    lineHeight = 14.sp,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
-                )
-            }
+    val categoryItems = remember(areaList) {
+        listOf(0 to "推荐") + areaList.map { it.id to it.name }
+    }
+    val selectedIndex = remember(selectedAreaId, areaList) {
+        resolveLiveHomeCategorySelectedIndex(
+            selectedAreaId = selectedAreaId,
+            areaIds = areaList.map { it.id }
+        )
+    }
+    val segmentedSpec = remember { resolveLiveHomeCategorySegmentedControlSpec() }
+    val scrollState = rememberScrollState()
+    val density = LocalDensity.current
+    val itemWidthPx = with(density) { (segmentedSpec.itemWidthDp ?: 0).dp.toPx() }
+    val scrollEdgeBufferPx = with(density) { 20.dp.toPx() }
+    var indicatorPosition by remember { mutableFloatStateOf(selectedIndex.toFloat()) }
+
+    LaunchedEffect(selectedIndex) {
+        indicatorPosition = selectedIndex.toFloat()
+    }
+
+    LaunchedEffect(indicatorPosition, categoryItems.size, scrollState.maxValue, itemWidthPx) {
+        if (itemWidthPx <= 0f || scrollState.maxValue <= 0) return@LaunchedEffect
+        val contentWidthPx = itemWidthPx * categoryItems.size +
+            with(density) { (segmentedSpec.containerHorizontalPaddingDp * 2).dp.toPx() }
+        val viewportWidthPx = (contentWidthPx - scrollState.maxValue).coerceAtLeast(1f)
+        val targetScroll = resolveLiveHomeCategoryFollowScrollTarget(
+            indicatorPosition = indicatorPosition,
+            itemWidthPx = itemWidthPx,
+            itemCount = categoryItems.size,
+            viewportWidthPx = viewportWidthPx,
+            currentScrollPx = scrollState.value.toFloat(),
+            maxScrollPx = scrollState.maxValue.toFloat(),
+            edgeBufferPx = scrollEdgeBufferPx
+        )
+
+        if (kotlin.math.abs(targetScroll - scrollState.value) > 1) {
+            scrollState.scrollTo(targetScroll)
         }
-        items(areaList, key = { it.id }) { area ->
-            val selected = area.id == selectedAreaId
-            Surface(
-                onClick = { onAreaSelected(area.id) },
-                color = if (selected) chipColors.selectedContainerColor else chipColors.unselectedContainerColor,
-                shape = RoundedCornerShape(999.dp),
-                border = null
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = area.name,
-                        color = if (selected) chipColors.selectedContentColor else chipColors.unselectedContentColor,
-                        fontSize = 14.sp,
-                        lineHeight = 14.sp,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
-                    )
-                }
-            }
-        }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(segmentedSpec.heightDp.dp)
+            .horizontalScroll(scrollState, enabled = false),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        BottomBarLiquidSegmentedControl(
+            items = categoryItems.map { it.second },
+            selectedIndex = selectedIndex,
+            onSelected = { index ->
+                categoryItems.getOrNull(index)?.let { onAreaSelected(it.first) }
+            },
+            itemWidth = segmentedSpec.itemWidthDp?.dp,
+            height = segmentedSpec.heightDp.dp,
+            indicatorHeight = segmentedSpec.indicatorHeightDp.dp,
+            labelFontSize = segmentedSpec.labelFontSizeSp.sp,
+            containerHorizontalPadding = segmentedSpec.containerHorizontalPaddingDp.dp,
+            containerVerticalPadding = segmentedSpec.containerVerticalPaddingDp.dp,
+            onIndicatorPositionChanged = { indicatorPosition = it }
+        )
     }
 }
 
