@@ -71,6 +71,17 @@ class LivePiliPlusVisualPolicyTest {
     }
 
     @Test
+    fun `interaction segmented control keeps liquid glass touch target dimensions`() {
+        val spec = resolveLiveInteractionSegmentedControlSpec()
+
+        assertEquals(14, spec.horizontalPaddingDp)
+        assertEquals(8, spec.verticalPaddingDp)
+        assertEquals(44, spec.heightDp)
+        assertEquals(36, spec.indicatorHeightDp)
+        assertEquals(14, spec.labelFontSizeSp)
+    }
+
+    @Test
     fun `live room backdrop and input alpha mirror PiliPlus transparent stack`() {
         val tokens = resolveLivePiliPlusRoomColorTokens(
             inputOverlayColor = Color(0xFFDDE1E6),

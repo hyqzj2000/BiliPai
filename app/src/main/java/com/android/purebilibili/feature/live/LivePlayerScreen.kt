@@ -72,6 +72,7 @@ import com.android.purebilibili.feature.live.components.LiveContributionRankShee
 import com.android.purebilibili.feature.live.components.LivePlayerControls
 import com.android.purebilibili.feature.live.components.LiveSendDanmakuSheet
 import com.android.purebilibili.feature.live.components.LiveSuperChatSection
+import com.android.purebilibili.feature.home.components.BottomBarLiquidSegmentedControl
 import com.android.purebilibili.feature.video.player.shouldContinuePlaybackDuringPause
 import com.android.purebilibili.feature.video.state.isPlaybackActiveForLifecycle
 import com.android.purebilibili.feature.video.state.shouldResumeAfterLifecyclePause
@@ -1412,17 +1413,25 @@ private fun LivePrimaryInteractionPanel(
     chatContent: @Composable () -> Unit,
     superChatContent: @Composable () -> Unit
 ) {
+    val segmentedSpec = remember { resolveLiveInteractionSegmentedControlSpec() }
+    val tabs = remember { listOf("聊天", "SC") }
     Column(modifier = Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = selectedTab) {
-            Tab(
-                selected = selectedTab == 0,
-                onClick = { onSelectedTab(0) },
-                text = { Text("聊天") }
-            )
-            Tab(
-                selected = selectedTab == 1,
-                onClick = { onSelectedTab(1) },
-                text = { Text("SC") }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = segmentedSpec.horizontalPaddingDp.dp,
+                    vertical = segmentedSpec.verticalPaddingDp.dp
+                )
+        ) {
+            BottomBarLiquidSegmentedControl(
+                items = tabs,
+                selectedIndex = selectedTab,
+                onSelected = onSelectedTab,
+                modifier = Modifier.fillMaxWidth(),
+                height = segmentedSpec.heightDp.dp,
+                indicatorHeight = segmentedSpec.indicatorHeightDp.dp,
+                labelFontSize = segmentedSpec.labelFontSizeSp.sp
             )
         }
         Box(modifier = Modifier.weight(1f)) {

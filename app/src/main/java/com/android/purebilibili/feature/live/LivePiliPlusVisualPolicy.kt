@@ -35,6 +35,14 @@ internal data class LivePiliPlusRoomColorTokens(
     val inputContentColor: Color
 )
 
+internal data class LiveInteractionSegmentedControlSpec(
+    val horizontalPaddingDp: Int,
+    val verticalPaddingDp: Int,
+    val heightDp: Int,
+    val indicatorHeightDp: Int,
+    val labelFontSizeSp: Int
+)
+
 internal fun resolveLivePiliPlusHomeMetrics(): LivePiliPlusHomeMetrics {
     return LivePiliPlusHomeMetrics(
         safeSpaceDp = 12,
@@ -99,6 +107,16 @@ internal fun shouldRenderLiveDanmakuImageEmoticon(emoticonUrl: String?): Boolean
 
 internal fun shouldStopLivePlaybackOnRouteDispose(isChangingConfigurations: Boolean): Boolean {
     return !isChangingConfigurations
+}
+
+internal fun resolveLiveInteractionSegmentedControlSpec(): LiveInteractionSegmentedControlSpec {
+    return LiveInteractionSegmentedControlSpec(
+        horizontalPaddingDp = 14,
+        verticalPaddingDp = 8,
+        heightDp = 44,
+        indicatorHeightDp = 36,
+        labelFontSizeSp = 14
+    )
 }
 
 internal fun resolveLivePiliPlusRoomColorTokens(
